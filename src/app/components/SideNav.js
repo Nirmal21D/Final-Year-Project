@@ -84,12 +84,12 @@ const SideNav = () => {
                     </MenuItem>
                   </Link>
                   <Link href="/pages/plan2" passHref>
-                    <MenuItem as="a" bg="#ebeff4">
+                    <MenuItem as="a" bg="#ffffff">
                       Plan 2
                     </MenuItem>
                   </Link>
                   <Link href="/pages/plan3" passHref>
-                    <MenuItem as="a" bg="#ebeff4">
+                    <MenuItem as="a" bg="#ffffff">
                       Plan 3
                     </MenuItem>
                   </Link>
