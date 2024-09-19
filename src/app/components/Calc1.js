@@ -9,6 +9,7 @@ import {
   Text,
   Heading,
   useNumberInput,
+  
 } from "@chakra-ui/react";
 
 const FinancialCalculator = () => {

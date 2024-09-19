@@ -1,5 +1,5 @@
 {
-  "/pages/plan1/page": "app/pages/plan1/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js",
   "/pages/calculator/page": "app/pages/calculator/page.js"
 }
