@@ -1,24 +1,91 @@
 "use client";
 import React, { useState } from "react";
-import { Text, Button } from "@chakra-ui/react";
 import {
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
   Box,
+  Text,
+  Button,
+  Slider,
+  SliderMark,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  Tooltip,
+  Input,
+  Flex,
 } from "@chakra-ui/react";
 
 const CompoundInterestCalculator = () => {
-  const [principal, setPrincipal] = useState(0);
-  const [rate, setRate] = useState(0);
-  const [time, setTime] = useState(0);
+  const [principal, setPrincipal] = useState(1000);
+  const [rate, setRate] = useState(5);
+  const [time, setTime] = useState(1);
   const [compound, setCompound] = useState(null);
 
   const calculateCompound = () => {
     const amount = principal * Math.pow(1 + rate / 100, time);
     setCompound((amount - principal).toFixed(2));
+  };
+
+  const renderSliderWithTextbox = (
+    label,
+    value,
+    setValue,
+    min,
+    max,
+    step,
+    unit = ""
+  ) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+
+    return (
+      <Box mb={6} width="100%">
+        <Text mb={2}>{label}</Text>
+        <Flex alignItems="center">
+          <Slider
+            flex="1"
+            defaultValue={value}
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(v) => setValue(v)}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            colorScheme="teal"
+            mr={4}
+          >
+            <SliderMark value={10000} mt="1" ml="-2.5" fontSize="sm">
+              10000
+            </SliderMark>
+            <SliderMark value={50000} mt="1" ml="-2.5" fontSize="sm">
+              50000
+            </SliderMark>
+            <SliderMark value={100000} mt="1" ml="-2.5" fontSize="sm">
+              100000
+            </SliderMark>
+            <SliderTrack>
+              <SliderFilledTrack />
+            </SliderTrack>
+            <Tooltip
+              hasArrow
+              bg="teal.500"
+              color="white"
+              placement="top"
+              isOpen={showTooltip}
+              label={`${value}${unit}`}
+            >
+              <SliderThumb />
+            </Tooltip>
+          </Slider>
+          <Input
+            width="100px"
+            value={value}
+            onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
+            type="number"
+            textAlign="center"
+          />
+        </Flex>
+      </Box>
+    );
   };
 
   return (
@@ -41,44 +108,25 @@ const CompoundInterestCalculator = () => {
           Compound Interest Calculator
         </Text>
 
-        <NumberInput
-          value={principal}
-          onChange={(valueString) => setPrincipal(parseFloat(valueString) || 0)}
-          placeholder="Principal Amount (₹)"
-          mb={4}
-        >
-          <NumberInputField placeholder="Principal Amount (₹)" />
-          <NumberInputStepper>
-            <NumberIncrementStepper />
-            <NumberDecrementStepper />
-          </NumberInputStepper>
-        </NumberInput>
-
-        <NumberInput
-          value={rate}
-          onChange={(valueString) => setRate(parseFloat(valueString) || 0)}
-          placeholder="Rate of Interest (%)"
-          mb={4}
-        >
-          <NumberInputField placeholder="Rate of Interest (%)" />
-          <NumberInputStepper>
-            <NumberIncrementStepper />
-            <NumberDecrementStepper />
-          </NumberInputStepper>
-        </NumberInput>
-
-        <NumberInput
-          value={time}
-          onChange={(valueString) => setTime(parseFloat(valueString) || 0)}
-          placeholder="Time (years)"
-          mb={4}
-        >
-          <NumberInputField placeholder="Time (years)" />
-          <NumberInputStepper>
-            <NumberIncrementStepper />
-            <NumberDecrementStepper />
-          </NumberInputStepper>
-        </NumberInput>
+        {renderSliderWithTextbox(
+          "Principal Amount (₹)",
+          principal,
+          setPrincipal,
+          0,
+          10000000,
+          1000,
+          "₹"
+        )}
+        {renderSliderWithTextbox(
+          "Rate of Interest (%)",
+          rate,
+          setRate,
+          0,
+          50,
+          0.1,
+          "%"
+        )}
+        {renderSliderWithTextbox("Time (years)", time, setTime, 0, 50, 1)}
 
         <Button
           color="#ebeff4"
