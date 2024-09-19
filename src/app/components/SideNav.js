@@ -79,7 +79,7 @@ const SideNav = () => {
                 <MenuList bg="#ebeff4">
                   {/* Each MenuItem is a clickable link */}
                   <Link href="/pages/plan1" passHref>
-                    <MenuItem as="a" bg="#ebeff4">
+                    <MenuItem as="a" bg="#ffffff">
                       Plan 1
                     </MenuItem>
                   </Link>
