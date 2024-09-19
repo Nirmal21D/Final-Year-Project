@@ -19,10 +19,13 @@ const CompoundInterestCalculator = () => {
   const [rate, setRate] = useState(5);
   const [time, setTime] = useState(1);
   const [compound, setCompound] = useState(null);
-
+  const [totalAmount, setTotalAmount] = useState(null);
   const calculateCompound = () => {
     const amount = principal * Math.pow(1 + rate / 100, time);
     setCompound((amount - principal).toFixed(2));
+
+    const totalAmount = amount.toFixed(2);
+    setTotalAmount(amount.toFixed(2));
   };
 
   const renderSliderWithTextbox = (
@@ -53,14 +56,14 @@ const CompoundInterestCalculator = () => {
             colorScheme="teal"
             mr={4}
           >
-            <SliderMark value={10000} mt="1" ml="-2.5" fontSize="sm">
-              10000
+            <SliderMark value={250000} mt="1" ml="-2.5" fontSize="sm">
+            250000
             </SliderMark>
-            <SliderMark value={50000} mt="1" ml="-2.5" fontSize="sm">
-              50000
+            <SliderMark value={500000} mt="1" ml="-2.5" fontSize="sm">
+              500000
             </SliderMark>
-            <SliderMark value={100000} mt="1" ml="-2.5" fontSize="sm">
-              100000
+            <SliderMark value={750000} mt="1" ml="-2.5" fontSize="sm">
+              750000
             </SliderMark>
             <SliderTrack>
               <SliderFilledTrack />
@@ -113,7 +116,7 @@ const CompoundInterestCalculator = () => {
           principal,
           setPrincipal,
           0,
-          10000000,
+          1000000,
           1000,
           "₹"
         )}
@@ -139,8 +142,10 @@ const CompoundInterestCalculator = () => {
         </Button>
 
         {compound && (
-          <Text fontSize="lg" color="green.500" mt={4}>
+          <Text fontSize="lg" color="white" mt={4}>
             Compound Interest: ₹{compound}
+            <br />
+            Total Amount: ₹{totalAmount}
           </Text>
         )}
       </Box>
