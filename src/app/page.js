@@ -6,7 +6,7 @@ import { Box, Text } from "@chakra-ui/react";
 import Welcome from "./components/Welcome";
 import InUp from "./components/InUp";
 
-const Page = () => {
+const ProfilePage = () => {
   return (
     <>
       <Box
@@ -48,4 +48,4 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default ProfilePage;

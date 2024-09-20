@@ -3,7 +3,6 @@ import React from "react";
 import SideNav from "@/app/components/SideNav";
 
 import { Box } from "@chakra-ui/react";
-import Calc1 from "@/app/components/Calc1";
 import Calc2 from "@/app/components/Calc2";
 
 const page = () => {
@@ -26,7 +25,7 @@ const page = () => {
         <Box display="flex" gap={10} justifyItems="center">
           <SideNav />
         </Box>
-        {/* <Calc1 /> */}
+    
         <Calc2 />
       </Box>
     </>
