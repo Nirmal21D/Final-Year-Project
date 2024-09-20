@@ -41,6 +41,7 @@ const Calc2 = () => {
             <Grid templateColumns="repeat(1,1fr)" gap={4}>
               <Button
                 color="#ebeff4"
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -51,6 +52,7 @@ const Calc2 = () => {
 
               <Button
                 color="#ebeff4"
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -60,6 +62,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -69,6 +72,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -78,6 +82,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -87,6 +92,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -96,6 +102,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"

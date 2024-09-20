@@ -61,6 +61,7 @@ const SideNav = () => {
                   <MenuButton
                     as={Button}
                     bg="rgba(229, 229, 229, 0.1)"
+                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                     color="#e9ecef"
                     width="full"
                   >
@@ -72,6 +73,7 @@ const SideNav = () => {
                 <MenuButton
                   as={Button}
                   bg="rgba(229, 229, 229, 0.1)"
+                  _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                   color="#e9ecef"
                 >
                   Investment Plans
@@ -102,6 +104,7 @@ const SideNav = () => {
                   as={Button}
                   bg="rgba(229, 229, 229, 0.1)"
                   color="#e9ecef"
+                  _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 >
                   Banks
                 </MenuButton>
@@ -125,6 +128,7 @@ const SideNav = () => {
                     bg="rgba(229, 229, 229, 0.1)"
                     color="#e9ecef"
                     width="full"
+                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                   >
                     Calculator
                   </MenuButton>
@@ -137,6 +141,7 @@ const SideNav = () => {
                     bg="rgba(229, 229, 229, 0.1)"
                     color="#e9ecef"
                     width="full"
+                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                   >
                     My Profile
                   </MenuButton>

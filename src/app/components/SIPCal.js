@@ -50,6 +50,15 @@ const SIPCalculator = () => {
             colorScheme="teal"
             mr={4}
           >
+             <SliderMark value={250000} mt="1" ml="-2.5" fontSize="sm">
+            250000
+            </SliderMark>
+            <SliderMark value={500000} mt="1" ml="-2.5" fontSize="sm">
+              500000
+            </SliderMark>
+            <SliderMark value={750000} mt="1" ml="-2.5" fontSize="sm">
+              750000
+            </SliderMark> 
             <SliderTrack>
               <SliderFilledTrack />
             </SliderTrack>
@@ -99,9 +108,9 @@ const SIPCalculator = () => {
         "Monthly Installment (₹)",
         installment,
         setInstallment,
-        500,
-        50000,
-        100,
+        1000,
+        1000000,
+        1000,
         "₹"
       )}
       {renderSliderWithTextbox(

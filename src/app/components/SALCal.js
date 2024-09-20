@@ -17,9 +17,9 @@ import React, { useState } from "react";
 const SalaryCalculator = () => {
   const [basicSalary, setBasicSalary] = useState(10000);
   const [hra, setHra] = useState(10);
-  const [ta, setTa] = useState(1000);
+  const [ta, setTa] = useState(10);
   const [pf, setPf] = useState(5);
-  const [tax, setTax] = useState(1000);
+  const [tax, setTax] = useState(10000);
   const [otherDeductions, setOtherDeductions] = useState(500);
   const [grossSalary, setGrossSalary] = useState(null);
 
@@ -39,7 +39,7 @@ const SalaryCalculator = () => {
       <Box mb={6} width="100%">
         <Text mb={2}>{label}</Text>
         <Flex alignItems="center">
-          <Slider
+            <Slider
             flex="1"
             defaultValue={value}
             min={min}
@@ -52,6 +52,16 @@ const SalaryCalculator = () => {
             colorScheme="teal"
             mr={4}
           >
+            <SliderMark value={250000} mt="1" ml="-2.5" fontSize="sm">
+            250000
+            </SliderMark>
+
+            <SliderMark value={500000} mt="1" ml="-2.5" fontSize="sm">
+              500000
+            </SliderMark>
+            <SliderMark value={750000} mt="1" ml="-2.5" fontSize="sm">
+              750000
+            </SliderMark>
             <SliderTrack>
               <SliderFilledTrack />
             </SliderTrack>
@@ -98,35 +108,12 @@ const SalaryCalculator = () => {
       </Text>
 
       {renderSliderWithTextbox("Basic Salary (₹)", basicSalary, setBasicSalary, 5000, 1000000, 1000, "₹")}
-      {renderSliderWithTextbox("HRA (%)", hra, setHra, 0, 50, 0.5, "%")}
-      <Input
-        type="number"
-        placeholder="Transport Allowance (₹)"
-        value={ta}
-        onChange={(e) => setTa(parseFloat(e.target.value) || 0)}
-        mb={4}
-        bg="white"
-        size="lg"
-      />
-      {renderSliderWithTextbox("PF (%)", pf, setPf, 0, 20, 0.5, "%")}
-      <Input
-        type="number"
-        placeholder="Tax (₹)"
-        value={tax}
-        onChange={(e) => setTax(parseFloat(e.target.value) || 0)}
-        mb={4}
-        bg="white"
-        size="lg"
-      />
-      <Input
-        type="number"
-        placeholder="Other Deductions (₹)"
-        value={otherDeductions}
-        onChange={(e) => setOtherDeductions(parseFloat(e.target.value) || 0)}
-        mb={4}
-        bg="white"
-        size="lg"
-      />
+      {renderSliderWithTextbox("HRA (%)", hra, setHra, 0, 100, 0.5, "%")}
+      {renderSliderWithTextbox("TA (%)", ta, setTa, 0, 100, 0.5, "%")}   
+      {renderSliderWithTextbox("Tax (₹)", tax, setTax, 0, 100000, 1000, "₹")}
+      {renderSliderWithTextbox("Other Deductions (₹)", otherDeductions, setOtherDeductions, 0, 100000, 1000, "₹")}
+      {renderSliderWithTextbox("PF (%)", pf, setPf, 0, 100, 0.1, "%")}
+      
 
       <Button
         color="#ebeff4"
