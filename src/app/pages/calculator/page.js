@@ -14,18 +14,18 @@ const page = () => {
         gap={10}
         justifyItems="center"
         p={5}
-        // Add background image here
-        backgroundImage="url(/images/body-background.png)" // Set the image path
-        backgroundPosition="center" // Adjust position of the background image
-        backgroundRepeat="no-repeat" // Prevent the image from repeating
-        backgroundSize="cover" // Ensure the image covers the entire background
-        height="100vh" // Set height to full viewport
-        width="100%" // Set width to 100%
+        backgroundImage="url(/images/body-background.png)"
+        backgroundPosition="center"
+        backgroundSize="cover"
+        backgroundAttachment="fixed"
+        backgroundRepeat="no-repeat"
+        height="auto"
+        width="100%"
       >
         <Box display="flex" gap={10} justifyItems="center">
           <SideNav />
         </Box>
-    
+
         <Calc2 />
       </Box>
     </>
