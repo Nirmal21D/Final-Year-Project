@@ -1,4 +1,3 @@
-
 "use client";
 import React from "react";
 import SideNav from "../../components/SideNav";
@@ -16,21 +15,21 @@ const profile = () => {
         p={5}
         backgroundImage="url(/images/body-background.png)"
         backgroundPosition="center"
-        backgroundRepeat="no-repeat"
         backgroundSize="cover"
-        height="100vh"
+        backgroundAttachment="fixed"
+        backgroundRepeat="no-repeat"
+        height="auto"
         width="100%"
       >
         <Box display="flex" gap={10} justifyItems="center">
           <SideNav />
           <SearchBox />
         </Box>
-       
-          <ProfilePage />
+
+        <ProfilePage />
       </Box>
     </>
   );
 };
-
 
 export default profile;

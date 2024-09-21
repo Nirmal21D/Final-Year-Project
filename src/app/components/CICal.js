@@ -57,7 +57,7 @@ const CompoundInterestCalculator = () => {
             mr={4}
           >
             <SliderMark value={250000} mt="1" ml="-2.5" fontSize="sm">
-            250000
+              250000
             </SliderMark>
             <SliderMark value={500000} mt="1" ml="-2.5" fontSize="sm">
               500000

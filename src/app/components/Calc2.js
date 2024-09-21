@@ -22,6 +22,9 @@ const Calc2 = () => {
           display="flex"
           alignItems="center"
           justifyContent="center"
+          overflow="hidden"
+          position="sticky"
+          top="0"
         >
           <Box
             my={6}
@@ -125,6 +128,7 @@ const Calc2 = () => {
           display="flex"
           alignItems="center"
           justifyContent="center"
+          overflow="hidden"
         >
           {selectedCal === "CI" && <CICal />}
           {selectedCal === "EMI" && <EMICal />}
