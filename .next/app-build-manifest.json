@@ -10,11 +10,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/layout.js"
     ],
-    "/pages/profile/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pages/profile/page.js"
-    ],
     "/pages/calculator/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
