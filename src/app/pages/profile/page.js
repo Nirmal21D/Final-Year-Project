@@ -19,7 +19,9 @@ const profile = () => {
         backgroundAttachment="fixed"
         backgroundRepeat="no-repeat"
         height="auto"
-        width="100%"
+        width="auto"
+        minHeight="100vh" // Ensures the background covers at least the full viewport height
+        minWidth="auto" // Ensures the background covers the full viewport width
       >
         <Box display="flex" gap={10} justifyItems="center">
           <SideNav />

@@ -28,7 +28,7 @@ const SideNav = () => {
   return (
     <>
       {/* Hamburger Icon Button */}
-      <Button ref={btnRef} bg="#152b5a" onClick={onOpen}>
+      <Button ref={btnRef} bg="#152b5a" onClick={onOpen} position="fixed">
         <HamburgerIcon color="#c1c1c1" />
       </Button>
       <Drawer
@@ -131,6 +131,32 @@ const SideNav = () => {
                     _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                   >
                     Calculator
+                  </MenuButton>
+                </Link>
+              </Menu>
+              <Menu>
+                <Link href="/pages/signup">
+                  <MenuButton
+                    as={Button}
+                    bg="rgba(229, 229, 229, 0.1)"
+                    color="#e9ecef"
+                    width="full"
+                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                  >
+                    SignUp
+                  </MenuButton>
+                </Link>
+              </Menu>
+              <Menu>
+                <Link href="/pages/login">
+                  <MenuButton
+                    as={Button}
+                    bg="rgba(229, 229, 229, 0.1)"
+                    color="#e9ecef"
+                    width="full"
+                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                  >
+                    Login
                   </MenuButton>
                 </Link>
               </Menu>

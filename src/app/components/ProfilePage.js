@@ -14,7 +14,7 @@ const ProfilePage = () => {
   const [passwd, setPasswd] = useState("");
   const [phone, setPhone] = useState("");
   const [salary, setSalary] = useState("");
-  const [userId, setUserId] = useState("");
+ 
   const [username, setUsername] = useState("");
   const [fundsHistory, setFundsHistory] = useState(["funds"]);
   const toast = useToast();
@@ -39,6 +39,7 @@ const ProfilePage = () => {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         bg="white"
+        color="black"
         size="lg"
         flex="1"
       />
@@ -68,7 +69,7 @@ const ProfilePage = () => {
       {renderHorizontalInput("Password", passwd, setPasswd, "password")}
       {renderHorizontalInput("Phone", phone, setPhone, "number")}
       {renderHorizontalInput("Salary", salary, setSalary)}
-      {renderHorizontalInput("User ID", userId, setUserId)}
+      
       {renderHorizontalInput("Username", username, setUsername)}
 
       <Box mb={4} width="100%">

@@ -20,10 +20,12 @@ const SearchBox = () => {
     <>
       <Box
         bg="rgba(229, 229, 229, 0.1)"
-        width="100%"
+        width="90%"
         p={3}
         height={65}
         borderRadius="md"
+        position="fixed"
+        left={24}
       >
         <InputGroup>
           <InputLeftElement pointerEvents="none">

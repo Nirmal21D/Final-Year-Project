@@ -23,8 +23,7 @@ const Calc2 = () => {
           alignItems="center"
           justifyContent="center"
           overflow="hidden"
-          position="sticky"
-          top="0"
+          position="fixed"
         >
           <Box
             my={6}
@@ -117,8 +116,8 @@ const Calc2 = () => {
           </Box>
         </Box>
 
-        <Box height="inherit">
-          <Divider orientation="vertical" />
+        <Box height="inherit" ml="42vw">
+          <Divider orientation="vertical" position="fixed" />
         </Box>
 
         <Box
