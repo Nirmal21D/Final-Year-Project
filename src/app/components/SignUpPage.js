@@ -126,7 +126,7 @@ const SignUpPage = () => {
         window.location.href = "/";
       }
       else if(userType === "bank"){
-        window.location.href = "/bankpanel";
+        window.location.href = "/pages/Bankpages/bankpanel";
       }
     } catch (error) {
       console.error("Sign Up Error:", error);

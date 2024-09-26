@@ -1,11 +1,53 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import SideNav from "@/app/components/SideNav";
 import SearchBox from "../../components/SearchBar";
 import { Box, Text } from "@chakra-ui/react";
 import Plancards from "@/app/components/Plancards";
+import { db, auth } from "@/firebase"; // Adjust the path as necessary
+import { collection, getDocs } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 
 const page = () => {
+  const [plans, setPlans] = useState([]);
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        router.push('/pages/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "plans"));
+        const plansData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setPlans(plansData);
+      } catch (error) {
+        console.error("Error fetching plans: ", error);
+      }
+    };
+
+    if (user) {
+      fetchPlans();
+    }
+  }, [user]);
+
+  if (!user) {
+    return <Box>Loading...</Box>;
+  }
+
   return (
     <>
       <Box
@@ -14,13 +56,12 @@ const page = () => {
         gap={10}
         justifyItems="center"
         p={5}
-        // Add background image here
-        backgroundImage="url(/images/body-background.png)" // Set the image path
-        backgroundPosition="center" // Adjust position of the background image
-        backgroundRepeat="no-repeat" // Prevent the image from repeating
-        backgroundSize="cover" // Ensure the image covers the entire background
-        height="100vh" // Set height to full viewport
-        width="100%" // Set width to 100%
+        backgroundImage="url(/images/body-background.png)"
+        backgroundPosition="center"
+        backgroundRepeat="no-repeat"
+        backgroundSize="cover"
+        height="100vh"
+        width="100%"
       >
         <Box display="flex" gap={10} justifyItems="center">
           <SideNav />
@@ -33,40 +74,15 @@ const page = () => {
           gap={20}
           p={10}
         >
-          <Plancards
-            header="Plan1"
-            summary="
-Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ab animi, nobis voluptatum libero ea consectetur adipisci. Odit deleniti id quibusdam nesciunt mollitia vitae hic ad cum pariatu."
-          />
-          <Plancards
-            header="Plan2"
-            summary="
-Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ab animi, nobis voluptatum libero ea consectetur adipisci. Odit deleniti id quibusdam nesciunt mollitia vitae hic ad cum pariatu."
-          />
-          <Plancards
-            header="Plan3"
-            summary="
-Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ab animi, nobis voluptatum libero ea consectetur adipisci. Odit deleniti id quibusdam nesciunt mollitia vitae hic ad cum pariatu."
-          />
+          {plans.map((plan) => (
+            <Plancards
+              key={plan.id}
+              header={plan.planName}
+              summary={plan.description}
+            />
+          ))}
         </Box>
       </Box>
-
-      {/* <Box w="100%" h="200px" bgGradient="linear(to-t, green.200, pink.500)"></Box> */}
-
-      {/* <Box
-        w="100%"
-        h="200px"
-        bgGradient="radial(gray.300, yellow.400, pink.200)"
-      />
-
-      <Text
-        bgGradient="linear(to-l, #7928CA, #FF0080)"
-        bgClip="text"
-        fontSize="6xl"
-        fontWeight="extrabold"
-      >
-        Welcome to Chakra UI
-      </Text> */}
     </>
   );
 };
