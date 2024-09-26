@@ -15,6 +15,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/pages/calculator/page.js"
     ],
+    "/pages/profile/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/pages/profile/page.js"
+    ],
     "/pages/signup/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -25,10 +30,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/pages/login/page.js"
     ],
-    "/pages/profile/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/pages/profile/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

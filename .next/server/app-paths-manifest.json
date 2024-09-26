@@ -1,8 +1,8 @@
 {
-  "/pages/calculator/page": "app/pages/calculator/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
+  "/pages/calculator/page": "app/pages/calculator/page.js",
   "/pages/signup/page": "app/pages/signup/page.js",
-  "/pages/login/page": "app/pages/login/page.js",
   "/pages/profile/page": "app/pages/profile/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js"
+  "/pages/login/page": "app/pages/login/page.js"
 }
