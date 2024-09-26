@@ -45,13 +45,10 @@ const LoginPage = () => {
       return;
     }
 
-    // Example login logic (replace with your actual authentication logic)
     try {
-      const loginSuccessful = await loginUser(identifier, password, userType);
-
-      if (loginSuccessful) {
-        // Redirect to the main page
-        window.location.href = "/"; // Use window.location for redirection
+      const loginSuccessful = await loginUser(auth, identifier, password, userType);
+        console.log(`User logged in: ${userCredential.user}`);
+        router.push('/profile'); 
         toast({
           title: "Login Successful.",
 
@@ -60,9 +57,6 @@ const LoginPage = () => {
           duration: 3000,
           isClosable: true,
         });
-      } else {
-        throw new Error("Login failed.");
-      }
     } catch (error) {
       toast({
         title: "Error",

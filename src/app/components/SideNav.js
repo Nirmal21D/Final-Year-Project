@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   Box,
@@ -19,15 +19,54 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
-import Link from "next/link"; // Correct import for Next.js Link component
+import Link from "next/link";
+import { auth, db } from "../../firebase"; // Added db import
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports
 
 const SideNav = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure(); // Ensure the Drawer can open and close
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = React.useRef();
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        try {
+          const userDoc = doc(db, 'users', currentUser.uid);
+          const userSnap = await getDoc(userDoc);
+
+          if (userSnap.exists()) {
+            setUserData(userSnap.data());
+          } else {
+            console.error("No such document!");
+          }
+        } catch (error) {
+          console.error("Error fetching user data: ", error);
+        }
+      } else {
+        console.log("No user is signed in.");
+        setUserData(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      setUserData(null);
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
+  };
 
   return (
     <>
-      {/* Hamburger Icon Button */}
       <Button ref={btnRef} bg="#152b5a" onClick={onOpen} position="fixed">
         <HamburgerIcon color="#c1c1c1" />
       </Button>
@@ -55,7 +94,6 @@ const SideNav = () => {
             p={5}
           >
             <Box display="flex" flexDirection="column" gap={5}>
-              {/* Custom Dropdown for Investment Plans */}
               <Link href="/">
                 <Menu>
                   <MenuButton
@@ -65,7 +103,7 @@ const SideNav = () => {
                     color="#e9ecef"
                     width="full"
                   >
-                    DashBoard
+                    Home
                   </MenuButton>
                 </Menu>
               </Link>
@@ -79,7 +117,6 @@ const SideNav = () => {
                   Investment Plans
                 </MenuButton>
                 <MenuList bg="#ebeff4">
-                  {/* Each MenuItem is a clickable link */}
                   <Link href="/pages/plan1" passHref>
                     <MenuItem as="a" bg="#ffffff">
                       Plan 1
@@ -98,7 +135,6 @@ const SideNav = () => {
                 </MenuList>
               </Menu>
 
-              {/* Custom Dropdown for Banks */}
               <Menu>
                 <MenuButton
                   as={Button}
@@ -109,7 +145,6 @@ const SideNav = () => {
                   Banks
                 </MenuButton>
                 <MenuList>
-                  {/* Each MenuItem is a clickable link */}
                   <Link href="/bank1" passHref>
                     <MenuItem as="a">Bank 1</MenuItem>
                   </Link>
@@ -134,74 +169,94 @@ const SideNav = () => {
                   </MenuButton>
                 </Link>
               </Menu>
-              <Menu>
-                <Link href="/pages/signup">
-                  <MenuButton
-                    as={Button}
-                    bg="rgba(229, 229, 229, 0.1)"
-                    color="#e9ecef"
-                    width="full"
-                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
-                  >
-                    SignUp
-                  </MenuButton>
-                </Link>
-              </Menu>
-              <Menu>
-                <Link href="/pages/login">
-                  <MenuButton
-                    as={Button}
-                    bg="rgba(229, 229, 229, 0.1)"
-                    color="#e9ecef"
-                    width="full"
-                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
-                  >
-                    Login
-                  </MenuButton>
-                </Link>
-              </Menu>
-              <Menu>
-                <Link href="/pages/profile">
-                  <MenuButton
-                    as={Button}
-                    bg="rgba(229, 229, 229, 0.1)"
-                    color="#e9ecef"
-                    width="full"
-                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
-                  >
-                    My Profile
-                  </MenuButton>
-                </Link>
-              </Menu>
-            </Box>
-            {/* Avatar */}
-            <Box mt="auto">
-              <Wrap justify="flex-start">
-                <WrapItem>
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    flexDirection="column"
-                  >
-                    <Box display="flex" alignItems="center" gap={4}>
-                      <Avatar
-                        name="Harshita Gawas"
-                        src="https://bit.ly/dan-abramov"
-                      />
-                      <Text color="white" fontWeight="bold">
-                        Harshita Gawas
-                      </Text>
-                    </Box>
-
-                    <Link href="/pages/profile">
-                      <Text color="white" fontSize="sm">
-                        View Profile
-                      </Text>
+              {!user ? (
+                <>
+                  <Menu>
+                    <Link href="/pages/signup">
+                      <MenuButton
+                        as={Button}
+                        bg="rgba(229, 229, 229, 0.1)"
+                        color="#e9ecef"
+                        width="full"
+                        _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                      >
+                        SignUp
+                      </MenuButton>
                     </Link>
-                  </Box>
-                </WrapItem>
-              </Wrap>
+                  </Menu>
+                  <Menu>
+                    <Link href="/pages/login">
+                      <MenuButton
+                        as={Button}
+                        bg="rgba(229, 229, 229, 0.1)"
+                        color="#e9ecef"
+                        width="full"
+                        _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                      >
+                        Login
+                      </MenuButton>
+                    </Link>
+                  </Menu>
+                </>
+              ) : (
+                <>
+                  <Menu>
+                    <Link href="/pages/profile">
+                      <MenuButton
+                        as={Button}
+                        bg="rgba(229, 229, 229, 0.1)"
+                        color="#e9ecef"
+                        width="full"
+                        _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                      >
+                        My Profile
+                      </MenuButton>
+                    </Link>
+                  </Menu>
+                  <Menu>
+                    <MenuButton
+                      as={Button}
+                      bg="rgba(250, 5, 5, 0.1)"
+                      color="#e9ecef"
+                      width="full"
+                      _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                      onClick={handleLogout}
+                    >
+                      Log Out
+                    </MenuButton>
+                  </Menu>
+                </>
+              )}
             </Box>
+            {user && userData && (
+              <Box mt="auto">
+                <Wrap justify="flex-start">
+                  <WrapItem>
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      flexDirection="column"
+                    >
+                      <Box display="flex" alignItems="center" gap={4}>
+                        <Avatar
+                          name={userData.name || "User"}
+                          src={userData.photoURL}
+                        />
+                        <Text color="white" fontWeight="bold">
+                          {userData.name || "User"}
+                        </Text>
+                      </Box>
+
+                      <Link href="/pages/profile">
+                        <Text color="white" fontSize="sm">
+                          View Profile
+                        </Text>
+                      </Link>
+                    </Box>
+                  </WrapItem>
+                </Wrap>
+              </Box>
+            )}
           </DrawerBody>
         </DrawerContent>
       </Drawer>

@@ -20,13 +20,15 @@ import {
 } from "../../firebase"; // Adjust the path as necessary
 import { setDoc, doc, getDoc } from "firebase/firestore"; // Firestore functions
 import Link from "next/link";
+import { onAuthStateChanged } from "firebase/auth";
 
 const SignUpPage = () => {
   // State variables
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [salary, setSalary] = useState();
+  const [mobileNumber, setMobileNumber] = useState();
+  const [profileImage, setProfileImage] = useState(null);
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState("");
   const [bankEmail, setBankEmail] = useState("");
@@ -44,7 +46,7 @@ const SignUpPage = () => {
     // Basic validation for regular users
     if (
       userType === "regular" &&
-      (!firstName || !lastName || !email || !username || !password)
+      (!name || !email  || !password)
     ) {
       toast({
         title: "Error",
@@ -71,10 +73,9 @@ const SignUpPage = () => {
       return;
     }
 
-    setIsLoading(true); // Start loading
+    setIsLoading(true);
 
     try {
-      // Create user with email and password if userType is "regular" or "bank"
       let userCredential;
       if (userType === "regular") {
         userCredential = await createUserWithEmailAndPassword(
@@ -83,7 +84,6 @@ const SignUpPage = () => {
           password
         );
       } else {
-        // For "bank" users
         userCredential = await createUserWithEmailAndPassword(
           auth,
           bankEmail,
@@ -92,34 +92,42 @@ const SignUpPage = () => {
       }
       const user = userCredential.user;
 
-      // Add user to Firebase Firestore
+      if(userType === "regular"){
       await setDoc(doc(db, "users", user.uid), {
-        firstName: userType === "regular" ? firstName : null,
-        lastName: userType === "regular" ? lastName : null,
+        userId: user.uid,
+        name: userType === "regular" ? name : null,
         email: userType === "regular" ? email : bankEmail,
-        username: userType === "regular" ? username : null,
         userType,
-        ...(userType === "bank" && {
+        salary: null,
+        mobileNumber: null,
+        profileImage: null,
+      })
+    }
+    else if(userType === "bank"){
+        await setDoc(doc(db, "Banks", user.uid), {
           bankEmail,
           bankName,
-          bpaswd, // Security: Consider hashing this before storing
+          bpaswd, 
           ifscode,
-        }),
-        createdAt: new Date(),
-      });
+        });
+      }
 
       toast({
         title: "Sign Up Successful",
         description: `Welcome, ${
-          userType === "bank" ? bankName : firstName
+          userType === "bank" ? bankName : name
         }! Your account has been created.`,
         status: "success",
         duration: 5000,
         isClosable: true,
       });
 
-      // Redirect the user to the dashboard or desired page
-      // Example: window.location.href = "/dashboard";
+      if(userType === "regular"){
+        window.location.href = "/";
+      }
+      else if(userType === "bank"){
+        window.location.href = "/bankpanel";
+      }
     } catch (error) {
       console.error("Sign Up Error:", error);
       let errorMessage = "An error occurred during sign up.";
@@ -138,7 +146,7 @@ const SignUpPage = () => {
         isClosable: true,
       });
     } finally {
-      setIsLoading(false); // Stop loading
+      setIsLoading(false);
     }
   };
 
@@ -156,10 +164,15 @@ const SignUpPage = () => {
       if (!userDoc.exists()) {
         // Add user data to Firestore
         await setDoc(userDocRef, {
+          userId: user.uid,
+          name: user.displayName || "",
+          userType,
+          salary: null,
+          mobileNumber: null,
+          profileImage: null,
           email: user.email,
-          username: user.displayName || "",
-          userType: "regular",
-          createdAt: new Date(),
+         
+        
         });
       }
 
@@ -170,9 +183,14 @@ const SignUpPage = () => {
         duration: 5000,
         isClosable: true,
       });
+      if(userType === "regular"){
+        window.location.href = "/";
+      }
+      else if(userType === "bank"){
+        window.location.href = "/bankpanel";
+      }
 
-      // Redirect the user to the dashboard or desired page
-      // Example: window.location.href = "/dashboard";
+  
     } catch (error) {
       console.error("Google Sign Up Error:", error);
       let errorMessage = "An error occurred during Google sign up.";
@@ -237,13 +255,13 @@ const SignUpPage = () => {
           <>
             <Flex mb={4} width="100%" alignItems="center">
               <Text width="40%" fontWeight="bold" mr={4}>
-                First Name
+               Name
               </Text>
               <Input
                 type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Enter your First Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your Name"
                 bg="white"
                 color="black"
                 size="lg"
@@ -252,22 +270,7 @@ const SignUpPage = () => {
               />
             </Flex>
 
-            <Flex mb={4} width="100%" alignItems="center">
-              <Text width="40%" fontWeight="bold" mr={4}>
-                Last Name
-              </Text>
-              <Input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Enter your Last Name"
-                bg="white"
-                color="black"
-                size="lg"
-                flex="1"
-                required
-              />
-            </Flex>
+    
 
             <Flex mb={4} width="100%" alignItems="center">
               <Text width="40%" fontWeight="bold" mr={4}>
@@ -286,22 +289,6 @@ const SignUpPage = () => {
               />
             </Flex>
 
-            <Flex mb={4} width="100%" alignItems="center">
-              <Text width="40%" fontWeight="bold" mr={4}>
-                Username
-              </Text>
-              <Input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your Username"
-                bg="white"
-                color="black"
-                size="lg"
-                flex="1"
-                required
-              />
-            </Flex>
 
             <Flex mb={4} width="100%" alignItems="center">
               <Text width="40%" fontWeight="bold" mr={4}>
@@ -319,17 +306,18 @@ const SignUpPage = () => {
                 required
               />
             </Flex>
-
             <Button
-              onClick={handleGoogleSignUp}
-              colorScheme="red"
-              width="full"
-              isLoading={isLoading}
-              bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
-              _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
-            >
-              Sign Up with Google
-            </Button>
+          type="submit"
+          isLoading={isLoading}
+          loadingText="Signing Up..."
+          colorScheme="teal"
+          width="full"
+          mb={4}
+          bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
+          _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
+        >
+          Sign Up
+        </Button>
             <Divider my={4} borderColor="white" />
           </>
         )}
@@ -404,23 +392,33 @@ const SignUpPage = () => {
                 required
               />
             </Flex>
+
+            <Button
+          type="submit"
+          isLoading={isLoading}
+          loadingText="Signing Up..."
+          colorScheme="teal"
+          width="full"
+          mb={4}
+          bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
+          _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
+        >
+          Sign Up
+        </Button>
           </>
         )}
-
-        <Link href="/">
-          <Button
-            type="submit"
-            isLoading={isLoading}
-            loadingText="Signing Up..."
-            colorScheme="teal"
-            width="full"
-            mb={4}
-            bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
-            _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
-          >
-            Sign Up
-          </Button>
-        </Link>
+        
+        <Button
+              onClick={handleGoogleSignUp}
+              colorScheme="red"
+              width="full"
+              isLoading={isLoading}
+              bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
+              _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
+            >
+              Sign Up with Google
+            </Button>
+        
       </form>
     </Box>
   );
