@@ -1,5 +1,4 @@
 "use client";
-// import Welcome from "./Welcome";
 import {
   Box,
   Button,
@@ -11,33 +10,25 @@ import {
   Divider,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/firebase";
+import { useRouter } from "next/navigation";
 
 const LoginPage = () => {
-  const [identifier, setIdentifier] = useState(""); // Email or username
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState(""); // Input for phone number
-  const [userType, setUserType] = useState("user"); // Default to 'user'
-  const [bankIdentifier, setBankIdentifier] = useState(""); // Bank ID or Bank Email
+  const [userType, setUserType] = useState("user");
+  const [bankIdentifier, setBankIdentifier] = useState("");
   const toast = useToast();
+  const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (userType === "user" && !identifier) {
+    if ((userType === "user" && !identifier) || (userType === "bank" && !bankIdentifier) || !password) {
       toast({
         title: "Error",
-        description: "Please provide your Email or Username.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    if (userType === "bank" && !bankIdentifier) {
-      toast({
-        title: "Error",
-        description: "Please provide your Bank ID or Bank Email.",
+        description: "Please fill in all required fields.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -46,18 +37,26 @@ const LoginPage = () => {
     }
 
     try {
-      const loginSuccessful = await loginUser(auth, identifier, password, userType);
-        console.log(`User logged in: ${userCredential.user}`);
-        router.push('/profile'); 
-        toast({
-          title: "Login Successful.",
+      const email = userType === "user" ? identifier : bankIdentifier;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log(`User logged in: ${userCredential.user.uid}`);
+      
+      toast({
+        title: "Login Successful",
+        description: `Logged in as ${userType}.`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
 
-          description: `Logged in as ${userType}.`,
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
+      // Redirect based on user type
+      if (userType === "user") {
+        router.push('/profile');
+      } else if (userType === "bank") {
+        router.push('/bankpanel');
+      }
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Error",
         description: error.message || "An error occurred during login.",
@@ -68,16 +67,30 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Handle Google login functionality here
-    toast({
-      title: "Google Login",
-      description: "Logging in with Google...",
-      status: "info",
-      duration: 3000,
-      isClosable: true,
-    });
-    console.log("Google login initiated");
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("Google login successful:", result.user);
+      
+      toast({
+        title: "Google Login Successful",
+        description: "You've been logged in with Google.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      router.push('/');
+    } catch (error) {
+      console.error("Google login error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred during Google login.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
@@ -160,8 +173,8 @@ const LoginPage = () => {
             value={userType}
             onChange={(e) => {
               setUserType(e.target.value);
-              setIdentifier(""); // Clear identifier input when switching types
-              setBankIdentifier(""); // Clear bank input when switching types
+              setIdentifier("");
+              setBankIdentifier("");
             }}
             bg="white"
             color="black"
@@ -201,11 +214,6 @@ const LoginPage = () => {
       </form>
     </Box>
   );
-};
-
-// Mock login function (replace with your actual authentication logic)
-const loginUser = async (identifier, password, userType) => {
-  return new Promise((resolve) => setTimeout(() => resolve(true), 1000));
 };
 
 export default LoginPage;
