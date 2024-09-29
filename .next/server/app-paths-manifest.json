@@ -1,9 +1,10 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/pages/login/page": "app/pages/login/page.js",
-  "/pages/signup/page": "app/pages/signup/page.js",
   "/page": "app/page.js",
+  "/pages/Bankpages/bankdashboard/page": "app/pages/Bankpages/bankdashboard/page.js",
+  "/pages/calculator/page": "app/pages/calculator/page.js",
+  "/pages/profile/page": "app/pages/profile/page.js",
   "/pages/plan1/page": "app/pages/plan1/page.js",
-  "/pages/plan2/page": "app/pages/plan2/page.js",
-  "/pages/plan3/page": "app/pages/plan3/page.js"
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/pages/Bankpages/addplans/page": "app/pages/Bankpages/addplans/page.js"
 }
