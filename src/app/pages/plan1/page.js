@@ -4,7 +4,7 @@ import SideNav from "@/app/components/SideNav";
 import SearchBox from "../../components/SearchBar";
 import { Box, Text } from "@chakra-ui/react";
 import Plancards from "@/app/components/Plancards";
-import { db, auth } from "@/firebase"; // Adjust the path as necessary
+import { db, auth } from "@/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
@@ -18,7 +18,7 @@ const page = () => {
       if (currentUser) {
         setUser(currentUser);
       } else {
-        router.push('/pages/login');
+        router.push("/pages/login");
       }
     });
 

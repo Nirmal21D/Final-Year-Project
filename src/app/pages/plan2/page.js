@@ -9,13 +9,21 @@ const page = () => {
     <>
       <Box
         display="flex"
+        flexDirection="column"
         gap={10}
-        alignItems="center"
         justifyItems="center"
-        px={5}
+        p={5}
+        backgroundImage="url(/images/body-background.png)"
+        backgroundPosition="center"
+        backgroundRepeat="no-repeat"
+        backgroundSize="cover"
+        height="100vh"
+        width="100%"
       >
-        <SideNav />
-        <SearchBox />
+        <Box display="flex" gap={10} justifyItems="center">
+          <SideNav />
+          <SearchBox />
+        </Box>
       </Box>
     </>
   );

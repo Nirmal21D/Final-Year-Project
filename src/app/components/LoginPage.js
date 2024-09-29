@@ -25,7 +25,11 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if ((userType === "user" && !identifier) || (userType === "bank" && !bankIdentifier) || !password) {
+    if (
+      (userType === "user" && !identifier) ||
+      (userType === "bank" && !bankIdentifier) ||
+      !password
+    ) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -38,9 +42,13 @@ const LoginPage = () => {
 
     try {
       const email = userType === "user" ? identifier : bankIdentifier;
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       console.log(`User logged in: ${userCredential.user.uid}`);
-      
+
       toast({
         title: "Login Successful",
         description: `Logged in as ${userType}.`,
@@ -51,9 +59,9 @@ const LoginPage = () => {
 
       // Redirect based on user type
       if (userType === "user") {
-        router.push('/profile');
+        router.push("/profile");
       } else if (userType === "bank") {
-        router.push('/bankpanel');
+        router.push("/bankpanel");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -71,7 +79,7 @@ const LoginPage = () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       console.log("Google login successful:", result.user);
-      
+
       toast({
         title: "Google Login Successful",
         description: "You've been logged in with Google.",
@@ -80,7 +88,7 @@ const LoginPage = () => {
         isClosable: true,
       });
 
-      router.push('/');
+      router.push("/");
     } catch (error) {
       console.error("Google login error:", error);
       toast({
@@ -107,6 +115,8 @@ const LoginPage = () => {
       width="100%"
       maxWidth="600px"
       mx="auto"
+      position="relative"
+      top={14}
     >
       <Text fontSize="2xl" fontWeight="bold" mb={6} textAlign="center">
         Login
