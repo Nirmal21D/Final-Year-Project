@@ -42,6 +42,8 @@ const ProfilePage = () => {
           justifyContent="flex-start"
           flexDirection="column"
           p={8}
+          position="relative"
+          top={14}
         >
           {/* <InUp /> */}
           <Welcome />

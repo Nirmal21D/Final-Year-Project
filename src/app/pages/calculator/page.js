@@ -3,7 +3,7 @@ import React from "react";
 import SideNav from "@/app/components/SideNav";
 
 import { Box } from "@chakra-ui/react";
-import Calc2 from "@/components/Calc2";
+import Calc2 from "@/app/components/Calc2";
 
 const page = () => {
   return (
