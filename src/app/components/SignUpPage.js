@@ -44,10 +44,7 @@ const SignUpPage = () => {
     e.preventDefault();
 
     // Basic validation for regular users
-    if (
-      userType === "regular" &&
-      (!name || !email  || !password)
-    ) {
+    if (userType === "regular" && (!name || !email || !password)) {
       toast({
         title: "Error",
         description: "Please fill in all the required fields.",
@@ -92,22 +89,21 @@ const SignUpPage = () => {
       }
       const user = userCredential.user;
 
-      if(userType === "regular"){
-      await setDoc(doc(db, "users", user.uid), {
-        userId: user.uid,
-        name: userType === "regular" ? name : null,
-        email: userType === "regular" ? email : bankEmail,
-        userType,
-        salary: null,
-        mobileNumber: null,
-        profileImage: null,
-      })
-    }
-    else if(userType === "bank"){
+      if (userType === "regular") {
+        await setDoc(doc(db, "users", user.uid), {
+          userId: user.uid,
+          name: userType === "regular" ? name : null,
+          email: userType === "regular" ? email : bankEmail,
+          userType,
+          salary: null,
+          mobileNumber: null,
+          profileImage: null,
+        });
+      } else if (userType === "bank") {
         await setDoc(doc(db, "Banks", user.uid), {
           bankEmail,
           bankName,
-          bpaswd, 
+          bpaswd,
           ifscode,
         });
       }
@@ -122,11 +118,10 @@ const SignUpPage = () => {
         isClosable: true,
       });
 
-      if(userType === "regular"){
+      if (userType === "regular") {
         window.location.href = "/";
-      }
-      else if(userType === "bank"){
-        window.location.href = "/pages/Bankpages/bankpanel";
+      } else if (userType === "bank") {
+        window.location.href = "/pages/Bankpages/bankdashboard";
       }
     } catch (error) {
       console.error("Sign Up Error:", error);
@@ -171,8 +166,6 @@ const SignUpPage = () => {
           mobileNumber: null,
           profileImage: null,
           email: user.email,
-         
-        
         });
       }
 
@@ -183,14 +176,11 @@ const SignUpPage = () => {
         duration: 5000,
         isClosable: true,
       });
-      if(userType === "regular"){
+      if (userType === "regular") {
         window.location.href = "/";
-      }
-      else if(userType === "bank"){
+      } else if (userType === "bank") {
         window.location.href = "/bankpanel";
       }
-
-  
     } catch (error) {
       console.error("Google Sign Up Error:", error);
       let errorMessage = "An error occurred during Google sign up.";
@@ -255,7 +245,7 @@ const SignUpPage = () => {
           <>
             <Flex mb={4} width="100%" alignItems="center">
               <Text width="40%" fontWeight="bold" mr={4}>
-               Name
+                Name
               </Text>
               <Input
                 type="text"
@@ -269,8 +259,6 @@ const SignUpPage = () => {
                 required
               />
             </Flex>
-
-    
 
             <Flex mb={4} width="100%" alignItems="center">
               <Text width="40%" fontWeight="bold" mr={4}>
@@ -289,7 +277,6 @@ const SignUpPage = () => {
               />
             </Flex>
 
-
             <Flex mb={4} width="100%" alignItems="center">
               <Text width="40%" fontWeight="bold" mr={4}>
                 Password
@@ -307,17 +294,17 @@ const SignUpPage = () => {
               />
             </Flex>
             <Button
-          type="submit"
-          isLoading={isLoading}
-          loadingText="Signing Up..."
-          colorScheme="teal"
-          width="full"
-          mb={4}
-          bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
-          _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
-        >
-          Sign Up
-        </Button>
+              type="submit"
+              isLoading={isLoading}
+              loadingText="Signing Up..."
+              colorScheme="teal"
+              width="full"
+              mb={4}
+              bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
+              _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
+            >
+              Sign Up
+            </Button>
             <Divider my={4} borderColor="white" />
           </>
         )}
@@ -394,31 +381,30 @@ const SignUpPage = () => {
             </Flex>
 
             <Button
-          type="submit"
-          isLoading={isLoading}
-          loadingText="Signing Up..."
-          colorScheme="teal"
-          width="full"
-          mb={4}
-          bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
-          _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
-        >
-          Sign Up
-        </Button>
-          </>
-        )}
-        
-        <Button
-              onClick={handleGoogleSignUp}
-              colorScheme="red"
-              width="full"
+              type="submit"
               isLoading={isLoading}
+              loadingText="Signing Up..."
+              colorScheme="teal"
+              width="full"
+              mb={4}
               bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
               _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
             >
-              Sign Up with Google
+              Sign Up
             </Button>
-        
+          </>
+        )}
+
+        <Button
+          onClick={handleGoogleSignUp}
+          colorScheme="red"
+          width="full"
+          isLoading={isLoading}
+          bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
+          _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
+        >
+          Sign Up with Google
+        </Button>
       </form>
     </Box>
   );

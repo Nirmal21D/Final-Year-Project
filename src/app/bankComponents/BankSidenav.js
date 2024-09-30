@@ -120,33 +120,19 @@ const SideNav = () => {
                   </MenuButton>
                 </Menu>
               </Link>
-              <Menu>
-                <MenuButton
-                  as={Button}
-                  bg="rgba(229, 229, 229, 0.1)"
-                  _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
-                  color="#e9ecef"
-                >
-                  Bank Plans
-                </MenuButton>
-                <MenuList bg="#ebeff4">
-                  <Link href="/pages/plan1" passHref>
-                    <MenuItem as="a" bg="#ffffff">
-                      Plan 1
-                    </MenuItem>
-                  </Link>
-                  <Link href="/pages/plan2" passHref>
-                    <MenuItem as="a" bg="#ffffff">
-                      Plan 2
-                    </MenuItem>
-                  </Link>
-                  <Link href="/pages/plan3" passHref>
-                    <MenuItem as="a" bg="#ffffff">
-                      Plan 3
-                    </MenuItem>
-                  </Link>
-                </MenuList>
-              </Menu>
+              <Link href="/pages/Bankpages/bankplans">
+                <Menu>
+                  <MenuButton
+                    as={Button}
+                    bg="rgba(229, 229, 229, 0.1)"
+                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                    color="#e9ecef"
+                    width="full"
+                  >
+                    Bank Plans
+                  </MenuButton>
+                </Menu>
+              </Link>
 
               {!user ? (
                 <>
@@ -180,7 +166,7 @@ const SideNav = () => {
               ) : (
                 <>
                   <Menu>
-                    <Link href="/pages/profile">
+                    <Link href="/pages/Bankpages/bankprofile">
                       <MenuButton
                         as={Button}
                         bg="rgba(229, 229, 229, 0.1)"

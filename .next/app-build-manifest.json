@@ -15,30 +15,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/pages/Bankpages/bankdashboard/page.js"
     ],
-    "/pages/calculator/page": [
+    "/pages/Bankpages/bankprofile/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/pages/calculator/page.js"
-    ],
-    "/pages/profile/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pages/profile/page.js"
-    ],
-    "/pages/plan1/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pages/plan1/page.js"
+      "static/chunks/app/pages/Bankpages/bankprofile/page.js"
     ],
     "/pages/Bankpages/addplans/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/pages/Bankpages/addplans/page.js"
     ],
-    "/_not-found/page": [
+    "/pages/plan1/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/pages/plan1/page.js"
+    ],
+    "/pages/Bankpages/bankplans/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/pages/Bankpages/bankplans/page.js"
     ]
   }
 }
