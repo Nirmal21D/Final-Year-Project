@@ -16,6 +16,8 @@ import {
   NumberInputField,
   Textarea,
   Select,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
 import { auth, db } from "@/firebase";
 import { useRouter } from "next/navigation";
@@ -114,15 +116,13 @@ const page = () => {
           loanName,
           createdBy: user.uid,
         });
-        console.log("Form submitted:", formData);
         toast({
           title: "Form submitted",
-          description: "The plan details have been added to the database.",
+          description: "The loan plan details have been added to the database.",
           status: "success",
           duration: 3000,
           isClosable: true,
         });
-        // Reset form after successful submission
         setFormData({
           planId: "",
           planType: "",
@@ -147,10 +147,10 @@ const page = () => {
           description,
           createdBy: user.uid,
         });
-        console.log("Form submitted:", formData);
         toast({
           title: "Form submitted",
-          description: "The plan details have been added to the database.",
+          description:
+            "The investment plan details have been added to the database.",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -191,9 +191,9 @@ const page = () => {
         backgroundSize="cover"
         backgroundAttachment="fixed"
         backgroundRepeat="no-repeat"
-        minHeight="100vh" // Ensure it covers the viewport height
-        width="auto" // Ensure it covers the viewport width
-        overflow="hidden" // Prevent the background from being repeated unnecessarily
+        minHeight="100vh"
+        width="auto"
+        overflow="hidden"
         color="white"
       >
         <Box display="flex" gap={30} justifyItems="center">
@@ -201,121 +201,139 @@ const page = () => {
           <Navbar />
         </Box>
         <Box p={8}>
-          <VStack spacing={6} align="stretch">
-            <Heading>Bank Panel</Heading>
+          <VStack my={5} align="stretch">
+            <Heading>Plan Information</Heading>
             <Text>Welcome, {user.email}</Text>
-
-            <form onSubmit={handleSubmit}>
-              <VStack spacing={4} align="stretch">
-                <FormControl isRequired>
-                  <FormLabel>Plan Type</FormLabel>
-                  <Select
-                    name="planType"
-                    value={formData.planType}
-                    onChange={handleInputChange}
-                    placeholder="Select plan type"
-                  >
-                    <option value="loan">Loan</option>
-                    <option value="investment">Investment</option>
-                  </Select>
-                </FormControl>
-
-                {formData.planType === "loan" ? (
-                  <>
+            <Box display="flex" alignItems="center" justifyContent="center">
+              <Box
+                width={600}
+                bgGradient="linear(to-l, rgba(10, 14, 35, 0.49) 76.65%, rgba(10, 14, 35, 0.49))"
+                p={10}
+                borderRadius="3xl"
+              >
+                <form onSubmit={handleSubmit}>
+                  <VStack spacing={4} align="stretch">
                     <FormControl isRequired>
-                      <FormLabel>Loan Type</FormLabel>
+                      <FormLabel>Plan Type</FormLabel>
                       <Select
-                        name="loanType"
-                        value={formData.loanType}
+                        name="planType"
+                        value={formData.planType}
                         onChange={handleInputChange}
-                        placeholder="Select loan type"
+                        placeholder="Select plan type"
                       >
-                        <option value="personal">Personal Loan</option>
-                        <option value="home">Home Loan</option>
-                        <option value="auto">Auto Loan</option>
-                        <option value="business">Business Loan</option>
+                        <option value="loan">Loan</option>
+                        <option value="investment">Investment</option>
                       </Select>
                     </FormControl>
 
-                    <FormControl isRequired>
-                      <FormLabel>Loan Name</FormLabel>
-                      <Input
-                        name="loanName"
-                        value={formData.loanName}
-                        onChange={handleInputChange}
-                      />
-                    </FormControl>
-                  </>
-                ) : (
-                  <>
-                    <FormControl isRequired>
-                      <FormLabel>Plan Name</FormLabel>
-                      <Input
-                        name="planName"
-                        value={formData.planName}
-                        onChange={handleInputChange}
-                      />
-                    </FormControl>
-                  </>
-                )}
-
-                <FormControl isRequired>
-                  <FormLabel>Interest Rate (%)</FormLabel>
-                  <NumberInput min={0} max={100}>
-                    <NumberInputField
-                      name="interestRate"
-                      value={formData.interestRate}
-                      onChange={handleInputChange}
-                    />
-                  </NumberInput>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Maximum Amount</FormLabel>
-                  <NumberInput min={0}>
-                    <NumberInputField
-                      name="maxAmount"
-                      value={formData.maxAmount}
-                      onChange={handleInputChange}
-                    />
-                  </NumberInput>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Minimum Amount</FormLabel>
-                  <NumberInput min={0}>
-                    <NumberInputField
-                      name="minAmount"
-                      value={formData.minAmount}
-                      onChange={handleInputChange}
-                    />
-                  </NumberInput>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Tenure (in months)</FormLabel>
-                  <NumberInput min={1}>
-                    <NumberInputField
-                      name="tenure"
-                      value={formData.tenure}
-                      onChange={handleInputChange}
-                    />
-                  </NumberInput>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                <Button type="submit" colorScheme="blue">
-                  Submit Plan
-                </Button>
-              </VStack>
-            </form>
-
-            <Button onClick={handleLogout} colorScheme="red">
-              Logout
-            </Button>
+                    {formData.planType === "loan" ? (
+                      <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                        <GridItem>
+                          <FormControl isRequired>
+                            <FormLabel>Loan Type</FormLabel>
+                            <Select
+                              name="loanType"
+                              value={formData.loanType}
+                              onChange={handleInputChange}
+                              placeholder="Select loan type"
+                            >
+                              <option value="personal">Personal Loan</option>
+                              <option value="home">Home Loan</option>
+                              <option value="auto">Auto Loan</option>
+                              <option value="business">Business Loan</option>
+                            </Select>
+                          </FormControl>
+                        </GridItem>
+                        <GridItem>
+                          <FormControl isRequired>
+                            <FormLabel>Loan Name</FormLabel>
+                            <Input
+                              name="loanName"
+                              value={formData.loanName}
+                              onChange={handleInputChange}
+                            />
+                          </FormControl>
+                        </GridItem>
+                      </Grid>
+                    ) : (
+                      <FormControl isRequired>
+                        <FormLabel>Plan Name</FormLabel>
+                        <Input
+                          name="planName"
+                          value={formData.planName}
+                          onChange={handleInputChange}
+                        />
+                      </FormControl>
+                    )}
+                    <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                      <GridItem>
+                        <FormControl isRequired>
+                          <FormLabel>Maximum Amount</FormLabel>
+                          <NumberInput min={0}>
+                            <NumberInputField
+                              name="maxAmount"
+                              value={formData.maxAmount}
+                              onChange={handleInputChange}
+                            />
+                          </NumberInput>
+                        </FormControl>
+                      </GridItem>
+                      <GridItem>
+                        <FormControl isRequired>
+                          <FormLabel>Minimum Amount</FormLabel>
+                          <NumberInput min={0}>
+                            <NumberInputField
+                              name="minAmount"
+                              value={formData.minAmount}
+                              onChange={handleInputChange}
+                            />
+                          </NumberInput>
+                        </FormControl>
+                      </GridItem>
+                      <GridItem>
+                        <FormControl isRequired>
+                          <FormLabel>Interest Rate (%)</FormLabel>
+                          <NumberInput min={0} max={100}>
+                            <NumberInputField
+                              name="interestRate"
+                              value={formData.interestRate}
+                              onChange={handleInputChange}
+                            />
+                          </NumberInput>
+                        </FormControl>
+                      </GridItem>
+                      <GridItem>
+                        <FormControl isRequired>
+                          <FormLabel>Tenure (in months)</FormLabel>
+                          <NumberInput min={1}>
+                            <NumberInputField
+                              name="tenure"
+                              value={formData.tenure}
+                              onChange={handleInputChange}
+                            />
+                          </NumberInput>
+                        </FormControl>
+                      </GridItem>
+                      <GridItem colSpan={2}>
+                        <FormControl isRequired>
+                          <FormLabel>Description</FormLabel>
+                          <Textarea
+                            name="description"
+                            value={formData.description}
+                            onChange={handleInputChange}
+                          />
+                        </FormControl>
+                      </GridItem>
+                    </Grid>
+                    <HStack spacing={4}>
+                      <Button type="submit" colorScheme="blue" width="100%">
+                        Submit
+                      </Button>
+                    </HStack>
+                  </VStack>
+                </form>
+              </Box>
+            </Box>
           </VStack>
         </Box>
       </Box>

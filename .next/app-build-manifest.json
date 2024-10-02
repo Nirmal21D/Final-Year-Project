@@ -10,10 +10,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/layout.js"
     ],
+    "/pages/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/pages/login/page.js"
+    ],
     "/pages/Bankpages/bankdashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/pages/Bankpages/bankdashboard/page.js"
+    ],
+    "/pages/signup/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/pages/signup/page.js"
+    ],
+    "/pages/welcome/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/pages/welcome/page.js"
+    ],
+    "/pages/Bankpages/bankplans/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/pages/Bankpages/bankplans/page.js"
     ],
     "/pages/Bankpages/bankprofile/page": [
       "static/chunks/webpack.js",
@@ -24,16 +44,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/pages/Bankpages/addplans/page.js"
-    ],
-    "/pages/plan1/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pages/plan1/page.js"
-    ],
-    "/pages/Bankpages/bankplans/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pages/Bankpages/bankplans/page.js"
     ]
   }
 }

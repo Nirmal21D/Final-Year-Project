@@ -5,7 +5,7 @@ import { Box } from "@chakra-ui/react";
 import BankSidenav from "@/app/bankComponents/BankSidenav";
 import Navbar from "@/app/bankComponents/Navbar";
 import DashStats from "@/app/bankComponents/DashStats";
-import Welcome from "@/app/components/Welcome";
+import BankWelcome from "@/app/bankComponents/BankWelcome";
 
 const page = () => {
   return (
@@ -47,7 +47,7 @@ const page = () => {
           top={8}
           my={5}
         >
-          <Welcome />
+          <BankWelcome />
         </Box>
       </Box>
     </>

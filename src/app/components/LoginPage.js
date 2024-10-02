@@ -59,7 +59,7 @@ const LoginPage = () => {
 
       // Redirect based on user type
       if (userType === "user") {
-        router.push("/profile");
+        router.push("/");
       } else if (userType === "bank") {
         router.push("/pages/Bankpages/bankdashboard");
       }

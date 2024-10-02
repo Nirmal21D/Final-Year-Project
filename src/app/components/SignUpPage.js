@@ -179,7 +179,7 @@ const SignUpPage = () => {
       if (userType === "regular") {
         window.location.href = "/";
       } else if (userType === "bank") {
-        window.location.href = "/bankpanel";
+        window.location.href = "/pages/Bankpages/bankdashboard";
       }
     } catch (error) {
       console.error("Google Sign Up Error:", error);

@@ -1,8 +1,8 @@
 {
-  "/pages/Bankpages/bankdashboard/page": "app/pages/Bankpages/bankdashboard/page.js",
+  "/pages/welcome/page": "app/pages/welcome/page.js",
   "/pages/Bankpages/bankplans/page": "app/pages/Bankpages/bankplans/page.js",
-  "/pages/plan1/page": "app/pages/plan1/page.js",
-  "/pages/Bankpages/addplans/page": "app/pages/Bankpages/addplans/page.js",
   "/pages/Bankpages/bankprofile/page": "app/pages/Bankpages/bankprofile/page.js",
+  "/pages/Bankpages/addplans/page": "app/pages/Bankpages/addplans/page.js",
+  "/pages/Bankpages/bankdashboard/page": "app/pages/Bankpages/bankdashboard/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js"
 }
