@@ -1,9 +1,8 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/pages/login/page": "app/pages/login/page.js",
-  "/pages/signup/page": "app/pages/signup/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js",
-  "/pages/plan1/page": "app/pages/plan1/page.js",
-  "/pages/plan2/page": "app/pages/plan2/page.js",
-  "/pages/plan3/page": "app/pages/plan3/page.js"
+  "/(plans)/plan1/page": "app/(plans)/plan1/page.js",
+  "/(plans)/plan2/page": "app/(plans)/plan2/page.js",
+  "/(client)/calculator/page": "app/(client)/calculator/page.js"
 }

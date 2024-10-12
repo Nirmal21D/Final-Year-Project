@@ -10,35 +10,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/layout.js"
     ],
-    "/pages/login/page": [
+    "/(plans)/plan1/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/pages/login/page.js"
+      "static/chunks/app/(plans)/plan1/page.js"
     ],
-    "/pages/plan1/page": [
+    "/(plans)/plan2/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/pages/plan1/page.js"
+      "static/chunks/app/(plans)/plan2/page.js"
     ],
-    "/pages/plan2/page": [
+    "/(client)/calculator/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/pages/plan2/page.js"
-    ],
-    "/pages/plan3/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pages/plan3/page.js"
-    ],
-    "/pages/calculator/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pages/calculator/page.js"
-    ],
-    "/pages/signup/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pages/signup/page.js"
+      "static/chunks/app/(client)/calculator/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
