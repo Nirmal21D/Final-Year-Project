@@ -117,17 +117,17 @@ const SideNav = () => {
                   Investment Plans
                 </MenuButton>
                 <MenuList bg="#ebeff4">
-                  <Link href="/pages/plan1" passHref>
+                  <Link href=" /plan1" passHref>
                     <MenuItem as="a" bg="#ffffff">
                       Plan 1
                     </MenuItem>
                   </Link>
-                  <Link href="/pages/plan2" passHref>
+                  <Link href=" /plan2" passHref>
                     <MenuItem as="a" bg="#ffffff">
                       Plan 2
                     </MenuItem>
                   </Link>
-                  <Link href="/pages/plan3" passHref>
+                  <Link href=" /plan3" passHref>
                     <MenuItem as="a" bg="#ffffff">
                       Plan 3
                     </MenuItem>
@@ -157,7 +157,7 @@ const SideNav = () => {
                 </MenuList>
               </Menu>
               <Menu>
-                <Link href="/pages/calculator">
+                <Link href=" /calculator">
                   <MenuButton
                     as={Button}
                     bg="rgba(229, 229, 229, 0.1)"
@@ -172,7 +172,7 @@ const SideNav = () => {
               {!user ? (
                 <>
                   <Menu>
-                    <Link href="/pages/signup">
+                    <Link href=" /signup">
                       <MenuButton
                         as={Button}
                         bg="rgba(229, 229, 229, 0.1)"
@@ -185,7 +185,7 @@ const SideNav = () => {
                     </Link>
                   </Menu>
                   <Menu>
-                    <Link href="/pages/login">
+                    <Link href=" /login">
                       <MenuButton
                         as={Button}
                         bg="rgba(229, 229, 229, 0.1)"
@@ -201,7 +201,7 @@ const SideNav = () => {
               ) : (
                 <>
                   <Menu>
-                    <Link href="/pages/profile">
+                    <Link href=" /profile">
                       <MenuButton
                         as={Button}
                         bg="rgba(229, 229, 229, 0.1)"
@@ -247,7 +247,7 @@ const SideNav = () => {
                         </Text>
                       </Box>
 
-                      <Link href="/pages/profile">
+                      <Link href=" /profile">
                         <Text color="white" fontSize="sm">
                           View Profile
                         </Text>
