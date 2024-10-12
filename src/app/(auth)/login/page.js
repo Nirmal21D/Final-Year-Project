@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import SideNav from "../../components/SideNav";
-import SearchBox from "../../components/SearchBar";
-import LoginPage from "../../components/LoginPage";
+import SideNav from "../../../components/SideNav";
+import SearchBox from "../../../components/SearchBar";
+import LoginPage from "../../../components/LoginPage";
 import { Box } from "@chakra-ui/react";
 
 const login = () => {

@@ -17,7 +17,7 @@ import {
   googleProvider,
   signInWithPopup,
   createUserWithEmailAndPassword,
-} from "../../firebase"; // Adjust the path as necessary
+} from "../firebase"; // Adjust the path as necessary
 import { setDoc, doc, getDoc } from "firebase/firestore"; // Firestore functions
 import Link from "next/link";
 import { onAuthStateChanged } from "firebase/auth";

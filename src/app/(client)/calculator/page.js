@@ -1,8 +1,9 @@
 "use client";
 import React from "react";
-import SideNav from "@/app/components/SideNav";
-import SearchBox from "../../components/SearchBar";
+import SideNav from "@/components/SideNav";
+
 import { Box } from "@chakra-ui/react";
+import Calc2 from "@/components/Calc2";
 
 const page = () => {
   return (
@@ -15,15 +16,19 @@ const page = () => {
         p={5}
         backgroundImage="url(/images/body-background.png)"
         backgroundPosition="center"
-        backgroundRepeat="no-repeat"
         backgroundSize="cover"
-        height="100vh"
-        width="100%"
+        backgroundAttachment="fixed"
+        backgroundRepeat="no-repeat"
+        height="auto"
+        width="auto"
+        minHeight="100vh" // Ensures the background covers at least the full viewport height
+        minWidth="auto" // Ensures the background covers the full viewport width
       >
         <Box display="flex" gap={10} justifyItems="center">
           <SideNav />
-          <SearchBox />
         </Box>
+
+        <Calc2 />
       </Box>
     </>
   );

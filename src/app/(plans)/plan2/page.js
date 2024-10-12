@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
-import SideNav from "@/app/components/SideNav";
-import SearchBox from "../../components/SearchBar";
+import SideNav from "@/components/SideNav";
+import SearchBox from "../../../components/SearchBar";
 import { Box } from "@chakra-ui/react";
 
 const page = () => {

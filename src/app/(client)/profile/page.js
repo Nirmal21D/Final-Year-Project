@@ -1,11 +1,10 @@
 "use client";
 import React from "react";
-import SideNav from "@/app/components/SideNav";
-
-import { Box } from "@chakra-ui/react";
-import Calc2 from "@/app/components/Calc2";
-
-const page = () => {
+import SideNav from "../../../components/SideNav";
+import SearchBox from "../../../components/SearchBar";
+import ProfilePage from "../../../components/ProfilePage";
+import { Box, Text } from "@chakra-ui/react";
+const profile = () => {
   return (
     <>
       <Box
@@ -26,12 +25,13 @@ const page = () => {
       >
         <Box display="flex" gap={10} justifyItems="center">
           <SideNav />
+          <SearchBox />
         </Box>
 
-        <Calc2 />
+        <ProfilePage />
       </Box>
     </>
   );
 };
 
-export default page;
+export default profile;

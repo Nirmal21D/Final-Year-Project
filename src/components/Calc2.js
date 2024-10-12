@@ -1,12 +1,12 @@
 "use client";
 import { Box, Heading, Grid, Button, Center, Divider } from "@chakra-ui/react";
-import CICal from "../components/CICal";
-import EMICal from "../components/EMICal";
-import FDCal from "../components/FDCal";
-import IncomeTaxCal from "../components/IncomeTaxCal";
-import SICal from "../components/SICal";
-import SALCal from "../components/SALCal";
-import SIPCal from "../components/SIPCal";
+import CICal from "./CICal";
+import EMICal from "./EMICal";
+import FDCal from "./FDCal";
+import IncomeTaxCal from "./IncomeTaxCal";
+import SICal from "./SICal";
+import SALCal from "./SALCal";
+import SIPCal from "./SIPCal";
 
 import React, { useState } from "react";
 

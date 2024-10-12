@@ -1,7 +1,7 @@
 "use client";
-import SideNav from "../../components/SideNav";
-import SearchBox from "../../components/SearchBar";
-import Welcome from "../../components/Welcome";
+import SideNav from "../../../components/SideNav";
+import SearchBox from "../../../components/SearchBar";
+import Welcome from "../../../components/Welcome";
 import { Box } from "@chakra-ui/react";
 
 

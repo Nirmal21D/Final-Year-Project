@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
-import SideNav from "../../components/SideNav";
-import SearchBox from "../../components/SearchBar";
-import ProfilePage from "../../components/ProfilePage";
-import { Box, Text } from "@chakra-ui/react";
-const profile = () => {
+import SideNav from "../../../components/SideNav";
+import SearchBox from "../../../components/SearchBar";
+import SignUpPage from "../../../components/SignUpPage";
+import { Box } from "@chakra-ui/react";
+const login = () => {
   return (
     <>
       <Box
@@ -28,10 +28,10 @@ const profile = () => {
           <SearchBox />
         </Box>
 
-        <ProfilePage />
+        <SignUpPage />
       </Box>
     </>
   );
 };
 
-export default profile;
+export default login;

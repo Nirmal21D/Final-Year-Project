@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import SideNav from "@/app/components/SideNav";
-import SearchBox from "../../components/SearchBar";
+import SideNav from "@/components/SideNav";
+import SearchBox from "../../../components/SearchBar";
 import { Box, Text } from "@chakra-ui/react";
-import Plancards from "@/app/components/Plancards";
+import Plancards from "@/components/Plancards";
 import { db, auth } from "@/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
