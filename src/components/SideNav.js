@@ -24,7 +24,7 @@ import { auth, db } from "../firebase"; // Added db import
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports
 
-const SideNav = () => {
+const SideNav= () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = React.useRef();
   const [user, setUser] = useState(null);
@@ -169,6 +169,32 @@ const SideNav = () => {
                   </MenuButton>
                 </Link>
               </Menu>
+              <Menu>
+                    <Link href=" /budget">
+                      <MenuButton
+                        as={Button}
+                        bg="rgba(229, 229, 229, 0.1)"
+                        color="#e9ecef"
+                        width="full"
+                        _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                      >
+                        Budget Planner
+                      </MenuButton>
+                    </Link>
+                  </Menu>
+                  <Menu>
+                    <Link href=" /inflation">
+                      <MenuButton
+                        as={Button}
+                        bg="rgba(229, 229, 229, 0.1)"
+                        color="#e9ecef"
+                        width="full"
+                        _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                      >
+                        Inflation
+                      </MenuButton>
+                    </Link>
+                  </Menu>
               {!user ? (
                 <>
                   <Menu>
