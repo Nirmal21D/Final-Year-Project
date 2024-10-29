@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
-import SideNav from "./components/SideNav";
-import SearchBox from "./components/SearchBar";
+import SideNav from "../components/SideNav";
+import SearchBox from "../components/SearchBar";
 import { Box, Text } from "@chakra-ui/react";
-import Welcome from "./components/Welcome";
-import InUp from "./components/InUp";
+import Welcome from "../components/Welcome";
+import InUp from "../components/InUp";
 
 const ProfilePage = () => {
   return (

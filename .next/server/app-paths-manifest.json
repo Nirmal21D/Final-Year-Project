@@ -1,8 +1,9 @@
 {
-  "/pages/welcome/page": "app/pages/welcome/page.js",
-  "/pages/Bankpages/bankplans/page": "app/pages/Bankpages/bankplans/page.js",
-  "/pages/Bankpages/bankprofile/page": "app/pages/Bankpages/bankprofile/page.js",
-  "/pages/Bankpages/addplans/page": "app/pages/Bankpages/addplans/page.js",
+  "/page": "app/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
   "/pages/Bankpages/bankdashboard/page": "app/pages/Bankpages/bankdashboard/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js"
+  "/(auth)/signup/page": "app/(auth)/signup/page.js",
+  "/pages/Bankpages/bankprofile/page": "app/pages/Bankpages/bankprofile/page.js",
+  "/pages/Bankpages/bankplans/page": "app/pages/Bankpages/bankplans/page.js",
+  "/pages/Bankpages/addplans/page": "app/pages/Bankpages/addplans/page.js"
 }
