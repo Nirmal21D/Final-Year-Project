@@ -59,9 +59,10 @@ const LoginPage = () => {
 
       // Redirect based on user type
       if (userType === "user") {
-        router.push("/profile");
+        router.push("/");
       } else if (userType === "bank") {
-        router.push("/pages/Bankpages/bankpanel");
+        router.push("/pages/Bankpages/bankdashboard");
+        // router.push("/pages/Bankpages/bankpanel");
       }
     } catch (error) {
       console.error("Login error:", error);
