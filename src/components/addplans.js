@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Box, Heading, Text, VStack, HStack, Button, useToast, FormControl, FormLabel, Input, NumberInput, NumberInputField, Textarea, Select } from '@chakra-ui/react';
+import { Box, Heading, Text, VStack, Button, useToast, FormControl, FormLabel, Input, NumberInput, NumberInputField, Textarea, Select } from '@chakra-ui/react';
 import { auth, db } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, setDoc, doc } from 'firebase/firestore';
+import { collection, setDoc, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 const BankPanel = () => {
@@ -20,7 +20,6 @@ const BankPanel = () => {
     description: '',
     loanType: '',
     loanName: '',
-
   });
   const router = useRouter();
   const toast = useToast();
@@ -74,75 +73,53 @@ const BankPanel = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      
       const { planName, interestRate, maxAmount, minAmount, tenure, description, loanType, loanName } = formData;
       const planId = uuidv4();
       if (formData.planType === 'loan') {
         const planDocRef = doc(collection(db, 'loanplans'), planId);
         await setDoc(planDocRef, {
-            planId,
-            interestRate,
-            maxAmount,
-            minAmount,
-            tenure,
-            description,
-            loanType,
-            loanName,
-            createdBy: user.uid,
-           
-        });
-        console.log('Form submitted:', formData);
-        toast({
-          title: "Form submitted",
-          description: "The plan details have been added to the database.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-        // Reset form after successful submission
-        setFormData({
-          planId: '',
-          planType: '',
-          planName: '',
-          interestRate: 0,
-          maxAmount: 0,
-          minAmount: 0,
-          tenure: 0,
-          description: '',
-          loanType: '',
-          loanName: '',
+          planId,
+          interestRate,
+          maxAmount,
+          minAmount,
+          tenure,
+          description,
+          loanType,
+          loanName,
+          createdBy: user.uid,
         });
       } else if (formData.planType === 'investment') {
-        const planDocRef = doc(collection(db, 'plans'), planId);
+        const planDocRef = doc(collection(db, 'investmentplans'), planId);
         await setDoc(planDocRef, {
-            planId,
-            planName,
-            interestRate,
-            maxAmount,
-            minAmount,
-            tenure,
-            description,
-            createdBy: user.uid,
-        });
-        console.log('Form submitted:', formData);
-        toast({
-          title: "Form submitted",
-          description: "The plan details have been added to the database.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-        setFormData({
-          planId: '',
-          planType: '',
-          planName: '',
-          interestRate: '',
-          maxAmount: 0,
-          minAmount: 0,
-          tenure: 0,
-          description: '',
+          planId,
+          planName,
+          interestRate,
+          maxAmount,
+          minAmount,
+          tenure,
+          description,
+          createdBy: user.uid,
         });
       }
+      toast({
+        title: "Form submitted",
+        description: "The plan details have been added to the database.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      setFormData({
+        planId: '',
+        planType: '',
+        planName: '',
+        interestRate: '',
+        maxAmount: 0,
+        minAmount: 0,
+        tenure: 0,
+        description: '',
+        loanType: '',
+        loanName: '',
+      });
     } catch (error) {
       console.error("Error adding document: ", error);
       toast({
@@ -156,7 +133,7 @@ const BankPanel = () => {
   };
 
   return (
-    <Box p={8}>
+    <Box p={4} borderWidth={1} borderRadius="md" boxShadow="md">
       <VStack spacing={6} align="stretch">
         <Heading>Bank Panel</Heading>
         <Text>Welcome, {user.email}</Text>
