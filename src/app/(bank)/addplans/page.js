@@ -220,9 +220,11 @@ const page = () => {
                         value={formData.planType}
                         onChange={handleInputChange}
                         placeholder="Select plan type"
+                        bg="#1D236A" // Changed background color
+                        color="white" // Changed text color
                       >
-                        <option value="loan">Loan</option>
-                        <option value="investment">Investment</option>
+                        <option value="loan" style={{ backgroundColor: '#1D236A', color: 'white' }}>Loan</option> {/* Updated to match theme */}
+                        <option value="investment" style={{ backgroundColor: '#1D236A', color: 'white' }}>Investment</option> {/* Updated to match theme */}
                       </Select>
                     </FormControl>
 
@@ -236,11 +238,13 @@ const page = () => {
                               value={formData.loanType}
                               onChange={handleInputChange}
                               placeholder="Select loan type"
+                              bg="#1D236A" // Changed background color
+                              color="white" // Changed text color
                             >
-                              <option value="personal">Personal Loan</option>
-                              <option value="home">Home Loan</option>
-                              <option value="auto">Auto Loan</option>
-                              <option value="business">Business Loan</option>
+                              <option value="personal" style={{ backgroundColor: '#1D236A', color: 'white' }}>Personal Loan</option> {/* Updated to match theme */}
+                              <option value="home" style={{ backgroundColor: '#1D236A', color: 'white' }}>Home Loan</option> {/* Updated to match theme */}
+                              <option value="auto" style={{ backgroundColor: '#1D236A', color: 'white' }}>Auto Loan</option> {/* Updated to match theme */}
+                              <option value="business" style={{ backgroundColor: '#1D236A', color: 'white' }}>Business Loan</option> {/* Updated to match theme */}
                             </Select>
                           </FormControl>
                         </GridItem>

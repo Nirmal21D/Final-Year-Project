@@ -24,7 +24,7 @@ const page = () => {
         overflow="hidden" // Prevent the background from being repeated unnecessarily
         color="white"
       >
-        <Box display="flex" gap={30} justifyItems="center">
+        <Box display="flex" gap={30} justifyItems="center" pb={16}>
           <BankSidenav />
           <Navbar />
         </Box>
