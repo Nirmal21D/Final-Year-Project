@@ -23,19 +23,27 @@ import Link from "next/link";
 import { auth, db } from "../firebase"; // Added db import
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports
+import { investmentPlans } from "./PlanData";
 
-const SideNav= () => {
+
+const SideNav = () => {
+  const [activeType, setActiveType] = useState(null);
+
+  const togglePlans = (type) => {
+    setActiveType((prevType) => (prevType === type ? null : type));
+  };
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = React.useRef();
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
-  
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         try {
-          const userDoc = doc(db, 'users', currentUser.uid);
+          const userDoc = doc(db, "users", currentUser.uid);
           const userSnap = await getDoc(userDoc);
 
           if (userSnap.exists()) {
@@ -107,7 +115,12 @@ const SideNav= () => {
                   </MenuButton>
                 </Menu>
               </Link>
-              <Menu>
+
+              {/* __________________________________________________________________________________________ */}
+
+              <Menu closeOnSelect={false}>
+                {" "}
+                {/* Keep menu open when selecting sub-items */}
                 <MenuButton
                   as={Button}
                   bg="rgba(229, 229, 229, 0.1)"
@@ -117,23 +130,30 @@ const SideNav= () => {
                   Investment Plans
                 </MenuButton>
                 <MenuList bg="#ebeff4">
-                  <Link href=" /plan1" passHref>
-                    <MenuItem as="a" bg="#ffffff">
-                      Plan 1
-                    </MenuItem>
-                  </Link>
-                  <Link href=" /plan2" passHref>
-                    <MenuItem as="a" bg="#ffffff">
-                      Plan 2
-                    </MenuItem>
-                  </Link>
-                  <Link href=" /plan3" passHref>
-                    <MenuItem as="a" bg="#ffffff">
-                      Plan 3
-                    </MenuItem>
-                  </Link>
+                  {investmentPlans.map((investment) => (
+                    <Box key={investment.type}>
+                      <MenuItem
+                        bg="#ffffff"
+                        onClick={() => togglePlans(investment.type)}
+                        _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                      >
+                        {investment.type}
+                      </MenuItem>
+                      {activeType === investment.type && (
+                        <Box pl={4} bg="#ebeff4">
+                          {investment.plans.map((plan) => (
+                            <MenuItem key={plan.name} bg="#ffffff">
+                              <Link href={plan.link}>{plan.name}</Link>
+                            </MenuItem>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  ))}
                 </MenuList>
               </Menu>
+
+              {/* __________________________________________________________________________________________ */}
 
               <Menu>
                 <MenuButton
