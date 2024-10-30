@@ -1,28 +1,34 @@
 "use client";
 import React from "react";
-import { Box, Text, Image } from "@chakra-ui/react";
+import { Box, Text, Image, Flex, IconButton } from "@chakra-ui/react";
+import { HamburgerIcon } from "@chakra-ui/icons";
+import SideNav from './BankSidenav';
 
-const Navbar = () => {
+const Navbar = ({ onOpen }) => {
   return (
     <>
       <Box
-        bg="rgba(229, 229, 229, 0.1)"
-        width="90%"
-        px={3}
-        py={2}
-        height={65}
+        bg="rgba(255, 255, 255, 0.9)"
+        width="100%"
+        px={4}
+        py={3}
+        height={70}
         borderRadius="md"
         position="fixed"
-        left={24}
-        color="white"
+        left={0}
+        color="black"
+        boxShadow="md"
       >
-        <Box display="flex" gap={2}>
-          <Image src="../../images/home.png" height={6} />
-          <Text>/</Text>
-          <Text>Dashboard</Text>
-        </Box>
-        <Text fontWeight="bold">Dashboard</Text>
+        <SideNav />
+        <Flex align="center" justify="space-between" pl={16}>
+          <Flex align="center" gap={3}>
+            <Image src="../../images/home.png" height={8} />
+            <Text fontSize="lg" fontWeight="semibold">Dashboard</Text>
+          </Flex>
+          <Text fontWeight="bold" fontSize="lg">Dashboard</Text>
+        </Flex>
       </Box>
+      
     </>
   );
 };

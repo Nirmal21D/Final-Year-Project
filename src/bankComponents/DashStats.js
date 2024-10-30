@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   chakra,
   Stat,
@@ -12,78 +12,52 @@ import {
 } from "@chakra-ui/react";
 
 const DashStats = () => {
+  const [stats, setStats] = useState([]);
+
+  useEffect(() => {
+    const newStats = [
+      { label: "New Clients", value: Math.floor(Math.random() * 5000) },
+      { label: "Total Revenue", value: Math.floor(Math.random() * 5000) },
+      { label: "Active Users", value: Math.floor(Math.random() * 5000) },
+      { label: "Pending Transactions", value: Math.floor(Math.random() * 5000) },
+    ];
+    setStats(newStats);
+  }, []);
+
   return (
     <>
       <Grid
         position="relative"
         top={14}
         color="white"
-        h="200px"
+        h="auto"
         templateRows="repeat(2, 1fr)"
         templateColumns="repeat(2, 1fr)"
-        gap={4}
+        gap={6}
         px={6}
       >
-        <GridItem
-          rowSpan={1}
-          colSpan={1}
-          bg="rgba(10, 14, 35, 0.49) 76.65%"
-          px={4}
-          py={2}
-          borderRadius="3xl"
-          display="flex"
-          alignItems="center"
-        >
-          <Stat>
-            <StatLabel>New Clients</StatLabel>
-            <StatNumber>+ 3,462</StatNumber>
-          </Stat>
-        </GridItem>
-        <GridItem
-          rowSpan={1}
-          colSpan={1}
-          bg="rgba(10, 14, 35, 0.49) 76.65%"
-          px={4}
-          py={2}
-          borderRadius="3xl"
-          display="flex"
-          alignItems="center"
-        >
-          <Stat>
-            <StatLabel>New Clients</StatLabel>
-            <StatNumber>+ 3,462</StatNumber>
-          </Stat>
-        </GridItem>
-        <GridItem
-          rowSpan={1}
-          colSpan={1}
-          bg="rgba(10, 14, 35, 0.49) 76.65%"
-          px={4}
-          py={2}
-          borderRadius="3xl"
-          display="flex"
-          alignItems="center"
-        >
-          <Stat>
-            <StatLabel>New Clients</StatLabel>
-            <StatNumber>+ 3,462</StatNumber>
-          </Stat>
-        </GridItem>
-        <GridItem
-          rowSpan={1}
-          colSpan={1}
-          bg="rgba(10, 14, 35, 0.49) 76.65%"
-          px={4}
-          py={2}
-          borderRadius="3xl"
-          display="flex"
-          alignItems="center"
-        >
-          <Stat>
-            <StatLabel>New Clients</StatLabel>
-            <StatNumber>+ 3,462</StatNumber>
-          </Stat>
-        </GridItem>
+        {stats.map((stat, index) => (
+          <GridItem
+            key={index}
+            rowSpan={1}
+            colSpan={1}
+            bg="rgba(10, 14, 35, 0.7)"
+            px={4}
+            py={4}
+            borderRadius="lg"
+            display="flex"
+            alignItems="center"
+            boxShadow="md"
+            transition="transform 0.2s"
+            _hover={{ transform: "scale(1.05)" }}
+          >
+            <Stat>
+              <StatLabel fontSize="lg" fontWeight="bold">{stat.label}</StatLabel>
+              <StatNumber fontSize="2xl">+ {stat.value}</StatNumber>
+              <StatHelpText fontSize="sm" color="gray.400">Updated just now</StatHelpText>
+            </Stat>
+          </GridItem>
+        ))}
       </Grid>
     </>
   );

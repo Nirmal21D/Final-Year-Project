@@ -1,9 +1,10 @@
+
 "use client";
 import React from "react";
 import BankSidenav from "@/bankComponents/BankSidenav";
 import Navbar from "@/bankComponents/Navbar";
 import { Box } from "@chakra-ui/react";
-
+import PlanDisplay from '@/bankComponents/plandisplay'
 const page = () => {
   return (
     <>
@@ -27,8 +28,9 @@ const page = () => {
           <BankSidenav />
           <Navbar />
         </Box>
-        bank plans here
+        <PlanDisplay p={16}></PlanDisplay>
       </Box>
+      
     </>
   );
 };
