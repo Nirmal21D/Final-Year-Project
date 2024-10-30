@@ -62,7 +62,7 @@ const LoginPage = () => {
         router.push("/");
       } else if (userType === "bank") {
         router.push("/pages/Bankpages/bankdashboard");
-        router.push("/pages/Bankpages/bankpanel");
+        // router.push("/pages/Bankpages/bankpanel");
       }
     } catch (error) {
       console.error("Login error:", error);
