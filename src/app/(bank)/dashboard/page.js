@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
-import BankWelcome from "@/app/bankComponents/BankWelcome";
-import BankSidenav from "@/app/bankComponents/BankSidenav";
-import Navbar from "@/app/bankComponents/Navbar";
-import DashStats from "@/app/bankComponents/DashStats";
-import InvestPlanDisplay from "@/app/bankComponents/plandisplay";
+import BankWelcome from "@/bankComponents/BankWelcome";
+import BankSidenav from "@/bankComponents/BankSidenav";
+import Navbar from "@/bankComponents/Navbar";
+import DashStats from "@/bankComponents/DashStats";
+import InvestPlanDisplay from "@/bankComponents/plandisplay";
 import { Box } from "@chakra-ui/react";
 
 const DashboardPage = () => {

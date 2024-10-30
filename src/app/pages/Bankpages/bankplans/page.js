@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
-import BankSidenav from "@/app/bankComponents/BankSidenav";
-import Navbar from "@/app/bankComponents/Navbar";
+import BankSidenav from "@/bankComponents/BankSidenav";
+import Navbar from "@/bankComponents/Navbar";
 import { Box } from "@chakra-ui/react";
 
 const page = () => {

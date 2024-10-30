@@ -23,8 +23,8 @@ import { auth, db } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { collection, addDoc, setDoc, doc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import BankSidenav from "@/app/bankComponents/BankSidenav";
-import Navbar from "@/app/bankComponents/Navbar";
+import BankSidenav from "@/bankComponents/BankSidenav";
+import Navbar from "@/bankComponents/Navbar";
 
 const page = () => {
   const [user, setUser] = useState(null);

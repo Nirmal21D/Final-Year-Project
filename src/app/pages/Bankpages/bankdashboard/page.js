@@ -2,10 +2,10 @@
 
 import React from "react";
 import { Box } from "@chakra-ui/react";
-import BankSidenav from "@/app/bankComponents/BankSidenav";
+import BankSidenav from "@/bankComponents/BankSidenav";
 // import Navbar from "@/app/bankComponents/Navbar";
-import DashStats from "@/app/bankComponents/DashStats";
-import BankWelcome from "@/app/bankComponents/BankWelcome";
+import DashStats from "@/bankComponents/DashStats";
+import BankWelcome from "@/bankComponents/BankWelcome";
 
 const page = () => {
   return (

@@ -20,7 +20,7 @@ import {
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import Link from "next/link";
-import { auth, db } from "../../firebase"; // Added db import
+import { auth, db } from "../firebase"; // Added db import
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports
 
