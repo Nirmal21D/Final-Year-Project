@@ -38,8 +38,8 @@ const ProfilePage = () => {
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        bg="white"
-        color="black"
+        bg="transparent"
+        color="white"
         size="lg"
         flex="1"
       />
@@ -77,7 +77,7 @@ const ProfilePage = () => {
           History:
         </Text>
         <Box
-          bg="white"
+          bg="transparent"
           borderRadius="md"
           p={4}
           color="gray.800"
