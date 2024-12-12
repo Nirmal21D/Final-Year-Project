@@ -136,7 +136,7 @@ const page = () => {
           loanName: "",
         });
       } else if (formData.planType === "investment") {
-        const planDocRef = doc(collection(db, "plans"), planId);
+        const planDocRef = doc(collection(db, "investmentplans"), planId);
         await setDoc(planDocRef, {
           planId,
           planName,

@@ -2,7 +2,7 @@ export const investmentPlans = [
   {
     type: "Investment Type 1",
     plans: [
-      { name: "Plan 1A", link: "/plan-type1/plan1" },
+      { name: "Plan 1A", link: "/plan1" },
       { name: "Plan 1B", link: "/plan-type1/plan2" },
       { name: "Plan 1C", link: "/plan-type1/plan3" },
     ],

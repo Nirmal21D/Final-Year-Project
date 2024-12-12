@@ -12,7 +12,7 @@ import {
   Box,
 } from "@chakra-ui/react";
 
-const Plancards = ({ header, summary }) => {
+const Plancards = ({ header, summary, onClick }) => {
   return (
     <>
       <Card
@@ -24,13 +24,13 @@ const Plancards = ({ header, summary }) => {
         color="#ebeff4"
       >
         <CardHeader>
-          <Heading size="md">{header}</Heading>
+          <Heading size="md" noOfLines={2} wordBreak="break-word" >{header}</Heading>
         </CardHeader>
         <CardBody>
-          <Text>{summary}</Text>
+          <Text noOfLines={3} wordBreak="break-word">{summary}</Text>
         </CardBody>
         <CardFooter>
-          <Button bg="#ebeff4" color="#0f1535">
+          <Button bg="#ebeff4" color="#0f1535" onClick={onClick}>
             View here
           </Button>
         </CardFooter>
