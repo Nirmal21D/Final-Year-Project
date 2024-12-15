@@ -34,7 +34,7 @@ const SignUpPage = () => {
   const [bankEmail, setBankEmail] = useState("");
   const [bankName, setBankName] = useState("");
   const [bpaswd, setBpaswd] = useState("");
-  const [ifscode, setIfscode] = useState("");
+  const [status, setStatus] = useState("pending")
   const [isLoading, setIsLoading] = useState(false); // Loading state
 
   const toast = useToast();
@@ -58,7 +58,7 @@ const SignUpPage = () => {
     // Basic validation for bank users
     if (
       userType === "bank" &&
-      (!bankEmail || !bankName || !bpaswd || !ifscode)
+      (!bankEmail || !bankName || !bpaswd )
     ) {
       toast({
         title: "Error",
@@ -104,7 +104,7 @@ const SignUpPage = () => {
           bankEmail,
           bankName,
           bpaswd,
-          ifscode,
+         
         });
       }
 
@@ -121,7 +121,7 @@ const SignUpPage = () => {
       if (userType === "regular") {
         window.location.href = "/";
       } else if (userType === "bank") {
-        window.location.href = "/pages/Bankpages/bankdashboard";
+        window.location.href = "/bankdashboard";
       }
     } catch (error) {
       console.error("Sign Up Error:", error);
@@ -179,7 +179,7 @@ const SignUpPage = () => {
       if (userType === "regular") {
         window.location.href = "/";
       } else if (userType === "bank") {
-        window.location.href = "/pages/Bankpages/bankdashboard";
+        window.location.href = "/bankdashboard";
       }
     } catch (error) {
       console.error("Google Sign Up Error:", error);
@@ -363,22 +363,6 @@ const SignUpPage = () => {
               />
             </Flex>
 
-            <Flex mb={4} width="100%" alignItems="center">
-              <Text width="40%" fontWeight="bold" mr={4}>
-                IFSC Code
-              </Text>
-              <Input
-                type="text"
-                value={ifscode}
-                onChange={(e) => setIfscode(e.target.value)}
-                placeholder="Enter your IFSC Code"
-                bg="white"
-                color="black"
-                size="lg"
-                flex="1"
-                required
-              />
-            </Flex>
 
             <Button
               type="submit"
@@ -395,16 +379,7 @@ const SignUpPage = () => {
           </>
         )}
 
-        <Button
-          onClick={handleGoogleSignUp}
-          colorScheme="red"
-          width="full"
-          isLoading={isLoading}
-          bgGradient="linear(to-r, #0f0c29, #302b63, #24243e)"
-          _hover={{ bgGradient: "linear(to-r, #56577b, #302b63, #0f0c29)" }}
-        >
-          Sign Up with Google
-        </Button>
+        
       </form>
     </Box>
   );

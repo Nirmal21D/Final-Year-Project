@@ -31,14 +31,16 @@ const page = () => {
   const [formData, setFormData] = useState({
     planId: "",
     planType: "",
-    planName: "",
+    planName: "", // Added plan name field for investment plan
     interestRate: "",
     maxAmount: "",
     minAmount: "",
     tenure: "",
     description: "",
     loanType: "",
-    loanName: "",
+    loanName: "", // Added loan name field for loan plan
+    investmentCategory: "",
+    investmentSubCategory: "",
   });
   const router = useRouter();
   const toast = useToast();
@@ -101,6 +103,8 @@ const page = () => {
         description,
         loanType,
         loanName,
+        investmentCategory,
+        investmentSubCategory,
       } = formData;
       const planId = uuidv4();
       if (formData.planType === "loan") {
@@ -134,23 +138,26 @@ const page = () => {
           description: "",
           loanType: "",
           loanName: "",
+          investmentCategory: "",
+          investmentSubCategory: "",
         });
       } else if (formData.planType === "investment") {
         const planDocRef = doc(collection(db, "investmentplans"), planId);
         await setDoc(planDocRef, {
           planId,
-          planName,
+          planName, // Added plan name field for investment plan
           interestRate,
           maxAmount,
           minAmount,
           tenure,
           description,
+          investmentCategory,
+          investmentSubCategory,
           createdBy: user.uid,
         });
         toast({
           title: "Form submitted",
-          description:
-            "The investment plan details have been added to the database.",
+          description: "The investment plan details have been added to the database.",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -164,6 +171,8 @@ const page = () => {
           minAmount: 0,
           tenure: 0,
           description: "",
+          investmentCategory: "",
+          investmentSubCategory: "",
         });
       }
     } catch (error) {
@@ -228,44 +237,108 @@ const page = () => {
                       </Select>
                     </FormControl>
 
-                    {formData.planType === "loan" ? (
-                      <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                        <GridItem>
+                    {formData.planType === "investment" ? (
+                      <>
+                        <FormControl isRequired>
+                          <FormLabel>Plan Name</FormLabel>
+                          <Input
+                            name="planName"
+                            value={formData.planName}
+                            onChange={handleInputChange}
+                            bg="#1D236A" // Changed background color
+                            color="white" // Changed text color
+                          />
+                        </FormControl>
+                        <FormControl isRequired>
+                          <FormLabel>Category</FormLabel>
+                          <Select
+                            name="investmentCategory"
+                            value={formData.investmentCategory}
+                            onChange={handleInputChange}
+                            placeholder="Select investment category"
+                            bg="#1D236A" // Changed background color
+                            color="white" // Changed text color
+                          >
+                            <option value="bonds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Bonds</option>
+                            <option value="mutualFunds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Mutual Funds</option>
+                            <option value="fixedDeposits" style={{ backgroundColor: '#1D236A', color: 'white' }}>Fixed Deposits</option>
+                            <option value="goldInvestments" style={{ backgroundColor: '#1D236A', color: 'white' }}>Gold Investments</option>
+                            <option value="providentFunds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Provident Funds</option>
+                          </Select>
+                        </FormControl>
+
+                        {formData.investmentCategory !== "fixedDeposits" && (
                           <FormControl isRequired>
-                            <FormLabel>Loan Type</FormLabel>
+                            <FormLabel>Sub Category</FormLabel>
                             <Select
-                              name="loanType"
-                              value={formData.loanType}
+                              name="investmentSubCategory"
+                              value={formData.investmentSubCategory}
                               onChange={handleInputChange}
-                              placeholder="Select loan type"
+                              placeholder="Select sub category"
                               bg="#1D236A" // Changed background color
                               color="white" // Changed text color
                             >
-                              <option value="personal" style={{ backgroundColor: '#1D236A', color: 'white' }}>Personal Loan</option> {/* Updated to match theme */}
-                              <option value="home" style={{ backgroundColor: '#1D236A', color: 'white' }}>Home Loan</option> {/* Updated to match theme */}
-                              <option value="auto" style={{ backgroundColor: '#1D236A', color: 'white' }}>Auto Loan</option> {/* Updated to match theme */}
-                              <option value="business" style={{ backgroundColor: '#1D236A', color: 'white' }}>Business Loan</option> {/* Updated to match theme */}
+                              {formData.investmentCategory === "bonds" && (
+                                <>
+                                  <option value="governmentBonds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Government Bonds</option>
+                                  <option value="corporateBonds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Corporate Bonds</option>
+                                  <option value="taxFreeBonds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Tax-Free Bonds</option>
+                                </>
+                              )}
+                              {formData.investmentCategory === "mutualFunds" && (
+                                <>
+                                  <option value="equityFunds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Equity Funds</option>
+                                  <option value="hybridFunds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Hybrid Funds</option>
+                                  <option value="indexFunds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Index Funds</option>
+                                  <option value="realEstateFunds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Real Estate Funds</option>
+                                </>
+                              )}
+                              {formData.investmentCategory === "goldInvestments" && (
+                                <>
+                                  <option value="physicalGold" style={{ backgroundColor: '#1D236A', color: 'white' }}>Physical Gold</option>
+                                  <option value="digitalGold" style={{ backgroundColor: '#1D236A', color: 'white' }}>Digital Gold</option>
+                                  <option value="goldETFs" style={{ backgroundColor: '#1D236A', color: 'white' }}>Gold ETFs</option>
+                                  <option value="sovereignGoldBonds" style={{ backgroundColor: '#1D236A', color: 'white' }}>Sovereign Gold Bonds</option>
+                                </>
+                              )}
+                              {formData.investmentCategory === "providentFunds" && (
+                                <>
+                                  <option value="employeeProvidentFund" style={{ backgroundColor: '#1D236A', color: 'white' }}>Employee Provident Fund (EPF)</option>
+                                  <option value="publicProvidentFund" style={{ backgroundColor: '#1D236A', color: 'white' }}>Public Provident Fund (PPF)</option>
+                                  <option value="generalProvidentFund" style={{ backgroundColor: '#1D236A', color: 'white' }}>General Provident Fund (GPF)</option>
+                                </>
+                              )}
                             </Select>
                           </FormControl>
-                        </GridItem>
-                        <GridItem>
-                          <FormControl isRequired>
-                            <FormLabel>Loan Name</FormLabel>
-                            <Input
-                              name="loanName"
-                              value={formData.loanName}
-                              onChange={handleInputChange}
-                            />
-                          </FormControl>
-                        </GridItem>
-                      </Grid>
+                        )}
+                      </>
                     ) : (
                       <FormControl isRequired>
-                        <FormLabel>Plan Name</FormLabel>
-                        <Input
-                          name="planName"
-                          value={formData.planName}
+                        <FormLabel>Loan Type</FormLabel>
+                        <Select
+                          name="loanType"
+                          value={formData.loanType}
                           onChange={handleInputChange}
+                          placeholder="Select loan type"
+                          bg="#1D236A" // Changed background color
+                          color="white" // Changed text color
+                        >
+                          <option value="personal" style={{ backgroundColor: '#1D236A', color: 'white' }}>Personal Loan</option>
+                          <option value="home" style={{ backgroundColor: '#1D236A', color: 'white' }}>Home Loan</option>
+                          <option value="auto" style={{ backgroundColor: '#1D236A', color: 'white' }}>Auto Loan</option>
+                          <option value="business" style={{ backgroundColor: '#1D236A', color: 'white' }}>Business Loan</option>
+                        </Select>
+                      </FormControl>
+                    )}
+                    {formData.planType === "loan" && (
+                      <FormControl isRequired>
+                        <FormLabel>Loan Name</FormLabel>
+                        <Input
+                          name="loanName"
+                          value={formData.loanName}
+                          onChange={handleInputChange}
+                          bg="#1D236A" // Changed background color
+                          color="white" // Changed text color
                         />
                       </FormControl>
                     )}

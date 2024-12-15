@@ -16,6 +16,9 @@ export default function PlanDisplay() {
         minAmount: '',
         tenure: '',
         description: '',
+        loanName: '', // Added loan name field for loan plan
+        investmentCategory: '',
+        investmentSubCategory: '',
     });
     const [isEditingLoan, setIsEditingLoan] = useState(false); // State to manage loan editing
     const toast = useToast();
@@ -113,6 +116,8 @@ export default function PlanDisplay() {
         minAmount: plan.minAmount,
         tenure: plan.tenure,
         description: plan.description,
+        investmentCategory: plan.investmentCategory,
+        investmentSubCategory: plan.investmentSubCategory,
       });
     };
 
@@ -126,6 +131,7 @@ export default function PlanDisplay() {
         minAmount: plan.minAmount,
         tenure: plan.tenure,
         description: plan.description,
+        loanName: plan.loanName,
       });
     };
 
@@ -154,6 +160,9 @@ export default function PlanDisplay() {
           minAmount: '',
           tenure: '',
           description: '',
+          loanName: '',
+          investmentCategory: '',
+          investmentSubCategory: '',
         });
         toast({
           title: "Plan Updated",
@@ -192,6 +201,8 @@ export default function PlanDisplay() {
                   <Th color="blue.100">Min Amount</Th>
                   <Th color="blue.100">Tenure (months)</Th>
                   <Th color="blue.100">Description</Th>
+                  <Th color="blue.100">Category</Th>
+                  <Th color="blue.100">Sub Category</Th>
                   <Th color="blue.100">Actions</Th>
                 </Tr>
               </Thead>
@@ -204,6 +215,8 @@ export default function PlanDisplay() {
                     <Td>{plan.minAmount}</Td>
                     <Td>{plan.tenure}</Td>
                     <Td>{plan.description}</Td>
+                    <Td>{plan.investmentCategory}</Td>
+                    <Td>{plan.investmentSubCategory}</Td>
                     <Td>
                       <HStack spacing={2}>
                         <Button colorScheme="blue" onClick={() => handleEditInvestmentPlan(plan)}>Edit</Button>
@@ -278,6 +291,9 @@ export default function PlanDisplay() {
                   <NumberInputField placeholder="Tenure (months)" />
                 </NumberInput>
                 <Textarea name="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Description" />
+                {isEditingLoan && (
+                  <Input name="loanName" value={formData.loanName} onChange={(e) => setFormData({ ...formData, loanName: e.target.value })} placeholder="Loan Name" />
+                )}
                 <Button type="submit" colorScheme="green">Update Plan</Button>
               </VStack>
             </form>
