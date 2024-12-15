@@ -18,15 +18,7 @@ const SearchBox = () => {
 
   return (
     <>
-      <Box
-        bg="rgba(229, 229, 229, 0.1)"
-        width="90%"
-        p={3}
-        height={65}
-        borderRadius="md"
-        position="fixed"
-        left={24}
-      >
+      <Box display="flex" width="55%">
         <InputGroup>
           <InputLeftElement pointerEvents="none">
             <SearchIcon color="#e2cadb" />
@@ -34,13 +26,20 @@ const SearchBox = () => {
           <Input
             type="text"
             placeholder="Search..."
-            bg="rgba(10, 14, 35, 0.49)"
-            // bg="gray.100" // Light gray background
+            bg="gray.100" // Light gray background
             borderRadius="lg" // Optional: Rounded corners
-            // _placeholder={{ color: "gray.500" }}
+            _placeholder={{ color: "gray.500" }}
             id="searchIp"
+            height="6vh"
+            color="#333333"
           />
-          <Button onClick={handleSearch} bg="#395698" ml={2} color="white ">
+          <Button
+            onClick={handleSearch}
+            bg="#007b83"
+            ml={2}
+            color="#ffffff"
+            height="6vh"
+          >
             Search
           </Button>
         </InputGroup>

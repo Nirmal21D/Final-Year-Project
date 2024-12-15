@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Text } from "@chakra-ui/react";
-import { auth, db } from "@/firebase"; 
+import { Box, Text } from "@chakra-ui/react";
+import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -14,7 +14,7 @@ const Welcome = () => {
       setLoading(true);
       if (user) {
         try {
-          const userDoc = doc(db, 'users', user.uid);
+          const userDoc = doc(db, "users", user.uid);
           const userSnap = await getDoc(userDoc);
 
           if (userSnap.exists()) {
@@ -40,7 +40,13 @@ const Welcome = () => {
   }
 
   if (!userData) {
-    return <Text fontSize="3xl" color="white" fontWeight="bold" mb={4}>Please Sign Up or Login to continue</Text>;
+    return (
+      <Box p="20px">
+        <Text fontSize="3xl" color="#666d74" fontWeight="bold">
+          Please Sign Up or Login to continue
+        </Text>
+      </Box>
+    );
   }
 
   return (
