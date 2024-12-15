@@ -119,8 +119,7 @@ const SideNav = () => {
               {/* __________________________________________________________________________________________ */}
 
               <Menu closeOnSelect={false}>
-                {" "}
-                {/* Keep menu open when selecting sub-items */}
+               
                 <MenuButton
                   as={Button}
                   bg="rgba(229, 229, 229, 0.1)"
@@ -142,7 +141,7 @@ const SideNav = () => {
                       {activeType === investment.type && (
                         <Box pl={4} bg="#ebeff4">
                           {investment.plans.map((plan) => (
-                            <MenuItem key={plan.name} bg="#ffffff">
+                            <MenuItem key={plan.name} bg="#ebeff4">
                               <Link href={plan.link}>{plan.name}</Link>
                             </MenuItem>
                           ))}

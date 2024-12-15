@@ -42,8 +42,6 @@ const login = () => {
         <SideNav />
         <SearchBox />
       </Box>
-
-      {/* Pass handleLogin to LoginPage */}
       <LoginPage onLogin={handleLogin} />
     </Box>
   );
