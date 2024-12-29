@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Box,
@@ -27,14 +28,13 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports
 import { investmentPlans } from "./PlanData";
 const NavbarMain = () => {
+  const router = useRouter();
   const [activeType, setActiveType] = useState(null);
 
   const togglePlans = (type) => {
     setActiveType((prevType) => (prevType === type ? null : type));
   };
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const btnRef = React.useRef();
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
 
@@ -68,9 +68,18 @@ const NavbarMain = () => {
       await signOut(auth);
       setUser(null);
       setUserData(null);
+      router.push("/");
     } catch (error) {
       console.error("Error signing out: ", error);
     }
+  };
+
+  const buttonStyles = {
+    bg: "#567C8D",
+    color: "#e9ecef",
+    width: "100px",
+    height: "40px",
+    _hover: { bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" },
   };
 
   return (
@@ -231,61 +240,47 @@ const NavbarMain = () => {
           </>
         ) : (
           <>
-            <Menu>
-              <Link href=" /profile">
-                <MenuButton
-                  as={Button}
-                  bg="#567C8D"
-                  color="#e9ecef"
-                  width="full"
-                  _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-                >
-                  My Profile
-                </MenuButton>
-              </Link>
-            </Menu>
+            <Button {...buttonStyles} onClick={handleLogout}>
+              Log Out
+            </Button>
+
             <Divider orientation="vertical" height="35px" />
-            <Menu>
-              <MenuButton
-                as={Button}
-                bg="rgba(250, 5, 5, 0.1)"
-                color="#e9ecef"
-                width="full"
-                _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-                onClick={handleLogout}
-              >
-                Log Out
-              </MenuButton>
-            </Menu>
-            <Divider orientation="vertical" height="35px" />
+            {user && userData && (
+              <Box>
+                <Wrap>
+                  <WrapItem>
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      gap={4}
+                    >
+                      <Box display="flex" alignItems="center">
+                        <Avatar
+                          name={userData.name || "User"}
+                          src={userData.photoURL}
+                          h={4}
+                          w={4}
+                          p={4}
+                        />
+                      </Box>
+                      <Box>
+                        {/* <Text color="white" fontWeight="bold">
+                    {userData.name || "User"}
+                  </Text> */}
+
+                        <Link href="/profile">
+                          <Text color="white">View Profile</Text>
+                        </Link>
+                      </Box>
+                    </Box>
+                  </WrapItem>
+                </Wrap>
+              </Box>
+            )}
           </>
         )}
       </Flex>
-      {user && userData && (
-        <Box mt="auto">
-          <Wrap justify="flex-start">
-            <WrapItem>
-              <Box display="flex" alignItems="center" flexDirection="column">
-                <Box display="flex" alignItems="center" gap={4}>
-                  <Avatar
-                    name={userData.name || "User"}
-                    src={userData.photoURL}
-                  />
-                  <Text color="white" fontWeight="bold">
-                    {userData.name || "User"}
-                  </Text>
-                </Box>
-
-                <Link href=" /profile">
-                  <Text color="white" fontSize="sm">
-                    View Profile
-                  </Text>
-                </Link>
-              </Box>
-            </WrapItem>
-          </Wrap>
-        </Box>
-      )}
     </>
   );
 };

@@ -15,29 +15,33 @@ const Calc2 = () => {
 
   return (
     <>
-      <Box id="main" display="flex" gap={4}>
+      <Box id="main" display="flex" overflow="hidden">
         <Box
           id="left"
           width="40%"
+          position="fixed"
+          height="100vh"
           display="flex"
           alignItems="center"
           justifyContent="center"
-          overflow="hidden"
-          position="fixed"
+          // left="0"
+          top="58"
+          margin="auto"
         >
           <Box
-            my={6}
             display="flex"
             flexDirection="column"
             alignItems="center"
             justifyContent="center"
-            bg="rgba(10, 14, 35, 0.49)"
+            boxShadow="lg"
+            backdropFilter="blur(50px)"
+            bg="rgba(255, 255, 255, 0.2)"
             p={6}
             borderRadius="md"
             color="#ebeff4"
             width="80%"
           >
-            <Heading size="md" mb={6}>
+            <Heading size="md" mb={6} color="#666d74">
               Financial Calculations
             </Heading>
             <Grid templateColumns="repeat(1,1fr)" gap={4}>
@@ -116,26 +120,43 @@ const Calc2 = () => {
           </Box>
         </Box>
 
-        <Box height="inherit" ml="42vw">
-          <Divider orientation="vertical" position="fixed" />
+        <Box
+          height="100vh"
+          position="fixed"
+          left="40%"
+          width="1px"
+          borderColor="black"
+        >
+          <Divider orientation="vertical" h="100%" />
         </Box>
 
         <Box
           id="right"
           width="60%"
-          my={6}
+          minHeight="80vh"
+          marginLeft="40%"
           display="flex"
           alignItems="center"
           justifyContent="center"
-          overflow="hidden"
+          overflowY="auto"
+          overflowX="hidden"
+          px={4}
+          py={6}
         >
-          {selectedCal === "CI" && <CICal />}
-          {selectedCal === "EMI" && <EMICal />}
-          {selectedCal === "FD" && <FDCal />}
-          {selectedCal === "IT" && <IncomeTaxCal />}
-          {selectedCal === "SI" && <SICal />}
-          {selectedCal === "SAL" && <SALCal />}
-          {selectedCal === "SIP" && <SIPCal />}
+          <Box
+            width="100%"
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+          >
+            {selectedCal === "CI" && <CICal />}
+            {selectedCal === "EMI" && <EMICal />}
+            {selectedCal === "FD" && <FDCal />}
+            {selectedCal === "IT" && <IncomeTaxCal />}
+            {selectedCal === "SI" && <SICal />}
+            {selectedCal === "SAL" && <SALCal />}
+            {selectedCal === "SIP" && <SIPCal />}
+          </Box>
         </Box>
       </Box>
     </>

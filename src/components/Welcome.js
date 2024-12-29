@@ -51,15 +51,17 @@ const Welcome = () => {
 
   return (
     <>
-      <Text fontSize="md" color="gray.400">
-        Welcome back,
-      </Text>
-      <Text fontSize="3xl" color="white" fontWeight="bold" mb={4}>
-        {userData.name || "User"}
-      </Text>
-      <Text fontSize="lg" color="gray.400">
-        Glad to see you again!
-      </Text>
+      <Box p="20px">
+        <Text fontSize="lg" color="#666d74">
+          Welcome back,
+        </Text>
+        <Text fontSize="4xl" color="#003a5c" fontWeight="bold" mb={4}>
+          {userData.name || "User"}
+        </Text>
+        <Text fontSize="lg" color="#666d74">
+          Glad to see you again!
+        </Text>
+      </Box>
     </>
   );
 };
