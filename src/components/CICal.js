@@ -99,7 +99,7 @@ const CompoundInterestCalculator = () => {
         alignItems="center"
         justifyContent="center"
         p={6}
-        bg="rgba(117, 122, 140,0.299)"
+        bg="rgba(45, 55, 72, 0.25)"
         color="white"
         borderRadius="xl"
         shadow="md"
@@ -133,7 +133,8 @@ const CompoundInterestCalculator = () => {
 
         <Button
           color="#ebeff4"
-          bgGradient="linear(to-r, #0075ff ,  #9f7aea)"
+          bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+          _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
           onClick={calculateCompound}
           width="100%"
           mb={4}

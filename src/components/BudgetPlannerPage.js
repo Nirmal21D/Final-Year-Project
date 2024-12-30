@@ -122,7 +122,7 @@ const BudgetPlannerPage = () => {
 
   const InputForm = () => (
     <VStack spacing={4} width="100%">
-      <Text fontSize="xl" color="gray.700">
+      <Text fontSize="xl" color="white">
         Enter your salary:
       </Text>
       <Input
@@ -130,16 +130,49 @@ const BudgetPlannerPage = () => {
         placeholder="Enter your monthly salary"
         value={salary}
         onChange={(e) => setSalary(e.target.value)}
+        color="white"
       />
-      <Text fontSize="xl" color="gray.700">
+      <Text fontSize="xl" color="white">
         Select Budgeting Formula:
       </Text>
-      <Select value={formula} onChange={(e) => setFormula(e.target.value)}>
-        <option value="50-30-20">50-30-20 Formula</option>
-        <option value="60-20-20">60-20-20 Formula</option>
-        <option value="40-40-20">40-40-20 Formula</option>
+      <Select
+        value={formula}
+        onChange={(e) => setFormula(e.target.value)}
+        color="white"
+        sx={{
+          // Style for the dropdown options
+          "& option": {
+            color: "black",
+            background: "white",
+          },
+        }}
+      >
+        <option
+          value="50-30-20"
+          style={{ color: "black", background: "white" }}
+        >
+          50-30-20 Formula
+        </option>
+        <option
+          value="60-20-20"
+          style={{ color: "black", background: "white" }}
+        >
+          60-20-20 Formula
+        </option>
+        <option
+          value="40-40-20"
+          style={{ color: "black", background: "white" }}
+        >
+          40-40-20 Formula
+        </option>
       </Select>
-      <Button colorScheme="blue" onClick={calculateBudget} width="100%">
+      <Button
+        bg="#567C8D"
+        color="white"
+        _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#11212d" }}
+        onClick={calculateBudget}
+        width="100%"
+      >
         Calculate Budget
       </Button>
     </VStack>
@@ -148,9 +181,9 @@ const BudgetPlannerPage = () => {
   return (
     <Container maxW="7xl" py={8}>
       {!showResults ? (
-        <Card maxW="md" mx="auto">
+        <Card maxW="md" mx="auto" bg="gray.800">
           <CardHeader>
-            <Heading size="lg" textAlign="center">
+            <Heading size="lg" textAlign="center" color="white">
               Budget Planner
             </Heading>
           </CardHeader>
@@ -162,9 +195,11 @@ const BudgetPlannerPage = () => {
         <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={6}>
           {/* Left Column - Input Form */}
           <GridItem>
-            <Card height="100%">
+            <Card height="100%" bg="gray.800">
               <CardHeader>
-                <Heading size="md">Input Details</Heading>
+                <Heading size="md" color="white">
+                  Input Details
+                </Heading>
               </CardHeader>
               <CardBody>
                 <InputForm />
@@ -174,9 +209,11 @@ const BudgetPlannerPage = () => {
 
           {/* Middle Column - Pie Chart */}
           <GridItem>
-            <Card height="100%">
+            <Card height="100%" bg="gray.800">
               <CardHeader>
-                <Heading size="md">Budget Distribution</Heading>
+                <Heading size="md" color="white">
+                  Budget Distribution
+                </Heading>
               </CardHeader>
               <CardBody>
                 <Box width="100%" position="relative">
@@ -188,17 +225,19 @@ const BudgetPlannerPage = () => {
 
           {/* Right Column - Breakdown */}
           <GridItem>
-            <Card height="100%">
+            <Card height="100%" bg="gray.800">
               <CardHeader>
-                <Heading size="md">Budget Breakdown</Heading>
+                <Heading size="md" color="white">
+                  Budget Breakdown
+                </Heading>
               </CardHeader>
               <CardBody>
                 <Stack spacing={6}>
                   <Box>
-                    <Text fontSize="lg" fontWeight="bold" mb={2}>
+                    <Text fontSize="lg" fontWeight="bold" mb={2} color="white">
                       Total Distribution
                     </Text>
-                    <Stack spacing={2}>
+                    <Stack spacing={2} color="white">
                       <Text>
                         Investment: ₹{budgetData.investment.toFixed(2)}
                       </Text>
@@ -208,7 +247,7 @@ const BudgetPlannerPage = () => {
                       <Text>Savings: ₹{budgetData.savings.toFixed(2)}</Text>
                     </Stack>
                   </Box>
-                  <Box>
+                  <Box color="white">
                     <Text fontSize="lg" fontWeight="bold" mb={2}>
                       Investment Breakdown
                     </Text>

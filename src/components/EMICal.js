@@ -21,7 +21,7 @@ const EMICalculatorPage = () => {
   const [emi, setEmi] = useState(null);
   const [interest, setInterest] = useState(null);
   const [withInterestAmount, setWithInterestAmount] = useState(null);
-  
+
   const calculateEMI = () => {
     const monthlyRate = rate / 12 / 100;
     const emiAmount =
@@ -32,11 +32,9 @@ const EMICalculatorPage = () => {
     const interest = totalWithInterest - principal;
     const monthlyAmountWithInterest = interest + principal;
 
-   
     setInterest(interest.toFixed(2));
     setEmi(emiAmount.toFixed(2));
     setWithInterestAmount(totalWithInterest.toFixed(2));
-   
   };
 
   const renderSliderWithTextbox = (
@@ -109,7 +107,7 @@ const EMICalculatorPage = () => {
       alignItems="center"
       justifyContent="center"
       p={6}
-      bg="rgba(117, 122, 140,0.299)"
+      bg="rgba(45, 55, 72, 0.25)"
       color="white"
       borderRadius="xl"
       shadow="md"
@@ -143,7 +141,8 @@ const EMICalculatorPage = () => {
 
       <Button
         color="#ebeff4"
-        bgGradient="linear(to-r, #0075ff ,  #9f7aea)"
+        bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+        _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
         onClick={calculateEMI}
         width="100%"
         mb={4}
@@ -166,7 +165,6 @@ const EMICalculatorPage = () => {
           Total Repayment with Interest: ₹{withInterestAmount}
         </Text>
       )}
-
     </Box>
   );
 };

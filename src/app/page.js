@@ -50,8 +50,8 @@ const ProfilePage = () => {
             borderRadius="xl"
             boxShadow="lg"
             backdropFilter="blur(50px)"
-            bg="rgba(255, 255, 255, 0.1)"
-            border="1px solid rgba(255, 255, 255)"
+            bg="rgba(45, 55, 72, 0.2)"
+            // border="1px solid rgba(255, 255, 255)"
             marginTop="calc(17vh + 40px)" // 17vh (navbar height) + original margin
           >
             <Welcome />

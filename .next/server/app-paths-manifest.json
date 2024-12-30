@@ -1,7 +1,7 @@
 {
   "/page": "app/page.js",
-  "/(client)/budget/page": "app/(client)/budget/page.js",
+  "/(plans)/plan1/page": "app/(plans)/plan1/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
   "/(client)/calculator/page": "app/(client)/calculator/page.js",
-  "/(client)/inflation/page": "app/(client)/inflation/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js"
+  "/(client)/profile/page": "app/(client)/profile/page.js"
 }

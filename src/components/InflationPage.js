@@ -1,5 +1,16 @@
-"use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { Bar, Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip as ChartTooltip,
+  Legend,
+} from "chart.js";
 import {
   Box,
   Button,
@@ -14,21 +25,11 @@ import {
   Select,
   VStack,
   Heading,
+  Grid,
+  GridItem,
+  Container,
+  Center,
 } from "@chakra-ui/react";
-import { Bar, Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  LineElement,
-  Title,
-  Tooltip as ChartTooltip,
-  Legend,
-  PointElement,
-} from "chart.js";
-import SideNav from "/src/components/SideNav";
-import SearchBox from "/src/components/SearchBar";
 
 // Register Chart.js components
 ChartJS.register(
@@ -36,10 +37,10 @@ ChartJS.register(
   LinearScale,
   BarElement,
   LineElement,
+  PointElement,
   Title,
   ChartTooltip,
-  Legend,
-  PointElement
+  Legend
 );
 
 const countryOptions = {
@@ -59,9 +60,6 @@ const countryOptions = {
   Mexico: "MX$",
 };
 
-const API_KEY = "f7bc23a8877434fdec964e11";
-const API_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/INR`;
-
 const InflationPage = () => {
   const [investmentAmount, setInvestmentAmount] = useState(10000);
   const [years, setYears] = useState(5);
@@ -70,42 +68,7 @@ const InflationPage = () => {
   const [roiValues, setRoiValues] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState("India");
   const [currencySymbol, setCurrencySymbol] = useState(countryOptions["India"]);
-  const [totalFutureValue, setTotalFutureValue] = useState(null);
-  const [exchangeRates, setExchangeRates] = useState({});
-
-  useEffect(() => {
-    const fetchExchangeRates = async () => {
-      try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error("API request failed");
-        const data = await response.json();
-        setExchangeRates(data.conversion_rates);
-      } catch (error) {
-        console.error("Error fetching exchange rates:", error);
-      }
-    };
-    fetchExchangeRates();
-  }, []);
-
-  const calculatePredictions = () => {
-    let predictions = [];
-    let roiValues = [];
-    let totalValue = investmentAmount;
-
-    for (let year = 1; year <= years; year++) {
-      const futureValue = totalValue * Math.pow(1 + inflationRate / 100, year);
-      predictions.push(futureValue.toFixed(2));
-
-      const roi = ((futureValue - investmentAmount) / investmentAmount) * 100;
-      roiValues.push(roi.toFixed(2));
-    }
-
-    setPredictedValues(predictions);
-    setRoiValues(roiValues);
-
-    const totalFutureValueCalculation = investmentAmount * Math.pow(1 + inflationRate / 100, years);
-    setTotalFutureValue(totalFutureValueCalculation.toFixed(2));
-  };
+  const [showResults, setShowResults] = useState(false);
 
   const renderSliderWithTextbox = (
     label,
@@ -158,18 +121,133 @@ const InflationPage = () => {
             textAlign="center"
             color="white"
             _placeholder={{ color: "white" }}
-            bg="rgba(255, 255, 255, 0.1)"
-            border="1px solid white"
+            bg="whiteAlpha.100"
+            borderColor="whiteAlpha.300"
           />
         </Flex>
       </Box>
     );
   };
 
-  const handleCountryChange = (e) => {
-    const selected = e.target.value;
-    setSelectedCountry(selected);
-    setCurrencySymbol(countryOptions[selected]);
+  const calculatePredictions = () => {
+    let predictions = [];
+    let roiValues = [];
+    let totalValue = investmentAmount;
+
+    for (let year = 1; year <= years; year++) {
+      const futureValue = totalValue * Math.pow(1 + inflationRate / 100, year);
+      predictions.push(futureValue.toFixed(2));
+      const roi = ((futureValue - investmentAmount) / investmentAmount) * 100;
+      roiValues.push(roi.toFixed(2));
+    }
+
+    setPredictedValues(predictions);
+    setRoiValues(roiValues);
+    setShowResults(true);
+  };
+
+  const InputSection = () => (
+    <VStack
+      spacing={4}
+      width="100%"
+      p={6}
+      bg="gray.800"
+      borderRadius="lg"
+      boxShadow="xl"
+    >
+      <Heading size="md" color="white">
+        Investment Calculator
+      </Heading>
+
+      <Box width="100%">
+        <Text mb={2} color="white">
+          Select Country:
+        </Text>
+        <Select
+          value={selectedCountry}
+          onChange={(e) => {
+            setSelectedCountry(e.target.value);
+            setCurrencySymbol(countryOptions[e.target.value]);
+          }}
+          bg="whiteAlpha.100"
+          color="white"
+          borderColor="whiteAlpha.300"
+        >
+          {Object.keys(countryOptions).map((country) => (
+            <option
+              key={country}
+              value={country}
+              style={{ backgroundColor: "#2D3748", color: "white" }}
+            >
+              {country}
+            </option>
+          ))}
+        </Select>
+      </Box>
+
+      {renderSliderWithTextbox(
+        `Investment Amount (${currencySymbol})`,
+        investmentAmount,
+        setInvestmentAmount,
+        1000,
+        1000000,
+        1000,
+        currencySymbol
+      )}
+      {renderSliderWithTextbox(
+        "Inflation Rate (%)",
+        inflationRate,
+        setInflationRate,
+        0,
+        20,
+        0.1,
+        "%"
+      )}
+      {renderSliderWithTextbox("Years", years, setYears, 1, 30, 1)}
+
+      <Button
+        bg="#567C8D"
+        color="white"
+        _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#11212d" }}
+        onClick={calculatePredictions}
+        width="100%"
+      >
+        Calculate Predictions
+      </Button>
+    </VStack>
+  );
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        type: "category",
+        ticks: {
+          color: "white",
+        },
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+      },
+      y: {
+        type: "linear",
+        beginAtZero: true,
+        ticks: {
+          color: "white",
+        },
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        labels: {
+          color: "white",
+        },
+      },
+    },
   };
 
   const chartData = {
@@ -177,10 +255,7 @@ const InflationPage = () => {
     datasets: [
       {
         label: "Predicted Investment Value",
-        data: predictedValues.map((value) => {
-          const currencyRate = exchangeRates[selectedCountry] || 1;
-          return (value / currencyRate).toFixed(2);
-        }),
+        data: predictedValues,
         backgroundColor: "rgba(75,192,192,0.6)",
         borderColor: "rgba(75,192,192,1)",
         borderWidth: 1,
@@ -194,145 +269,81 @@ const InflationPage = () => {
       {
         label: "ROI (%)",
         data: roiValues,
-        backgroundColor: "rgba(255, 99, 132, 0.6)",
-        borderColor: "rgba(255, 99, 132, 1)",
+        backgroundColor: "rgba(255,99,132,0.6)",
+        borderColor: "rgba(255,99,132,1)",
         borderWidth: 1,
+        tension: 0.1,
       },
     ],
   };
 
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      gap={10}
-      justifyItems="center"
-      p={5}
-      backgroundImage="url(/images/body-background.png)"
-      backgroundPosition="center"
-      backgroundRepeat="no-repeat"
-      backgroundSize="cover"
-      height="100vh"
-      width="100%"
-      overflowY="auto"
-      css={{
-        "&::-webkit-scrollbar": {
-          width: "8px",
-          height: "8px",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          background: "#48BB78",
-          borderRadius: "10px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          background: "#2F855A",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "#1A202C",
-        },
-      }}
-    >
-      {/* Sidebar and SearchBox */}
-      <Box display="flex" gap={10} justifyItems="center">
-        <SideNav />
-        <SearchBox />
-      </Box>
+    <Box minH="100vh" px={4} py={24}>
+      {!showResults ? (
+        <Center minH="100vh">
+          <Container maxW="md">
+            <InputSection />
+          </Container>
+        </Center>
+      ) : (
+        <Grid
+          templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+          gap={4}
+          my={14}
+        >
+          <GridItem bg="gray.800" p={4} borderRadius="lg">
+            <InputSection />
+          </GridItem>
 
-      {/* Inflation Calculator Section */}
-      <VStack spacing={8} alignItems="center" p={10}>
-        <Heading color="white">Investment Calculator</Heading>
-
-        <Box width="100%" maxWidth="400px">
-          <Text mb={2} color="white">
-            Select Country:
-          </Text>
-          <Select
-            value={selectedCountry}
-            onChange={handleCountryChange}
-            bg="rgba(255, 255, 255, 0.1)"
-            color="white"
-            borderColor="white"
-          >
-            {Object.keys(countryOptions).map((country) => (
-              <option
-                key={country}
-                value={country}
-                style={{ backgroundColor: "black", color: "white" }}
-              >
-                {country}
-              </option>
-            ))}
-          </Select>
-        </Box>
-
-        {renderSliderWithTextbox(
-          `Investment Amount (${currencySymbol})`,
-          investmentAmount,
-          setInvestmentAmount,
-          1000,
-          1000000,
-          1000,
-          currencySymbol
-        )}
-        {renderSliderWithTextbox("Inflation Rate (%)", inflationRate, setInflationRate, 0, 20, 0.1, "%")}
-        {renderSliderWithTextbox("Years", years, setYears, 1, 30, 1)}
-
-        <Button colorScheme="teal" onClick={calculatePredictions} width="100%" mb={4}>
-          Calculate Predictions and ROI
-        </Button>
-
-        {predictedValues.length > 0 && (
-          <Box width="100%" height="400px" maxWidth="600px">
+          <GridItem bg="gray.800" p={4} borderRadius="lg">
             <Text fontSize="lg" color="white" mb={2}>
               Predicted Investment Value
             </Text>
-            <Bar
-              data={chartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      callback: function (value) {
-                        return `${currencySymbol}${value}`;
+            <Box height="320px">
+              <Bar
+                data={chartData}
+                options={{
+                  ...chartOptions,
+                  scales: {
+                    ...chartOptions.scales,
+                    y: {
+                      ...chartOptions.scales.y,
+                      ticks: {
+                        ...chartOptions.scales.y.ticks,
+                        callback: (value) => `${currencySymbol}${value}`,
                       },
                     },
                   },
-                },
-              }}
-              height={200}
-            />
-          </Box>
-        )}
+                }}
+              />
+            </Box>
+          </GridItem>
 
-        {roiValues.length > 0 && (
-          <Box mt={6} width="100%" height="400px" maxWidth="600px">
+          <GridItem bg="gray.800" p={4} borderRadius="lg">
             <Text fontSize="lg" color="white" mb={2}>
               ROI Over Time (%)
             </Text>
-            <Line
-              data={roiChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      callback: function (value) {
-                        return `${value}%`;
+            <Box height="320px">
+              <Line
+                data={roiChartData}
+                options={{
+                  ...chartOptions,
+                  scales: {
+                    ...chartOptions.scales,
+                    y: {
+                      ...chartOptions.scales.y,
+                      ticks: {
+                        ...chartOptions.scales.y.ticks,
+                        callback: (value) => `${value}%`,
                       },
                     },
                   },
-                },
-              }}
-              height={200}
-            />
-          </Box>
-        )}
-      </VStack>
+                }}
+              />
+            </Box>
+          </GridItem>
+        </Grid>
+      )}
     </Box>
   );
 };

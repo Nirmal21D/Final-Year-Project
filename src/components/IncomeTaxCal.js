@@ -32,7 +32,15 @@ const IncomeTaxCalculator = () => {
     setTax(taxAmount.toFixed(2));
   };
 
-  const renderSliderWithTextbox = (label, value, setValue, min, max, step, unit = "") => {
+  const renderSliderWithTextbox = (
+    label,
+    value,
+    setValue,
+    min,
+    max,
+    step,
+    unit = ""
+  ) => {
     const [showTooltip, setShowTooltip] = useState(false);
 
     return (
@@ -53,7 +61,7 @@ const IncomeTaxCalculator = () => {
             mr={4}
           >
             <SliderMark value={250000} mt="1" ml="-2.5" fontSize="sm">
-            250000
+              250000
             </SliderMark>
             <SliderMark value={500000} mt="1" ml="-2.5" fontSize="sm">
               500000
@@ -94,7 +102,7 @@ const IncomeTaxCalculator = () => {
       alignItems="center"
       justifyContent="center"
       p={6}
-      bg="rgba(117, 122, 140,0.299)"
+      bg="rgba(45, 55, 72, 0.25)"
       color="white"
       borderRadius="xl"
       shadow="md"
@@ -118,7 +126,8 @@ const IncomeTaxCalculator = () => {
 
       <Button
         color="#ebeff4"
-        bgGradient="linear(to-r, #0075ff ,  #9f7aea)"
+        bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+        _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
         onClick={calculateTax}
         width="100%"
         mb={4}

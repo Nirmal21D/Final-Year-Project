@@ -35,20 +35,20 @@ const Calc2 = () => {
             justifyContent="center"
             boxShadow="lg"
             backdropFilter="blur(50px)"
-            bg="rgba(255, 255, 255, 0.2)"
+            bg="rgba(45, 55, 72, 0.25)"
             p={6}
             borderRadius="md"
             color="#ebeff4"
             width="80%"
           >
-            <Heading size="md" mb={6} color="#666d74">
+            <Heading size="lg" mb={6} color="#003a5c">
               Financial Calculations
             </Heading>
             <Grid templateColumns="repeat(1,1fr)" gap={4}>
               <Button
                 color="#ebeff4"
-                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
                 whiteSpace="normal"
                 textAlign="center"
                 onClick={() => setSelectedCal("CI")}
@@ -58,7 +58,7 @@ const Calc2 = () => {
 
               <Button
                 color="#ebeff4"
-                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -68,7 +68,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
-                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -78,7 +78,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
-                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -88,7 +88,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
-                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -98,7 +98,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
-                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
@@ -108,7 +108,7 @@ const Calc2 = () => {
               </Button>
               <Button
                 color="#ebeff4"
-                _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
                 bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
                 whiteSpace="normal"
                 textAlign="center"
