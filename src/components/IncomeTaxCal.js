@@ -1,6 +1,8 @@
 "use client";
+import React, { useState } from "react";
 import {
   Box,
+  Text,
   Button,
   Slider,
   SliderMark,
@@ -8,30 +10,18 @@ import {
   SliderFilledTrack,
   SliderThumb,
   Tooltip,
-  Text,
-  Flex,
   Input,
+  Flex,
+  Container,
+  Card,
+  CardBody,
+  CardHeader,
+  Grid,
+  GridItem,
+  Stack,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
 
-const IncomeTaxCalculator = () => {
-  const [income, setIncome] = useState(250000);
-  const [tax, setTax] = useState(null);
-
-  const calculateTax = () => {
-    let taxAmount = 0;
-    if (income <= 250000) {
-      taxAmount = 0;
-    } else if (income <= 500000) {
-      taxAmount = (income - 250000) * 0.05;
-    } else if (income <= 1000000) {
-      taxAmount = 12500 + (income - 500000) * 0.2;
-    } else {
-      taxAmount = 112500 + (income - 1000000) * 0.3;
-    }
-    setTax(taxAmount.toFixed(2));
-  };
-
+const InputForm = ({ income, setIncome, tax, setTax, onCalculate }) => {
   const renderSliderWithTextbox = (
     label,
     value,
@@ -102,7 +92,7 @@ const IncomeTaxCalculator = () => {
       alignItems="center"
       justifyContent="center"
       p={6}
-      bg="rgba(45, 55, 72, 0.25)"
+      bg="rgba(45, 55, 72, 0.6)"
       color="white"
       borderRadius="xl"
       shadow="md"
@@ -126,21 +116,91 @@ const IncomeTaxCalculator = () => {
 
       <Button
         color="#ebeff4"
-        bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+        bgGradient="linear(to-l, #05153f 28.26% ,  #072561 91.2%)"
         _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-        onClick={calculateTax}
+        onClick={onCalculate}
         width="100%"
         mb={4}
       >
         Calculate Tax
       </Button>
-
-      {tax !== null && (
-        <Text fontSize="lg" color="green.500" mt={4}>
-          Tax: ₹{tax}
-        </Text>
-      )}
     </Box>
+  );
+};
+
+const IncomeTaxCalculator = () => {
+  const [income, setIncome] = useState(250000);
+  const [tax, setTax] = useState(null);
+  const [showResults, setShowResults] = useState(false);
+
+  const calculateTax = () => {
+    let taxAmount = 0;
+    if (income <= 250000) {
+      taxAmount = 0;
+    } else if (income <= 500000) {
+      taxAmount = (income - 250000) * 0.05;
+    } else if (income <= 1000000) {
+      taxAmount = 12500 + (income - 500000) * 0.2;
+    } else {
+      taxAmount = 112500 + (income - 1000000) * 0.3;
+    }
+    setTax(taxAmount.toFixed(2));
+    setShowResults(true);
+  };
+
+  return (
+    <Container maxW="7xl">
+      {!showResults ? (
+        <Card maxW="md" mx="auto" bg="transparent" boxShadow="none">
+          <CardBody>
+            <InputForm
+              income={income}
+              setIncome={setIncome}
+              tax={tax}
+              setTax={setTax}
+              onCalculate={calculateTax}
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <Grid
+          templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+          gap={6}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <GridItem>
+            <Card height="100%" width="30vw" bg="transparent" boxShadow="none">
+              <CardHeader></CardHeader>
+              <CardBody>
+                <InputForm
+                  income={income}
+                  setIncome={setIncome}
+                  tax={tax}
+                  setTax={setTax}
+                  onCalculate={calculateTax}
+                />
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          <GridItem>
+            <Card height="100%" bg="#567C8D">
+              <CardBody>
+                <Box width="100%" position="relative">
+                  <Stack spacing={4}>
+                    <Text fontSize="lg" color="white">
+                      Tax: ₹{tax}
+                    </Text>
+                  </Stack>
+                </Box>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </Grid>
+      )}
+    </Container>
   );
 };
 

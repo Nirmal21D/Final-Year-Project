@@ -1726,16 +1726,6 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpac
 
 /***/ }),
 
-/***/ "(ssr)/./node_modules/@chakra-ui/icons/dist/chunk-LGS2EUKR.mjs":
-/*!***************************************************************!*\
-  !*** ./node_modules/@chakra-ui/icons/dist/chunk-LGS2EUKR.mjs ***!
-  \***************************************************************/
-/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
-
-eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   SearchIcon: () => (/* binding */ SearchIcon)\n/* harmony export */ });\n/* harmony import */ var _chakra_ui_icon__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @chakra-ui/icon */ \"(ssr)/./node_modules/@chakra-ui/icon/dist/chunk-DEQZ7DVA.mjs\");\n/* __next_internal_client_entry_do_not_use__ SearchIcon auto */ // src/Search.tsx\n\nvar SearchIcon = (0,_chakra_ui_icon__WEBPACK_IMPORTED_MODULE_0__.createIcon)({\n    d: \"M23.384,21.619,16.855,15.09a9.284,9.284,0,1,0-1.768,1.768l6.529,6.529a1.266,1.266,0,0,0,1.768,0A1.251,1.251,0,0,0,23.384,21.619ZM2.75,9.5a6.75,6.75,0,1,1,6.75,6.75A6.758,6.758,0,0,1,2.75,9.5Z\",\n    displayName: \"SearchIcon\"\n});\n //# sourceMappingURL=chunk-LGS2EUKR.mjs.map\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHNzcikvLi9ub2RlX21vZHVsZXMvQGNoYWtyYS11aS9pY29ucy9kaXN0L2NodW5rLUxHUzJFVUtSLm1qcyIsIm1hcHBpbmdzIjoiOzs7Ozs7QUFBMkI7QUFFcEIsSUFBTUMsYUFBYUQsMkRBQVVBLENBQUM7SUFDbkNFLEdBQUc7SUFDSEMsYUFBYTtBQUNmIiwic291cmNlcyI6WyJ3ZWJwYWNrOi8vZmluYW5jZS8uLi9zcmMvU2VhcmNoLnRzeD83NTc3Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IGNyZWF0ZUljb24gfSBmcm9tIFwiQGNoYWtyYS11aS9pY29uXCJcblxuZXhwb3J0IGNvbnN0IFNlYXJjaEljb24gPSBjcmVhdGVJY29uKHtcbiAgZDogXCJNMjMuMzg0LDIxLjYxOSwxNi44NTUsMTUuMDlhOS4yODQsOS4yODQsMCwxLDAtMS43NjgsMS43NjhsNi41MjksNi41MjlhMS4yNjYsMS4yNjYsMCwwLDAsMS43NjgsMEExLjI1MSwxLjI1MSwwLDAsMCwyMy4zODQsMjEuNjE5Wk0yLjc1LDkuNWE2Ljc1LDYuNzUsMCwxLDEsNi43NSw2Ljc1QTYuNzU4LDYuNzU4LDAsMCwxLDIuNzUsOS41WlwiLFxuICBkaXNwbGF5TmFtZTogXCJTZWFyY2hJY29uXCIsXG59KVxuIl0sIm5hbWVzIjpbImNyZWF0ZUljb24iLCJTZWFyY2hJY29uIiwiZCIsImRpc3BsYXlOYW1lIl0sInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///(ssr)/./node_modules/@chakra-ui/icons/dist/chunk-LGS2EUKR.mjs\n");
-
-/***/ }),
-
 /***/ "(ssr)/./node_modules/@chakra-ui/image/dist/chunk-QINAG4RG.mjs":
 /*!***************************************************************!*\
   !*** ./node_modules/@chakra-ui/image/dist/chunk-QINAG4RG.mjs ***!

@@ -1,37 +1,51 @@
 "use client";
-import React from "react";
-import SideNav from "../../../components/SideNav";
-import SearchBox from "../../../components/SearchBar";
+import React, { useEffect, useState } from "react";
 import SignUpPage from "../../../components/SignUpPage";
 import { Box } from "@chakra-ui/react";
-const login = () => {
+import SearchBox from "@/components/SearchBar";
+const signup = () => {
   return (
     <>
       <Box
+        id="main"
         display="flex"
         flexDirection="column"
-        gap={10}
         justifyItems="center"
-        p={5}
-        backgroundImage="url(/images/body-background.png)"
-        backgroundPosition="center"
-        backgroundSize="cover"
-        backgroundAttachment="fixed"
-        backgroundRepeat="no-repeat"
+        alignItems="center"
         height="auto"
         width="auto"
-        minHeight="100vh" // Ensures the background covers at least the full viewport height
-        minWidth="auto" // Ensures the background covers the full viewport width
+        minHeight="100vh"
+        minWidth="auto"
       >
-        <Box display="flex" gap={10} justifyItems="center">
-          <SideNav />
-          <SearchBox />
+        <Box
+          id="upper"
+          position="fixed"
+          top="0"
+          left="0"
+          right="0"
+          zIndex="1000"
+        >
+          <Box
+            id="search"
+            width="100%"
+            background="#003a5c"
+            height="9vh"
+            display="flex"
+            alignItems="center"
+            justifyContent="space-around"
+            color="#ffffff"
+          >
+            Finance Mastery
+          </Box>
         </Box>
-
-        <SignUpPage />
+        <Box id="lower" w="full">
+          <Box id="signup">
+            <SignUpPage />
+          </Box>
+        </Box>
       </Box>
     </>
   );
 };
 
-export default login;
+export default signup;

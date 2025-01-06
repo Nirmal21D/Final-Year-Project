@@ -1,6 +1,8 @@
 "use client";
+import React, { useState } from "react";
 import {
   Box,
+  Text,
   Button,
   Slider,
   SliderMark,
@@ -8,23 +10,28 @@ import {
   SliderFilledTrack,
   SliderThumb,
   Tooltip,
-  Text,
-  Flex,
   Input,
+  Flex,
+  Container,
+  Card,
+  CardBody,
+  CardHeader,
+  Grid,
+  GridItem,
+  Stack,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
 
-const FDCalculator = () => {
-  const [principal, setPrincipal] = useState(10000);
-  const [rate, setRate] = useState(5);
-  const [time, setTime] = useState(1);
-  const [fdAmount, setFDAmount] = useState(null);
-
-  const calculateFD = () => {
-    const maturityAmount = principal * Math.pow(1 + rate / 100, time);
-    setFDAmount(maturityAmount.toFixed(2));
-  };
-
+const InputForm = ({
+  principal,
+  setPrincipal,
+  rate,
+  setRate,
+  time,
+  setTime,
+  fdAmount,
+  setFDAmount,
+  onCalculate,
+}) => {
   const renderSliderWithTextbox = (
     label,
     value,
@@ -95,7 +102,7 @@ const FDCalculator = () => {
       alignItems="center"
       justifyContent="center"
       p={6}
-      bg="rgba(45, 55, 72, 0.25)"
+      bg="rgba(45, 55, 72, 0.6)"
       color="white"
       borderRadius="xl"
       shadow="md"
@@ -129,21 +136,91 @@ const FDCalculator = () => {
 
       <Button
         color="#ebeff4"
-        bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+        bgGradient="linear(to-l, #05153f 28.26% ,  #072561 91.2%)"
         _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-        onClick={calculateFD}
+        onClick={onCalculate}
         width="100%"
         mb={4}
       >
         Calculate FD
       </Button>
-
-      {fdAmount && (
-        <Text fontSize="lg" color="green.500" mt={4}>
-          FD Maturity Amount: ₹{fdAmount}
-        </Text>
-      )}
     </Box>
+  );
+};
+const FDCalculator = () => {
+  const [principal, setPrincipal] = useState(10000);
+  const [rate, setRate] = useState(5);
+  const [time, setTime] = useState(1);
+  const [fdAmount, setFDAmount] = useState(null);
+  const [showResults, setShowResults] = useState(false);
+
+  const calculateFD = () => {
+    const maturityAmount = principal * Math.pow(1 + rate / 100, time);
+    setFDAmount(maturityAmount.toFixed(2));
+    setShowResults(true);
+  };
+
+  return (
+    <Container maxW="7xl">
+      {!showResults ? (
+        <Card maxW="md" mx="auto" bg="transparent" boxShadow="none">
+          <CardBody>
+            <InputForm
+              principal={principal}
+              setPrincipal={setPrincipal}
+              rate={rate}
+              setRate={setRate}
+              time={time}
+              setTime={setTime}
+              fdAmount={fdAmount}
+              setFDAmount={setFDAmount}
+              onCalculate={calculateFD}
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <Grid
+          templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+          gap={6}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <GridItem>
+            <Card height="100%" width="30vw" bg="transparent" boxShadow="none">
+              <CardHeader></CardHeader>
+              <CardBody>
+                <InputForm
+                  principal={principal}
+                  setPrincipal={setPrincipal}
+                  rate={rate}
+                  setRate={setRate}
+                  time={time}
+                  setTime={setTime}
+                  fdAmount={fdAmount}
+                  setFDAmount={setFDAmount}
+                  onCalculate={calculateFD}
+                />
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          <GridItem>
+            <Card height="100%" bg="#567C8D">
+              <CardBody>
+                <Box width="100%" position="relative">
+                  <Stack spacing={4}>
+                    <Text fontSize="lg" color="white">
+                      FD Maturity Amount: ₹{fdAmount}
+                    </Text>
+                  </Stack>
+                </Box>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </Grid>
+      )}
+    </Container>
   );
 };
 

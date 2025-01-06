@@ -1,6 +1,8 @@
 "use client";
+import React, { useState } from "react";
 import {
   Box,
+  Text,
   Button,
   Slider,
   SliderMark,
@@ -8,28 +10,28 @@ import {
   SliderFilledTrack,
   SliderThumb,
   Tooltip,
-  Text,
-  Flex,
   Input,
+  Flex,
+  Container,
+  Card,
+  CardBody,
+  CardHeader,
+  Grid,
+  GridItem,
+  Stack,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
 
-const SIPCalculator = () => {
-  const [installment, setInstallment] = useState(1000); // Monthly SIP amount
-  const [rate, setRate] = useState(5); // Annual interest rate
-  const [months, setMonths] = useState(12); // Investment duration in months
-  const [sipValue, setSipValue] = useState(null);
-
-  const calculateSIP = () => {
-    const monthlyRate = rate / 100 / 12; // Convert annual rate to monthly and decimal
-    const totalAmount =
-      installment *
-      ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) *
-      (1 + monthlyRate);
-
-    setSipValue(totalAmount.toFixed(2));
-  };
-
+const InputForm = ({
+  installment,
+  setInstallment,
+  rate,
+  setRate,
+  months,
+  setMonths,
+  sipValue,
+  setSipValue,
+  onCalculate,
+}) => {
   const renderSliderWithTextbox = (
     label,
     value,
@@ -100,7 +102,7 @@ const SIPCalculator = () => {
       alignItems="center"
       justifyContent="center"
       p={6}
-      bg="rgba(45, 55, 72, 0.25)"
+      bg="rgba(45, 55, 72, 0.6)"
       color="white"
       borderRadius="xl"
       shadow="md"
@@ -141,21 +143,96 @@ const SIPCalculator = () => {
 
       <Button
         color="#ebeff4"
-        bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+        bgGradient="linear(to-l, #05153f 28.26% ,  #072561 91.2%)"
         _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-        onClick={calculateSIP}
+        onClick={onCalculate}
         width="100%"
         mb={4}
       >
         Calculate SIP
       </Button>
-
-      {sipValue && (
-        <Text fontSize="lg" color="green.500" mt={4}>
-          Future Value: ₹{sipValue}
-        </Text>
-      )}
     </Box>
+  );
+};
+const SIPCalculator = () => {
+  const [installment, setInstallment] = useState(1000); // Monthly SIP amount
+  const [rate, setRate] = useState(5); // Annual interest rate
+  const [months, setMonths] = useState(12); // Investment duration in months
+  const [sipValue, setSipValue] = useState(null);
+  const [showResults, setShowResults] = useState(false);
+
+  const calculateSIP = () => {
+    const monthlyRate = rate / 100 / 12; // Convert annual rate to monthly and decimal
+    const totalAmount =
+      installment *
+      ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) *
+      (1 + monthlyRate);
+
+    setSipValue(totalAmount.toFixed(2));
+    setShowResults(true);
+  };
+
+  return (
+    <Container maxW="7xl">
+      {!showResults ? (
+        <Card maxW="md" mx="auto" bg="transparent" boxShadow="none">
+          <CardBody>
+            <InputForm
+              installment={installment}
+              setInstallment={setInstallment}
+              rate={rate}
+              setRate={setRate}
+              months={months}
+              setMonths={setMonths}
+              sipValue={sipValue}
+              setSipValue={setSipValue}
+              onCalculate={calculateSIP}
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <Grid
+          templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+          gap={6}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <GridItem>
+            <Card height="100%" width="30vw" bg="transparent" boxShadow="none">
+              <CardHeader></CardHeader>
+              <CardBody>
+                <InputForm
+                  installment={installment}
+                  setInstallment={setInstallment}
+                  rate={rate}
+                  setRate={setRate}
+                  months={months}
+                  setMonths={setMonths}
+                  sipValue={sipValue}
+                  setSipValue={setSipValue}
+                  onCalculate={calculateSIP}
+                />
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          <GridItem>
+            <Card height="100%" bg="#567C8D">
+              <CardBody>
+                <Box width="100%" position="relative">
+                  <Stack spacing={4}>
+                    <Text fontSize="lg" color="white">
+                      Future Value: ₹{sipValue}
+                    </Text>
+                  </Stack>
+                </Box>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </Grid>
+      )}
+    </Container>
   );
 };
 

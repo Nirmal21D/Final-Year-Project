@@ -1,8 +1,6 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
-import SideNav from "../../../components/SideNav";
-import SearchBox from "../../../components/SearchBar";
+
 import LoginPage from "../../../components/LoginPage";
 import { Box } from "@chakra-ui/react";
 
@@ -22,28 +20,46 @@ const login = () => {
   }, [userLoggedIn]);
 
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      gap={10}
-      justifyItems="center"
-      p={5}
-      backgroundImage="url(/images/body-background.png)"
-      backgroundPosition="center"
-      backgroundSize="cover"
-      backgroundAttachment="fixed"
-      backgroundRepeat="no-repeat"
-      height="100vh"
-      width="100%"
-      minHeight="100vh" // Ensures the background covers at least the full viewport height
-      minWidth="100vw" // Ensures the background covers the full viewport width
-    >
-      <Box display="flex" gap={10} justifyItems="center">
-        <SideNav />
-        <SearchBox />
+    <>
+      <Box
+        id="main"
+        display="flex"
+        flexDirection="column"
+        justifyItems="center"
+        alignItems="center"
+        height="auto"
+        width="auto"
+        minHeight="100vh"
+        minWidth="auto"
+      >
+        <Box
+          id="upper"
+          position="fixed"
+          top="0"
+          left="0"
+          right="0"
+          zIndex="1000"
+        >
+          <Box
+            id="search"
+            width="100%"
+            background="#003a5c"
+            height="9vh"
+            display="flex"
+            alignItems="center"
+            justifyContent="space-around"
+            color="#ffffff"
+          >
+            Finance Mastery
+          </Box>
+        </Box>
+        <Box id="lower" w="full">
+          <Box id="login">
+            <LoginPage handleLogin={handleLogin} />
+          </Box>
+        </Box>
       </Box>
-      <LoginPage onLogin={handleLogin} />
-    </Box>
+    </>
   );
 };
 

@@ -1,5 +1,13 @@
 "use client";
-import { Box, Heading, Grid, Button, Center, Divider } from "@chakra-ui/react";
+import {
+  Box,
+  Heading,
+  Grid,
+  Button,
+  Center,
+  Divider,
+  Input,
+} from "@chakra-ui/react";
 import CICal from "./CICal";
 import EMICal from "./EMICal";
 import FDCal from "./FDCal";
@@ -47,7 +55,7 @@ const Calc2 = () => {
             <Grid templateColumns="repeat(1,1fr)" gap={4}>
               <Button
                 color="#ebeff4"
-                bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+                bgGradient="linear(to-l, #141727 , #3a416f)"
                 _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
                 whiteSpace="normal"
                 textAlign="center"
@@ -59,7 +67,7 @@ const Calc2 = () => {
               <Button
                 color="#ebeff4"
                 _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-                bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+                bgGradient="linear(to-l, #141727 , #3a416f)"
                 whiteSpace="normal"
                 textAlign="center"
                 onClick={() => setSelectedCal("EMI")}
@@ -69,7 +77,7 @@ const Calc2 = () => {
               <Button
                 color="#ebeff4"
                 _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-                bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+                bgGradient="linear(to-l, #141727 , #3a416f)"
                 whiteSpace="normal"
                 textAlign="center"
                 onClick={() => setSelectedCal("FD")}
@@ -79,7 +87,7 @@ const Calc2 = () => {
               <Button
                 color="#ebeff4"
                 _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-                bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+                bgGradient="linear(to-l, #141727 , #3a416f)"
                 whiteSpace="normal"
                 textAlign="center"
                 onClick={() => setSelectedCal("IT")}
@@ -89,7 +97,7 @@ const Calc2 = () => {
               <Button
                 color="#ebeff4"
                 _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-                bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+                bgGradient="linear(to-l, #141727 , #3a416f)"
                 whiteSpace="normal"
                 textAlign="center"
                 onClick={() => setSelectedCal("SI")}
@@ -99,7 +107,7 @@ const Calc2 = () => {
               <Button
                 color="#ebeff4"
                 _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-                bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+                bgGradient="linear(to-l, #141727 , #3a416f)"
                 whiteSpace="normal"
                 textAlign="center"
                 onClick={() => setSelectedCal("SAL")}
@@ -109,7 +117,7 @@ const Calc2 = () => {
               <Button
                 color="#ebeff4"
                 _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-                bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+                bgGradient="linear(to-l, #141727 , #3a416f)"
                 whiteSpace="normal"
                 textAlign="center"
                 onClick={() => setSelectedCal("SIP")}

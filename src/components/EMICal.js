@@ -12,31 +12,24 @@ import {
   Tooltip,
   Input,
   Flex,
+  Container,
+  Card,
+  CardBody,
+  CardHeader,
+  Grid,
+  GridItem,
+  Stack,
 } from "@chakra-ui/react";
 
-const EMICalculatorPage = () => {
-  const [principal, setPrincipal] = useState(50000);
-  const [rate, setRate] = useState(5);
-  const [tenure, setTenure] = useState(12);
-  const [emi, setEmi] = useState(null);
-  const [interest, setInterest] = useState(null);
-  const [withInterestAmount, setWithInterestAmount] = useState(null);
-
-  const calculateEMI = () => {
-    const monthlyRate = rate / 12 / 100;
-    const emiAmount =
-      (principal * monthlyRate * Math.pow(1 + monthlyRate, tenure)) /
-      (Math.pow(1 + monthlyRate, tenure) - 1);
-
-    const totalWithInterest = emiAmount * tenure;
-    const interest = totalWithInterest - principal;
-    const monthlyAmountWithInterest = interest + principal;
-
-    setInterest(interest.toFixed(2));
-    setEmi(emiAmount.toFixed(2));
-    setWithInterestAmount(totalWithInterest.toFixed(2));
-  };
-
+const InputForm = ({
+  principal,
+  setPrincipal,
+  rate,
+  setRate,
+  tenure,
+  setTenure,
+  onCalculate,
+}) => {
   const renderSliderWithTextbox = (
     label,
     value,
@@ -54,7 +47,7 @@ const EMICalculatorPage = () => {
         <Flex alignItems="center">
           <Slider
             flex="1"
-            defaultValue={value}
+            // defaultValue={value}
             min={min}
             max={max}
             step={step}
@@ -107,7 +100,7 @@ const EMICalculatorPage = () => {
       alignItems="center"
       justifyContent="center"
       p={6}
-      bg="rgba(45, 55, 72, 0.25)"
+      bg="rgba(45, 55, 72, 0.6)"
       color="white"
       borderRadius="xl"
       shadow="md"
@@ -141,31 +134,105 @@ const EMICalculatorPage = () => {
 
       <Button
         color="#ebeff4"
-        bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+        bgGradient="linear(to-l, #05153f 28.26% ,  #072561 91.2%)"
         _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-        onClick={calculateEMI}
+        onClick={onCalculate}
         width="100%"
         mb={4}
       >
         Calculate EMI
       </Button>
-
-      {emi && (
-        <Text fontSize="lg" color="green.500" mt={4}>
-          EMI Amount: ₹{emi}
-        </Text>
-      )}
-      {interest && (
-        <Text fontSize="lg" color="green.500" mt={2}>
-          Interest: ₹{interest}
-        </Text>
-      )}
-      {withInterestAmount && (
-        <Text fontSize="lg" color="green.500" mt={2}>
-          Total Repayment with Interest: ₹{withInterestAmount}
-        </Text>
-      )}
     </Box>
+  );
+};
+
+const EMICalculatorPage = () => {
+  const [principal, setPrincipal] = useState(50000);
+  const [rate, setRate] = useState(5);
+  const [tenure, setTenure] = useState(12);
+  const [emi, setEmi] = useState(null);
+  const [interest, setInterest] = useState(null);
+  const [withInterestAmount, setWithInterestAmount] = useState(null);
+  const [showResults, setShowResults] = useState(false);
+
+  const calculateEMI = () => {
+    const monthlyRate = rate / 12 / 100;
+    const emiAmount =
+      (principal * monthlyRate * Math.pow(1 + monthlyRate, tenure)) /
+      (Math.pow(1 + monthlyRate, tenure) - 1);
+
+    const totalWithInterest = emiAmount * tenure;
+    const interestAmount = totalWithInterest - principal;
+
+    setInterest(interestAmount.toFixed(2));
+    setEmi(emiAmount.toFixed(2));
+    setWithInterestAmount(totalWithInterest.toFixed(2));
+    setShowResults(true);
+  };
+
+  return (
+    <Container maxW="7xl">
+      {!showResults ? (
+        <Card maxW="md" mx="auto" bg="transparent" boxShadow="none">
+          <CardBody>
+            <InputForm
+              principal={principal}
+              setPrincipal={setPrincipal}
+              rate={rate}
+              setRate={setRate}
+              tenure={tenure}
+              setTenure={setTenure}
+              onCalculate={calculateEMI}
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <Grid
+          templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          gap={6}
+        >
+          <GridItem>
+            <Card height="100%" width="30vw" bg="transparent" boxShadow="none">
+              <CardHeader></CardHeader>
+              <CardBody>
+                <InputForm
+                  principal={principal}
+                  setPrincipal={setPrincipal}
+                  rate={rate}
+                  setRate={setRate}
+                  tenure={tenure}
+                  setTenure={setTenure}
+                  onCalculate={calculateEMI}
+                />
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          <GridItem>
+            <Card height="100%" bg="#567C8D">
+              <CardBody>
+                <Box width="auto " position="relative">
+                  <Stack spacing={4}>
+                    <Text fontSize="lg" color="white">
+                      EMI Amount: ₹{emi}
+                    </Text>
+                    <Text fontSize="lg" color="white">
+                      Interest: ₹{interest}
+                    </Text>
+                    <Text fontSize="lg" color="white">
+                      Total Repayment with Interest: ₹{withInterestAmount}
+                    </Text>
+                  </Stack>
+                </Box>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </Grid>
+      )}
+    </Container>
   );
 };
 
