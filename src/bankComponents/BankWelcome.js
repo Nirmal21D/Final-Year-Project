@@ -37,7 +37,12 @@ const BankWelcome = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
         <Spinner size="xl" color="teal.500" />
       </Box>
     );
@@ -45,26 +50,39 @@ const BankWelcome = () => {
 
   if (!bankData) {
     return (
-      <VStack spacing={4} align="center" mt={10}>
-        <Text fontSize="3xl" color="white" fontWeight="bold">
+      <Box
+        bg="white"
+        p={6}
+        borderRadius="md"
+        shadow="md"
+        textAlign="center"
+        mb={6}
+      >
+        <Text fontSize="2xl" fontWeight="bold" color="gray.700" mb={2}>
           Please Sign Up or Login to continue
         </Text>
-      </VStack>
+      </Box>
     );
   }
 
   return (
-    <VStack spacing={2} align="center" mt={10}>
-      <Text fontSize="md" color="gray.400">
-        Welcome back,
+    <Box
+      bg="white"
+      p={6}
+      borderRadius="md"
+      shadow="md"
+      textAlign="center"
+      mb={6}
+    >
+      <Text fontSize="2xl" fontWeight="bold" color="gray.700" mb={2}>
+        Welcome to Finance Mastery!
       </Text>
-      <Text fontSize="3xl" color="white" fontWeight="bold">
-        {bankData.bankName || "Bank"}
+      <Text fontSize="md" color="gray.600">
+        We're excited to have your bank onboard. Whether you're here to explore
+        or manage plans, we're committed to empowering you with tools to reach
+        your goals. Let’s make finance simple and effective together!
       </Text>
-      <Text fontSize="lg" color="gray.400">
-        Glad to see you again!
-      </Text>
-    </VStack>
+    </Box>
   );
 };
 

@@ -17,7 +17,20 @@ import {
   WrapItem,
   Avatar,
   Text,
+  VStack,
 } from "@chakra-ui/react";
+import {
+  FiHome,
+  FiFilePlus,
+  FiFileText,
+  FiUser,
+  FiLogOut,
+  FiUserPlus,
+  FiLogIn,
+  FiTrendingUp,
+  FiBell,
+  FiSettings,
+} from "react-icons/fi";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import Link from "next/link";
 import { auth, db } from "../firebase"; // Added db import
@@ -67,7 +80,105 @@ const SideNav = () => {
 
   return (
     <>
-      <Button ref={btnRef} bg="#152b5a" onClick={onOpen} position="fixed">
+      <Text fontSize="2xl" fontWeight="bold" mb={6}>
+        Finance Mastery
+      </Text>
+      <VStack spacing={4} align="stretch">
+        <Link href="/bankdashboard">
+          <Button
+            w={"full"}
+            leftIcon={<FiHome />}
+            variant="ghost"
+            justifyContent="flex-start"
+            colorScheme="whiteAlpha"
+          >
+            Dashboard
+          </Button>
+        </Link>
+        <Link href=" /addplans">
+          <Button
+            w="full"
+            leftIcon={<FiFilePlus />}
+            variant="ghost"
+            justifyContent="flex-start"
+            colorScheme="whiteAlpha"
+          >
+            Add New Plan
+          </Button>
+        </Link>
+        <Link href=" /bankplans">
+          <Button
+            w={"full"}
+            leftIcon={<FiFileText />}
+            variant="ghost"
+            justifyContent="flex-start"
+            colorScheme="whiteAlpha"
+          >
+            Bank Plans
+          </Button>
+        </Link>
+
+        {!user ? (
+          <>
+            <Link href="/signup">
+              <Button
+                w={"full"}
+                leftIcon={<FiUserPlus />}
+                variant="ghost"
+                justifyContent="flex-start"
+                colorScheme="whiteAlpha"
+              >
+                Sign Up
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button
+                w={"full"}
+                leftIcon={<FiLogIn />}
+                variant="ghost"
+                justifyContent="flex-start"
+                colorScheme="whiteAlpha"
+              >
+                Login
+              </Button>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link href=" /bankprofile">
+              <Button
+                w={"full"}
+                leftIcon={<FiUser />}
+                variant="ghost"
+                justifyContent="flex-start"
+                colorScheme="whiteAlpha"
+              >
+                My Profile
+              </Button>
+            </Link>
+            <Button
+              w={"full"}
+              leftIcon={<FiLogOut />}
+              variant="ghost"
+              justifyContent="flex-start"
+              colorScheme="whiteAlpha"
+              onClick={handleLogout}
+            >
+              Log Out
+            </Button>
+          </>
+        )}
+      </VStack>
+      {/* <Button
+        ref={btnRef}
+        bg="#152b5a"
+        onClick={onOpen}
+        position="fixed"
+        width="2vw"
+        borderRadius="50"
+        top={4}
+        border="2px solid #c1c1c1"
+      >
         <HamburgerIcon color="#c1c1c1" />
       </Button>
       <Drawer
@@ -250,7 +361,7 @@ const SideNav = () => {
             )}
           </DrawerBody>
         </DrawerContent>
-      </Drawer>
+      </Drawer> */}
     </>
   );
 };

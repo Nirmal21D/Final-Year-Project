@@ -1,36 +1,44 @@
-
 "use client";
 import React from "react";
 import BankSidenav from "@/bankComponents/BankSidenav";
-import Navbar from "@/bankComponents/Navbar";
-import { Box } from "@chakra-ui/react";
-import PlanDisplay from '@/bankComponents/plandisplay'
+
+import { Box, Flex } from "@chakra-ui/react";
+import PlanDisplay from "@/bankComponents/plandisplay";
+import BankHeaders from "@/bankComponents/BankHeaders";
 const page = () => {
   return (
     <>
-      <Box
-        display="flex"
-        flexDirection="column"
-        gap={10}
-        justifyItems="center"
-        p={5}
-        backgroundImage="url(/images/body-background.png)"
-        backgroundPosition="center"
-        backgroundSize="cover"
-        backgroundAttachment="fixed"
-        backgroundRepeat="no-repeat"
-        minHeight="100vh" // Ensure it covers the viewport height
-        width="auto" // Ensure it covers the viewport width
-        overflow="hidden" // Prevent the background from being repeated unnecessarily
-        color="white"
-      >
-        <Box display="flex" gap={30} justifyItems="center" pb={16}>
+      <Flex h="auto">
+        {/* Sidebar */}
+        <Box
+          w="20%"
+          bg="gray.800"
+          color="white"
+          p={4}
+          position={"fixed"}
+          h={"full"}
+        >
           <BankSidenav />
-          <Navbar />
         </Box>
-        <PlanDisplay p={16}></PlanDisplay>
-      </Box>
-      
+
+        {/* Main Content */}
+        <Box
+          w="80%"
+          bg="gray.50"
+          display="flex"
+          flexDirection="column"
+          position={"absolute"}
+          left={"20%"}
+          h={"full"}
+        >
+          <Box position="fixed" width="80%" zIndex={1000}>
+            <BankHeaders />
+          </Box>
+          <Box px={6} mt={20} h="full">
+            <PlanDisplay />
+          </Box>
+        </Box>
+      </Flex>
     </>
   );
 };

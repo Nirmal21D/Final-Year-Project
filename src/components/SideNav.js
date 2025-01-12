@@ -25,7 +25,6 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports
 import { investmentPlans } from "./PlanData";
 
-
 const SideNav = () => {
   const [activeType, setActiveType] = useState(null);
 
@@ -119,7 +118,6 @@ const SideNav = () => {
               {/* __________________________________________________________________________________________ */}
 
               <Menu closeOnSelect={false}>
-               
                 <MenuButton
                   as={Button}
                   bg="rgba(229, 229, 229, 0.1)"
@@ -189,31 +187,31 @@ const SideNav = () => {
                 </Link>
               </Menu>
               <Menu>
-                    <Link href=" /budget">
-                      <MenuButton
-                        as={Button}
-                        bg="rgba(229, 229, 229, 0.1)"
-                        color="#e9ecef"
-                        width="full"
-                        _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
-                      >
-                        Budget Planner
-                      </MenuButton>
-                    </Link>
-                  </Menu>
-                  <Menu>
-                    <Link href=" /inflation">
-                      <MenuButton
-                        as={Button}
-                        bg="rgba(229, 229, 229, 0.1)"
-                        color="#e9ecef"
-                        width="full"
-                        _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
-                      >
-                        Inflation
-                      </MenuButton>
-                    </Link>
-                  </Menu>
+                <Link href=" /budget">
+                  <MenuButton
+                    as={Button}
+                    bg="rgba(229, 229, 229, 0.1)"
+                    color="#e9ecef"
+                    width="full"
+                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                  >
+                    Budget Planner
+                  </MenuButton>
+                </Link>
+              </Menu>
+              <Menu>
+                <Link href=" /inflation">
+                  <MenuButton
+                    as={Button}
+                    bg="rgba(229, 229, 229, 0.1)"
+                    color="#e9ecef"
+                    width="full"
+                    _hover={{ bg: "rgba(229, 229, 229, 0.8)" }}
+                  >
+                    Inflation
+                  </MenuButton>
+                </Link>
+              </Menu>
               {!user ? (
                 <>
                   <Menu>

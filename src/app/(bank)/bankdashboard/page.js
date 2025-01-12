@@ -1,57 +1,182 @@
-"use client";
+// "use client";
+
+// import React from "react";
+// import { Box } from "@chakra-ui/react";
+// import BankSidenav from "@/bankComponents/BankSidenav";
+// import DashStats from "@/bankComponents/DashStats";
+// import BankWelcome from "@/bankComponents/BankWelcome";
+
+// const page = () => {
+//   return (
+//     <>
+//       <Box
+//         id="main"
+//         display="flex"
+//         flexDirection="column"
+//         justifyItems="center"
+//         alignItems="center"
+//         backgroundImage="url(/images/newbg.png)"
+//         backgroundPosition="center"
+//         backgroundSize="cover"
+//         backgroundAttachment="fixed"
+//         backgroundRepeat="no-repeat"
+//         height="auto"
+//         width="auto"
+//         minHeight="100vh"
+//         minWidth="auto"
+//       >
+//         <Box
+//           id="upper"
+//           position="fixed"
+//           top="0"
+//           left="0"
+//           right="0"
+//           zIndex="1000"
+//         >
+//           <BankSidenav />
+//         </Box>
+//         <Box
+//           id="lower"
+//           w="full"
+//           display="flex"
+//           alignItems="center"
+//           justifyContent="center"
+//           flexDirection="column"
+//         >
+//           <Box
+//             id="welcome"
+//             m="40px"
+//             height="30vh"
+//             width="90%"
+//             borderRadius="xl"
+//             boxShadow="lg"
+//             backdropFilter="blur(50px)"
+//             bg="rgba(45, 55, 72, 0.2)"
+//             // border="1px solid rgba(255, 255, 255)"
+//             marginTop="calc(17vh + 40px)" // 17vh (navbar height) + original margin
+//           >
+//             <BankWelcome />
+//             <DashStats />
+//           </Box>
+//         </Box>
+//       </Box>
+//     </>
+//   );
+// };
+// export default page;
+
+// "use client";
+// import React from "react";
+// import { Box } from "@chakra-ui/react";
+// import BankSidenav from "@/bankComponents/BankSidenav";
+// import DashStats from "@/bankComponents/DashStats";
+// import BankWelcome from "@/bankComponents/BankWelcome";
+// import BankHeaders from "@/bankComponents/BankHeaders";
+// import Calendar from "@/bankComponents/Calendar";
+// const page = () => {
+//   return (
+//     <>
+//       <Box
+//         id="main"
+//         display="flex"
+//         flexDirection="column"
+//         justifyItems="center"
+//         alignItems="center"
+//         backgroundImage="url(/images/newbg.png)"
+//         backgroundPosition="center"
+//         backgroundSize="cover"
+//         backgroundAttachment="fixed"
+//         backgroundRepeat="no-repeat"
+//         height="auto"
+//         width="auto"
+//         minHeight="100vh"
+//         minWidth="auto"
+//         p={5}
+//       >
+//         <Box id="upper">
+//           <BankHeaders />
+//         </Box>
+//         <Box
+//           id="lower"
+//           w="full"
+//           // display="flex"
+//           // alignItems="center"
+//           // justifyContent="center"
+//           // flexDirection="column"
+//         >
+//           <Box id="calendar" marginTop="14vh">
+//             <Calendar />
+//           </Box>
+//         </Box>
+//       </Box>
+//     </>
+//   );
+// };
+// export default page;
+
+// import React from "react";
+// import { Box, Flex } from "@chakra-ui/react";
+
+// import BankHeaders from "@/bankComponents/BankHeaders";
+// import BankSidenav from "@/bankComponents/BankSidenav";
+// import DashStats from "@/bankComponents/DashStats";
+
+// const BankDashboard = () => {
+//   return (
+//     <Flex h="100vh">
+//       {/* Sidebar */}
+//       <Box w="20%" bg="gray.800" color="white" p={4}>
+//         <BankSidenav />
+//       </Box>
+
+//       {/* Main Content */}
+//       <Box w="80%" bg="gray.50" display="flex" flexDirection="column">
+//         <Box position="fixed" width="80%">
+//           <BankHeaders />
+//         </Box>
+//         <Box px={6} mt={24}>
+//           <DashStats />
+//         </Box>
+//       </Box>
+//     </Flex>
+//   );
+// };
+
+// export default BankDashboard;
 
 import React from "react";
-import { Box } from "@chakra-ui/react";
+import { Box, Flex } from "@chakra-ui/react";
+
+import BankHeaders from "@/bankComponents/BankHeaders";
 import BankSidenav from "@/bankComponents/BankSidenav";
-// import Navbar from "@/app/bankComponents/Navbar";
 import DashStats from "@/bankComponents/DashStats";
 import BankWelcome from "@/bankComponents/BankWelcome";
 
-const page = () => {
+const BankDashboard = () => {
   return (
-    <>
-      <Box
-        display="flex"
-        flexDirection="column"
-        gap={10}
-        justifyItems="center"
-        p={5}
-        backgroundImage="url(/images/body-background.png)"
-        backgroundPosition="center"
-        backgroundSize="cover"
-        backgroundAttachment="fixed"
-        backgroundRepeat="no-repeat"
-        minHeight="100vh" // Ensure it covers the viewport height
-        width="auto" // Ensure it covers the viewport width
-        overflow="hidden" // Prevent the background from being repeated unnecessarily
-      >
-        <Box display="flex" gap={30} justifyItems="center">
-          <BankSidenav />
-          {/* <Navbar /> */}
+    <Flex h="100vh">
+      {/* Sidebar */}
+      <Box w="20%" bg="gray.800" color="white" p={4}>
+        <BankSidenav />
+      </Box>
+
+      {/* Main Content */}
+      <Box w="80%" bg="gray.50" display="flex" flexDirection="column">
+        {/* Fixed Header */}
+        <Box position="fixed" width="80%">
+          <BankHeaders />
         </Box>
-        <DashStats />
-        <Box
-          alignSelf="center"
-          backgroundImage="url(/images/creature.png)"
-          backgroundPosition="center"
-          backgroundRepeat="no-repeat"
-          backgroundSize="cover"
-          height="60vh"
-          width="95%"
-          borderRadius="lg"
-          display="flex"
-          justifyContent="flex-start"
-          flexDirection="column"
-          p={8}
-          position="relative"
-          top={8}
-          my={5}
-        >
+
+        {/* Scrollable Content */}
+        <Box px={6} mt={24}>
           <BankWelcome />
+
+          {/* Dashboard Stats */}
+          <DashStats />
         </Box>
       </Box>
-    </>
+    </Flex>
   );
 };
 
-export default page;
+export default BankDashboard;

@@ -200,6 +200,17 @@ const BudgetPlannerPage = () => {
     ],
   };
 
+  const options = {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: "white", // Set the legend text color to white
+        },
+      },
+    },
+  };
+
   return (
     <Container maxW={containerWidth} py={containerPadding}>
       {!showResults ? (
@@ -237,7 +248,7 @@ const BudgetPlannerPage = () => {
               </CardHeader>
               <CardBody>
                 <Box width="100%" height={chartSize} position="relative">
-                  <Pie data={data} options={{ maintainAspectRatio: false }} />
+                  <Pie data={data} options={options} />
                 </Box>
               </CardBody>
             </Card>
