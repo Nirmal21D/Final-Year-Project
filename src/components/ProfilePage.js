@@ -1,12 +1,5 @@
 "use client";
-import {
-  Box,
-  Button,
-  Input,
-  Text,
-  Flex,
-  useToast,
-} from "@chakra-ui/react";
+import { Box, Button, Input, Text, Flex, useToast } from "@chakra-ui/react";
 import React, { useState } from "react";
 
 const ProfilePage = () => {
@@ -14,7 +7,7 @@ const ProfilePage = () => {
   const [passwd, setPasswd] = useState("");
   const [phone, setPhone] = useState("");
   const [salary, setSalary] = useState("");
- 
+
   const [username, setUsername] = useState("");
   const [fundsHistory, setFundsHistory] = useState(["funds"]);
   const toast = useToast();
@@ -39,9 +32,10 @@ const ProfilePage = () => {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         bg="transparent"
-        color="white"
+        color="black"
         size="lg"
         flex="1"
+        borderColor={"black"}
       />
     </Flex>
   );
@@ -54,7 +48,7 @@ const ProfilePage = () => {
       justifyContent="center"
       p={6}
       bg="rgba(117, 122, 140,0.299)"
-      color="white"
+      color="black"
       borderRadius="xl"
       shadow="md"
       width="100%"
@@ -69,7 +63,7 @@ const ProfilePage = () => {
       {renderHorizontalInput("Password", passwd, setPasswd, "password")}
       {renderHorizontalInput("Phone", phone, setPhone, "number")}
       {renderHorizontalInput("Salary", salary, setSalary)}
-      
+
       {renderHorizontalInput("Username", username, setUsername)}
 
       <Box mb={4} width="100%">
@@ -92,7 +86,8 @@ const ProfilePage = () => {
 
       <Button
         color="#ebeff4"
-        bgGradient="linear(to-r, #0075ff ,  #9f7aea)"
+        bgGradient="linear(to-l, #141727 , #3a416f)"
+        _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
         onClick={saveProfile}
         width="100%"
         mb={4}

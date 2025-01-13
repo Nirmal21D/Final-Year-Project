@@ -1,304 +1,1053 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Heading, Text, Table, Thead, Tbody, Tr, Th, Td, Button, Input, NumberInput, NumberInputField, Textarea, VStack, HStack, useToast } from '@chakra-ui/react';
-import { collection, getDocs, query, where, deleteDoc, doc, setDoc } from 'firebase/firestore';
-import { db, auth } from '@/firebase'; // Ensure db and auth are imported
-import { onAuthStateChanged } from 'firebase/auth';
+// "use client";
+// import React, { useState, useEffect } from "react";
+// import {
+//   Box,
+//   Heading,
+//   Text,
+//   Table,
+//   Thead,
+//   Tbody,
+//   Tr,
+//   Th,
+//   Td,
+//   Button,
+//   Input,
+//   NumberInput,
+//   NumberInputField,
+//   Textarea,
+//   VStack,
+//   HStack,
+//   useToast,
+//   Spinner,
+//   Alert,
+//   AlertIcon,
+//   AlertTitle,
+//   AlertDescription,
+//   useDisclosure,
+//   Modal,
+//   ModalOverlay,
+//   ModalContent,
+//   ModalHeader,
+//   ModalBody,
+//   ModalFooter,
+//   ModalCloseButton,
+//   Tab,
+//   Tabs,
+//   TabList,
+//   TabPanel,
+//   TabPanels,
+//   Badge,
+//   Tooltip,
+//   Container,
+//   Divider,
+// } from "@chakra-ui/react";
+// import {
+//   collection,
+//   getDocs,
+//   query,
+//   where,
+//   deleteDoc,
+//   doc,
+//   setDoc,
+// } from "firebase/firestore";
+// import { db, auth } from "@/firebase";
+// import { onAuthStateChanged } from "firebase/auth";
+
+// export default function PlanDisplay() {
+//   const [investmentPlans, setInvestmentPlans] = useState([]);
+//   const [loanPlans, setLoanPlans] = useState([]);
+//   const [user, setUser] = useState(null);
+//   const [editPlan, setEditPlan] = useState(null);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [error, setError] = useState(null);
+//   const { isOpen, onOpen, onClose } = useDisclosure();
+//   const toast = useToast();
+
+//   const initialFormData = {
+//     planName: "",
+//     interestRate: "",
+//     maxAmount: "",
+//     minAmount: "",
+//     tenure: "",
+//     description: "",
+//     loanName: "",
+//     investmentCategory: "",
+//     investmentSubCategory: "",
+//   };
+
+//   const [formData, setFormData] = useState(initialFormData);
+//   const [isEditingLoan, setIsEditingLoan] = useState(false);
+
+//   useEffect(() => {
+//     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+//       try {
+//         if (currentUser) {
+//           setUser(currentUser);
+//           await Promise.all([
+//             fetchInvestmentPlans(currentUser.uid),
+//             fetchLoanPlans(currentUser.uid),
+//           ]);
+//         } else {
+//           setUser(null);
+//           setInvestmentPlans([]);
+//           setLoanPlans([]);
+//         }
+//       } catch (err) {
+//         setError(err.message);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     });
+
+//     return () => unsubscribe();
+//   }, []);
+
+//   const fetchInvestmentPlans = async (userId) => {
+//     try {
+//       const q = query(
+//         collection(db, "investmentplans"),
+//         where("createdBy", "==", userId)
+//       );
+//       const querySnapshot = await getDocs(q);
+//       const plans = querySnapshot.docs.map((doc) => ({
+//         id: doc.id,
+//         ...doc.data(),
+//         createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || "N/A",
+//       }));
+//       setInvestmentPlans(plans);
+//     } catch (error) {
+//       throw new Error(`Error fetching investment plans: ${error.message}`);
+//     }
+//   };
+
+//   const fetchLoanPlans = async (userId) => {
+//     try {
+//       const q = query(
+//         collection(db, "loanplans"),
+//         where("createdBy", "==", userId)
+//       );
+//       const querySnapshot = await getDocs(q);
+//       const plans = querySnapshot.docs.map((doc) => ({
+//         id: doc.id,
+//         ...doc.data(),
+//         createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || "N/A",
+//       }));
+//       setLoanPlans(plans);
+//     } catch (error) {
+//       throw new Error(`Error fetching loan plans: ${error.message}`);
+//     }
+//   };
+
+//   const handleDeletePlan = async (planId, type) => {
+//     onOpen();
+//     const handleConfirmDelete = async () => {
+//       try {
+//         const collectionName =
+//           type === "loan" ? "loanplans" : "investmentplans";
+//         await deleteDoc(doc(db, collectionName, planId));
+
+//         if (type === "loan") {
+//           setLoanPlans((prev) => prev.filter((plan) => plan.id !== planId));
+//         } else {
+//           setInvestmentPlans((prev) =>
+//             prev.filter((plan) => plan.id !== planId)
+//           );
+//         }
+
+//         toast({
+//           title: "Plan Deleted",
+//           description: `The ${type} plan has been successfully deleted.`,
+//           status: "success",
+//           duration: 3000,
+//           isClosable: true,
+//         });
+//       } catch (error) {
+//         toast({
+//           title: "Error",
+//           description: `Failed to delete the ${type} plan: ${error.message}`,
+//           status: "error",
+//           duration: 3000,
+//           isClosable: true,
+//         });
+//       } finally {
+//         onClose();
+//       }
+//     };
+
+//     return (
+//       <Modal isOpen={isOpen} onClose={onClose}>
+//         <ModalOverlay />
+//         <ModalContent>
+//           <ModalHeader>Confirm Deletion</ModalHeader>
+//           <ModalCloseButton />
+//           <ModalBody>
+//             Are you sure you want to delete this plan? This action cannot be
+//             undone.
+//           </ModalBody>
+//           <ModalFooter>
+//             <Button colorScheme="red" mr={3} onClick={handleConfirmDelete}>
+//               Delete
+//             </Button>
+//             <Button variant="ghost" onClick={onClose}>
+//               Cancel
+//             </Button>
+//           </ModalFooter>
+//         </ModalContent>
+//       </Modal>
+//     );
+//   };
+
+//   const handleEdit = (plan, type) => {
+//     setIsEditingLoan(type === "loan");
+//     setEditPlan(plan.id);
+//     setFormData({
+//       planName: type === "loan" ? plan.loanName : plan.planName,
+//       interestRate: plan.interestRate,
+//       maxAmount: plan.maxAmount,
+//       minAmount: plan.minAmount,
+//       tenure: plan.tenure,
+//       description: plan.description,
+//       investmentCategory: plan.investmentCategory || "",
+//       investmentSubCategory: plan.investmentSubCategory || "",
+//     });
+//   };
+
+//   const handleSubmitEdit = async (e) => {
+//     e.preventDefault();
+//     setIsLoading(true);
+//     try {
+//       const collectionName = isEditingLoan ? "loanplans" : "investmentplans";
+//       await setDoc(doc(db, collectionName, editPlan), {
+//         ...formData,
+
+//         updatedAt: new Date(),
+//       });
+
+//       if (isEditingLoan) {
+//         setLoanPlans((prev) =>
+//           prev.map((plan) =>
+//             plan.id === editPlan ? { ...plan, ...formData } : plan
+//           )
+//         );
+//       } else {
+//         setInvestmentPlans((prev) =>
+//           prev.map((plan) =>
+//             plan.id === editPlan ? { ...plan, ...formData } : plan
+//           )
+//         );
+//       }
+
+//       toast({
+//         title: "Success",
+//         description: "Plan updated successfully",
+//         status: "success",
+//         duration: 3000,
+//         isClosable: true,
+//       });
+
+//       setEditPlan(null);
+//       setFormData(initialFormData);
+//     } catch (error) {
+//       toast({
+//         title: "Error",
+//         description: error.message,
+//         status: "error",
+//         duration: 3000,
+//         isClosable: true,
+//       });
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   if (isLoading) {
+//     return (
+//       <Box
+//         display="flex"
+//         justifyContent="center"
+//         alignItems="center"
+//         height="100vh"
+//       >
+//         <Spinner size="xl" color="blue.500" />
+//       </Box>
+//     );
+//   }
+
+//   if (error) {
+//     return (
+//       <Alert status="error">
+//         <AlertIcon />
+//         <AlertTitle>Error:</AlertTitle>
+//         <AlertDescription>{error}</AlertDescription>
+//       </Alert>
+//     );
+//   }
+
+//   if (!user) {
+//     return (
+//       <Alert status="warning">
+//         <AlertIcon />
+//         <AlertTitle>Authentication Required</AlertTitle>
+//         <AlertDescription>
+//           Please log in to access the bank panel.
+//         </AlertDescription>
+//       </Alert>
+//     );
+//   }
+
+//   const PlanTable = ({ plans, type }) => (
+//     <Table variant="simple" colorScheme="whiteAlpha" size="sm">
+//       <Thead>
+//         <Tr>
+//           <Th color="blue.100">
+//             {type === "loan" ? "Loan Name" : "Plan Name"}
+//           </Th>
+//           <Th color="blue.100">Interest Rate (%)</Th>
+//           <Th color="blue.100">Amount Range</Th>
+//           <Th color="blue.100">Tenure</Th>
+//           <Th color="blue.100">Actions</Th>
+//         </Tr>
+//       </Thead>
+//       <Tbody>
+//         {plans.map((plan) => (
+//           <Tr key={plan.id}>
+//             <Td>
+//               <Tooltip label={plan.description} placement="top">
+//                 <Text cursor="help">
+//                   {type === "loan" ? plan.loanName : plan.planName}
+//                 </Text>
+//               </Tooltip>
+//             </Td>
+//             <Td>
+//               <Badge colorScheme="green">{plan.interestRate}%</Badge>
+//             </Td>
+//             <Td>{`${Number(plan.minAmount).toLocaleString()} - ${Number(
+//               plan.maxAmount
+//             ).toLocaleString()}`}</Td>
+//             <Td>{plan.tenure} months</Td>
+
+//             <Td>
+//               <HStack spacing={2}>
+//                 <Button
+//                   size="sm"
+//                   colorScheme="blue"
+//                   onClick={() => handleEdit(plan, type)}
+//                 >
+//                   Edit
+//                 </Button>
+//                 <Button
+//                   size="sm"
+//                   colorScheme="red"
+//                   onClick={() => handleDeletePlan(plan.id, type)}
+//                 >
+//                   Delete
+//                 </Button>
+//               </HStack>
+//             </Td>
+//           </Tr>
+//         ))}
+//       </Tbody>
+//     </Table>
+//   );
+
+//   return (
+//     <Container maxW="container.xl" p={5}>
+//       <Box
+//         p={6}
+//         borderRadius="lg"
+//         bg="rgba(15, 21, 53, 0.95)"
+//         color="white"
+//         boxShadow="xl"
+//       >
+//         <Heading mb={4} color="blue.300" size="lg">
+//           Bank Panel
+//         </Heading>
+//         <Text color="gray.300" mb={6}>
+//           Welcome, {user.email}
+//         </Text>
+//         <Divider mb={6} />
+
+//         <Tabs variant="enclosed" colorScheme="blue">
+//           <TabList>
+//             <Tab>Investment Plans ({investmentPlans.length})</Tab>
+//             <Tab>Loan Plans ({loanPlans.length})</Tab>
+//           </TabList>
+
+//           <TabPanels>
+//             <TabPanel>
+//               {investmentPlans.length > 0 ? (
+//                 <PlanTable plans={investmentPlans} type="investment" />
+//               ) : (
+//                 <Alert status="info">
+//                   <AlertIcon />
+//                   No investment plans available.
+//                 </Alert>
+//               )}
+//             </TabPanel>
+//             <TabPanel>
+//               {loanPlans.length > 0 ? (
+//                 <PlanTable plans={loanPlans} type="loan" />
+//               ) : (
+//                 <Alert status="info">
+//                   <AlertIcon />
+//                   No loan plans available.
+//                 </Alert>
+//               )}
+//             </TabPanel>
+//           </TabPanels>
+//         </Tabs>
+
+//         {editPlan && (
+//           <Box mt={6} p={6} borderRadius="md" bg="rgba(255, 255, 255, 0.05)">
+//             <Heading size="md" mb={4} color="blue.300">
+//               Edit {isEditingLoan ? "Loan" : "Investment"} Plan
+//             </Heading>
+//             <form onSubmit={handleSubmitEdit}>
+//               <VStack spacing={4} align="stretch">
+//                 <Input
+//                   variant="filled"
+//                   name="planName"
+//                   value={formData.planName}
+//                   onChange={(e) =>
+//                     setFormData({ ...formData, planName: e.target.value })
+//                   }
+//                   placeholder={isEditingLoan ? "Loan Name" : "Plan Name"}
+//                   isRequired
+//                 />
+//                 <NumberInput
+//                   variant="filled"
+//                   min={0}
+//                   value={formData.interestRate}
+//                   onChange={(valueString) =>
+//                     setFormData({ ...formData, interestRate: valueString })
+//                   }
+//                   isRequired
+//                 >
+//                   <NumberInputField placeholder="Interest Rate (%)" />
+//                 </NumberInput>
+//                 <HStack>
+//                   <NumberInput
+//                     variant="filled"
+//                     min={0}
+//                     value={formData.minAmount}
+//                     onChange={(valueString) =>
+//                       setFormData({ ...formData, minAmount: valueString })
+//                     }
+//                     isRequired
+//                   >
+//                     <NumberInputField placeholder="Min Amount" />
+//                   </NumberInput>
+//                   <NumberInput
+//                     variant="filled"
+//                     min={0}
+//                     value={formData.maxAmount}
+//                     onChange={(valueString) =>
+//                       setFormData({ ...formData, maxAmount: valueString })
+//                     }
+//                     isRequired
+//                   >
+//                     <NumberInputField placeholder="Max Amount" />
+//                   </NumberInput>
+//                 </HStack>
+//                 <NumberInput
+//                   variant="filled"
+//                   min={1}
+//                   value={formData.tenure}
+//                   onChange={(valueString) =>
+//                     setFormData({ ...formData, tenure: valueString })
+//                   }
+//                   isRequired
+//                 >
+//                   <NumberInputField placeholder="Tenure (months)" />
+//                 </NumberInput>
+//                 <Textarea
+//                   variant="filled"
+//                   name="description"
+//                   value={formData.description}
+//                   onChange={(e) =>
+//                     setFormData({ ...formData, description: e.target.value })
+//                   }
+//                   placeholder="Description"
+//                   isRequired
+//                 />
+//                 <HStack spacing={4}>
+//                   <Button
+//                     type="submit"
+//                     colorScheme="green"
+//                     isLoading={isLoading}
+//                     loadingText="Updating..."
+//                     width="full"
+//                   >
+//                     Update Plan
+//                   </Button>
+//                   <Button
+//                     onClick={() => {
+//                       setEditPlan(null);
+//                       setFormData(initialFormData);
+//                     }}
+//                     colorScheme="gray"
+//                     width="full"
+//                   >
+//                     Cancel
+//                   </Button>
+//                 </HStack>
+//               </VStack>
+//             </form>
+//           </Box>
+//         )}
+//       </Box>
+//     </Container>
+//   );
+// }
+
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Heading,
+  Text,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Button,
+  Input,
+  NumberInput,
+  NumberInputField,
+  Textarea,
+  VStack,
+  HStack,
+  useToast,
+  Spinner,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Tab,
+  Tabs,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Badge,
+  Tooltip,
+  Container,
+  Divider,
+  Select,
+} from "@chakra-ui/react";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+  doc,
+  setDoc,
+} from "firebase/firestore";
+import { db, auth } from "@/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function PlanDisplay() {
-    const [investmentPlans, setInvestmentPlans] = useState([]);
-    const [loanPlans, setLoanPlans] = useState([]); // New state for loan plans
-    const [user, setUser] = useState(null); // Updated user state to null
-    const [editPlan, setEditPlan] = useState(null); // State to manage the plan being edited
-    const [formData, setFormData] = useState({
-        planName: '',
-        interestRate: '',
-        maxAmount: '',
-        minAmount: '',
-        tenure: '',
-        description: '',
-        loanName: '', // Added loan name field for loan plan
-        investmentCategory: '',
-        investmentSubCategory: '',
-    });
-    const [isEditingLoan, setIsEditingLoan] = useState(false); // State to manage loan editing
-    const toast = useToast();
+  const [investmentPlans, setInvestmentPlans] = useState([]);
+  const [loanPlans, setLoanPlans] = useState([]);
+  const [user, setUser] = useState(null);
+  const [editPlan, setEditPlan] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [planToDelete, setPlanToDelete] = useState(null);
+  const toast = useToast();
 
-    useEffect(() => {
-      const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+  const initialFormData = {
+    planName: "",
+    interestRate: "",
+    maxAmount: "",
+    minAmount: "",
+    tenure: "",
+    description: "",
+    loanName: "",
+    investmentCategory: "",
+    investmentSubCategory: "",
+  };
+  const [formData, setFormData] = useState(initialFormData);
+  const [isEditingLoan, setIsEditingLoan] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      try {
         if (currentUser) {
           setUser(currentUser);
-          await fetchInvestmentPlans(currentUser.uid); // Fetch plans for the authenticated user
-          await fetchLoanPlans(currentUser.uid); // Fetch loan plans for the authenticated user
+          await Promise.all([
+            fetchInvestmentPlans(currentUser.uid),
+            fetchLoanPlans(currentUser.uid),
+          ]);
         } else {
           setUser(null);
-          setInvestmentPlans([]); // Clear plans if no user is authenticated
-          setLoanPlans([]); // Clear loan plans if no user is authenticated
+          setInvestmentPlans([]);
+          setLoanPlans([]);
         }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const fetchInvestmentPlans = async (userId) => {
+    try {
+      const q = query(
+        collection(db, "investmentplans"),
+        where("createdBy", "==", userId)
+      );
+      const querySnapshot = await getDocs(q);
+      const plans = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || "N/A",
+      }));
+      setInvestmentPlans(plans);
+    } catch (error) {
+      throw new Error(`Error fetching investment plans: ${error.message}`);
+    }
+  };
+
+  const fetchLoanPlans = async (userId) => {
+    try {
+      const q = query(
+        collection(db, "loanplans"),
+        where("createdBy", "==", userId)
+      );
+      const querySnapshot = await getDocs(q);
+      const plans = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || "N/A",
+      }));
+      setLoanPlans(plans);
+    } catch (error) {
+      throw new Error(`Error fetching loan plans: ${error.message}`);
+    }
+  };
+
+  const handleDeleteClick = (planId, type) => {
+    setPlanToDelete({ id: planId, type });
+    onOpen();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!planToDelete) return;
+
+    try {
+      const collectionName =
+        planToDelete.type === "loan" ? "loanplans" : "investmentplans";
+      await deleteDoc(doc(db, collectionName, planToDelete.id));
+
+      if (planToDelete.type === "loan") {
+        setLoanPlans((prev) =>
+          prev.filter((plan) => plan.id !== planToDelete.id)
+        );
+      } else {
+        setInvestmentPlans((prev) =>
+          prev.filter((plan) => plan.id !== planToDelete.id)
+        );
+      }
+
+      toast({
+        title: "Plan Deleted",
+        description: `The ${planToDelete.type} plan has been successfully deleted.`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to delete the ${planToDelete.type} plan: ${error.message}`,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      onClose();
+      setPlanToDelete(null);
+    }
+  };
+
+  const handleEdit = (plan, type) => {
+    setIsEditingLoan(type === "loan");
+    setEditPlan(plan.id);
+    setFormData({
+      planName: type === "loan" ? plan.loanName : plan.planName,
+      interestRate: plan.interestRate,
+      maxAmount: plan.maxAmount,
+      minAmount: plan.minAmount,
+      tenure: plan.tenure,
+      description: plan.description,
+      investmentCategory: plan.investmentCategory || "",
+      investmentSubCategory: plan.investmentSubCategory || "",
+    });
+  };
+
+  const handleSubmitEdit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const collectionName = isEditingLoan ? "loanplans" : "investmentplans";
+      await setDoc(doc(db, collectionName, editPlan), {
+        ...formData,
+
+        updatedAt: new Date(),
       });
 
-      return () => unsubscribe(); // Cleanup subscription on unmount
-    }, []); // Empty dependency array to run once on mount
-
-    const fetchInvestmentPlans = async (userId) => {
-      try {
-        const q = query(collection(db, 'investmentplans'), where('createdBy', '==', userId)); // Query for plans created by the user
-        const querySnapshot = await getDocs(q);
-        const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setInvestmentPlans(plans);
-      } catch (error) {
-        console.error("Error fetching investment plans: ", error);
+      if (isEditingLoan) {
+        setLoanPlans((prev) =>
+          prev.map((plan) =>
+            plan.id === editPlan ? { ...plan, ...formData } : plan
+          )
+        );
+      } else {
+        setInvestmentPlans((prev) =>
+          prev.map((plan) =>
+            plan.id === editPlan ? { ...plan, ...formData } : plan
+          )
+        );
       }
-    };
 
-    const fetchLoanPlans = async (userId) => { // New function to fetch loan plans
-      try {
-        const q = query(collection(db, 'loanplans'), where('createdBy', '==', userId)); // Query for loan plans created by the user
-        const querySnapshot = await getDocs(q);
-        const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setLoanPlans(plans);
-      } catch (error) {
-        console.error("Error fetching loan plans: ", error);
-      }
-    };
-
-    const handleDeleteInvestmentPlan = async (planId) => {
-      try {
-        await deleteDoc(doc(db, 'investmentplans', planId)); // Delete the plan from the database
-        setInvestmentPlans(prevPlans => prevPlans.filter(plan => plan.id !== planId)); // Update local state
-        toast({
-          title: "Plan Deleted",
-          description: "The investment plan has been successfully deleted.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      } catch (error) {
-        console.error("Error deleting investment plan: ", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete the investment plan. Please try again.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    };
-
-    const handleDeleteLoanPlan = async (planId) => {
-      try {
-        await deleteDoc(doc(db, 'loanplans', planId)); // Delete the loan plan from the database
-        setLoanPlans(prevPlans => prevPlans.filter(plan => plan.id !== planId)); // Update local state
-        toast({
-          title: "Loan Plan Deleted",
-          description: "The loan plan has been successfully deleted.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      } catch (error) {
-        console.error("Error deleting loan plan: ", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete the loan plan. Please try again.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    };
-
-    const handleEditInvestmentPlan = (plan) => {
-      setEditPlan(plan.id);
-      setFormData({
-        planName: plan.planName,
-        interestRate: plan.interestRate,
-        maxAmount: plan.maxAmount,
-        minAmount: plan.minAmount,
-        tenure: plan.tenure,
-        description: plan.description,
-        investmentCategory: plan.investmentCategory,
-        investmentSubCategory: plan.investmentSubCategory,
+      toast({
+        title: "Success",
+        description: "Plan updated successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
       });
-    };
 
-    const handleEditLoanPlan = (plan) => {
-      setIsEditingLoan(true);
-      setEditPlan(plan.id);
-      setFormData({
-        planName: plan.loanName,
-        interestRate: plan.interestRate,
-        maxAmount: plan.maxAmount,
-        minAmount: plan.minAmount,
-        tenure: plan.tenure,
-        description: plan.description,
-        loanName: plan.loanName,
+      setEditPlan(null);
+      setFormData(initialFormData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
       });
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const handleSubmitEdit = async (e) => {
-      e.preventDefault();
-      try {
-        if (isEditingLoan) {
-          await setDoc(doc(db, 'loanplans', editPlan), {
-            ...formData,
-            createdBy: user.uid,
-          });
-          setLoanPlans(prevPlans => prevPlans.map(plan => (plan.id === editPlan ? { ...plan, loanName: formData.planName, ...formData } : plan)));
-        } else {
-          await setDoc(doc(db, 'investmentplans', editPlan), {
-            ...formData,
-            createdBy: user.uid,
-          });
-          setInvestmentPlans(prevPlans => prevPlans.map(plan => (plan.id === editPlan ? { ...plan, ...formData } : plan)));
-        }
-        setEditPlan(null);
-        setIsEditingLoan(false);
-        setFormData({
-          planName: '',
-          interestRate: '',
-          maxAmount: '',
-          minAmount: '',
-          tenure: '',
-          description: '',
-          loanName: '',
-          investmentCategory: '',
-          investmentSubCategory: '',
-        });
-        toast({
-          title: "Plan Updated",
-          description: "The plan has been successfully updated.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      } catch (error) {
-        console.error("Error updating plan: ", error);
-        toast({
-          title: "Error",
-          description: "Failed to update the plan. Please try again.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    };
-
+  if (isLoading) {
     return (
-      <Box p={5} borderWidth={1} borderRadius="md" boxShadow="md" bg="rgba(15, 21, 53, 0.8)" color="white">
-        <Heading mb={4} color="blue.300">Bank Panel</Heading>
-        {user ? <Text color="gray.300">Welcome, {user.email}</Text> : <Text color="gray.500">Please log in to see your investment plans.</Text>}
-        
-        {/* Display fetched investment plans in a table */}
-        <Box mt={4}>
-          <Heading size="md" mb={2} color="blue.200">Investment Plans</Heading>
-          {investmentPlans.length > 0 ? (
-            <Table variant="striped" colorScheme="" mt={4}>
-              <Thead>
-                <Tr>
-                  <Th color="blue.100">Plan Name</Th>
-                  <Th color="blue.100">Interest Rate (%)</Th>
-                  <Th color="blue.100">Max Amount</Th>
-                  <Th color="blue.100">Min Amount</Th>
-                  <Th color="blue.100">Tenure (months)</Th>
-                  <Th color="blue.100">Description</Th>
-                  <Th color="blue.100">Category</Th>
-                  <Th color="blue.100">Sub Category</Th>
-                  <Th color="blue.100">Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {investmentPlans.map(plan => (
-                  <Tr key={plan.id}>
-                    <Td>{plan.planName}</Td>
-                    <Td>{plan.interestRate}</Td>
-                    <Td>{plan.maxAmount}</Td>
-                    <Td>{plan.minAmount}</Td>
-                    <Td>{plan.tenure}</Td>
-                    <Td>{plan.description}</Td>
-                    <Td>{plan.investmentCategory}</Td>
-                    <Td>{plan.investmentSubCategory}</Td>
-                    <Td>
-                      <HStack spacing={2}>
-                        <Button colorScheme="blue" onClick={() => handleEditInvestmentPlan(plan)}>Edit</Button>
-                        <Button colorScheme="red" onClick={() => handleDeleteInvestmentPlan(plan.id)}>Delete</Button>
-                      </HStack>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          ) : (
-            <Text color="gray.500">No investment plans available.</Text>
-          )}
-        </Box>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <Spinner size="xl" color="blue.500" />
+      </Box>
+    );
+  }
 
-        {/* New section for displaying loan plans */}
-        <Box mt={4}>
-          <Heading size="md" mb={2} color="blue.200">Loan Plans</Heading>
-          {loanPlans.length > 0 ? (
-            <Table variant="striped" colorScheme="" mt={4}>
-              <Thead>
-                <Tr>
-                  <Th color="blue.100">Loan Name</Th>
-                  <Th color="blue.100">Interest Rate (%)</Th>
-                  <Th color="blue.100">Max Amount</Th>
-                  <Th color="blue.100">Min Amount</Th>
-                  <Th color="blue.100">Tenure (months)</Th>
-                  <Th color="blue.100">Description</Th>
-                  <Th color="blue.100">Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {loanPlans.map(plan => (
-                  <Tr key={plan.id}>
-                    <Td>{plan.loanName}</Td>
-                    <Td>{plan.interestRate}</Td>
-                    <Td>{plan.maxAmount}</Td>
-                    <Td>{plan.minAmount}</Td>
-                    <Td>{plan.tenure}</Td>
-                    <Td>{plan.description}</Td>
-                    <Td>
-                      <HStack spacing={2}>
-                        <Button colorScheme="blue" onClick={() => handleEditLoanPlan(plan)}>Edit</Button>
-                        <Button colorScheme="red" onClick={() => handleDeleteLoanPlan(plan.id)}>Delete</Button>
-                      </HStack>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          ) : (
-            <Text color="gray.500">No loan plans available.</Text>
+  if (error) {
+    return (
+      <Alert status="error">
+        <AlertIcon />
+        <AlertTitle>Error:</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Alert status="warning">
+        <AlertIcon />
+        <AlertTitle>Authentication Required</AlertTitle>
+        <AlertDescription>
+          Please log in to access the bank panel.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  const PlanTable = ({ plans, type }) => (
+    <Table variant="simple" colorScheme="whiteAlpha" size="sm">
+      <Thead>
+        <Tr>
+          <Th color="blue.100">
+            {type === "loan" ? "Loan Name" : "Plan Name"}
+          </Th>
+          <Th color="blue.100">Interest Rate (%)</Th>
+          <Th color="blue.100">Amount Range</Th>
+          <Th color="blue.100">Tenure</Th>
+          {type === "investment" && (
+            <>
+              <Th color="blue.100">Category</Th>
+              <Th color="blue.100">Sub Category</Th>
+            </>
           )}
-        </Box>
+          <Th color="blue.100">Description</Th>
+          <Th color="blue.100">Actions</Th>
+        </Tr>
+      </Thead>
+      <Tbody>
+        {plans.map((plan) => (
+          <Tr key={plan.id}>
+            <Td>
+              <Text>{type === "loan" ? plan.loanName : plan.planName}</Text>
+            </Td>
+            <Td>
+              <Badge colorScheme="green">{plan.interestRate}%</Badge>
+            </Td>
+            <Td>{`${Number(plan.minAmount).toLocaleString()} - ${Number(
+              plan.maxAmount
+            ).toLocaleString()}`}</Td>
+            <Td>{plan.tenure} months</Td>
+            {type === "investment" && (
+              <>
+                <Td>{plan.investmentCategory}</Td>
+                <Td>{plan.investmentSubCategory}</Td>
+              </>
+            )}
+            <Td>
+              <Tooltip label={plan.description} placement="top">
+                <Text noOfLines={2} cursor="help">
+                  {plan.description}
+                </Text>
+              </Tooltip>
+            </Td>
+            <Td>
+              <HStack spacing={2}>
+                <Button
+                  size="sm"
+                  colorScheme="blue"
+                  onClick={() => handleEdit(plan, type)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  colorScheme="red"
+                  onClick={() => handleDeleteClick(plan.id, type)}
+                >
+                  Delete
+                </Button>
+              </HStack>
+            </Td>
+          </Tr>
+        ))}
+      </Tbody>
+    </Table>
+  );
+
+  return (
+    <Container maxW="container.xl" p={5}>
+      <Box
+        p={6}
+        borderRadius="lg"
+        bg="rgba(15, 21, 53, 0.95)"
+        color="white"
+        boxShadow="xl"
+      >
+        <Heading mb={4} color="blue.300" size="lg">
+          Bank Panel
+        </Heading>
+        <Text color="gray.300" mb={6}>
+          Welcome, {user.email}
+        </Text>
+        <Divider mb={6} />
+
+        <Tabs variant="enclosed" colorScheme="blue">
+          <TabList>
+            <Tab>Investment Plans ({investmentPlans.length})</Tab>
+            <Tab>Loan Plans ({loanPlans.length})</Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel>
+              {investmentPlans.length > 0 ? (
+                <PlanTable plans={investmentPlans} type="investment" />
+              ) : (
+                <Alert status="info">
+                  <AlertIcon />
+                  No investment plans available.
+                </Alert>
+              )}
+            </TabPanel>
+            <TabPanel>
+              {loanPlans.length > 0 ? (
+                <PlanTable plans={loanPlans} type="loan" />
+              ) : (
+                <Alert status="info">
+                  <AlertIcon />
+                  No loan plans available.
+                </Alert>
+              )}
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
 
         {editPlan && (
-          <Box mt={4} p={4} borderWidth={1} borderRadius="md" boxShadow="md" bg="rgba(255, 255, 255, 0.1)">
-            <Heading size="md" mb={4} color="blue.300">{isEditingLoan ? "Edit Loan Plan" : "Edit Investment Plan"}</Heading>
+          <Box mt={6} p={6} borderRadius="md" bg="rgba(255, 255, 255, 0.05)">
+            <Heading size="md" mb={4} color="blue.300">
+              Edit {isEditingLoan ? "Loan" : "Investment"} Plan
+            </Heading>
             <form onSubmit={handleSubmitEdit}>
               <VStack spacing={4} align="stretch">
-                <Input name="planName" value={formData.planName} onChange={(e) => setFormData({ ...formData, planName: e.target.value })} placeholder={isEditingLoan ? "Loan Name" : "Plan Name"} />
-                <NumberInput min={0} value={formData.interestRate} onChange={(valueString) => setFormData({ ...formData, interestRate: valueString })}>
+                <Input
+                  name="planName"
+                  value={formData.planName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, planName: e.target.value })
+                  }
+                  placeholder={isEditingLoan ? "Loan Name" : "Plan Name"}
+                  isRequired
+                />
+                <NumberInput
+                  min={0}
+                  value={formData.interestRate}
+                  onChange={(valueString) =>
+                    setFormData({ ...formData, interestRate: valueString })
+                  }
+                  isRequired
+                >
                   <NumberInputField placeholder="Interest Rate (%)" />
                 </NumberInput>
-                <NumberInput min={0} value={formData.maxAmount} onChange={(valueString) => setFormData({ ...formData, maxAmount: valueString })}>
-                  <NumberInputField placeholder="Max Amount" />
-                </NumberInput>
-                <NumberInput min={0} value={formData.minAmount} onChange={(valueString) => setFormData({ ...formData, minAmount: valueString })}>
-                  <NumberInputField placeholder="Min Amount" />
-                </NumberInput>
-                <NumberInput min={1} value={formData.tenure} onChange={(valueString) => setFormData({ ...formData, tenure: valueString })}>
+                <HStack>
+                  <NumberInput
+                    min={0}
+                    value={formData.minAmount}
+                    onChange={(valueString) =>
+                      setFormData({ ...formData, minAmount: valueString })
+                    }
+                    isRequired
+                  >
+                    <NumberInputField placeholder="Min Amount" />
+                  </NumberInput>
+                  <NumberInput
+                    min={0}
+                    value={formData.maxAmount}
+                    onChange={(valueString) =>
+                      setFormData({ ...formData, maxAmount: valueString })
+                    }
+                    isRequired
+                  >
+                    <NumberInputField placeholder="Max Amount" />
+                  </NumberInput>
+                </HStack>
+                <NumberInput
+                  min={1}
+                  value={formData.tenure}
+                  onChange={(valueString) =>
+                    setFormData({ ...formData, tenure: valueString })
+                  }
+                  isRequired
+                >
                   <NumberInputField placeholder="Tenure (months)" />
                 </NumberInput>
-                <Textarea name="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Description" />
-                {isEditingLoan && (
-                  <Input name="loanName" value={formData.loanName} onChange={(e) => setFormData({ ...formData, loanName: e.target.value })} placeholder="Loan Name" />
+                {!isEditingLoan && (
+                  <>
+                    <Select
+                      placeholder="Select Category"
+                      value={formData.investmentCategory}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          investmentCategory: e.target.value,
+                        })
+                      }
+                      isRequired
+                    >
+                      <option value="Fixed Deposit">Fixed Deposit</option>
+                      <option value="Mutual Funds">Mutual Funds</option>
+                      <option value="Stocks">Stocks</option>
+                      <option value="Bonds">Bonds</option>
+                    </Select>
+                    <Select
+                      color={"black"}
+                      placeholder="Select Sub Category"
+                      value={formData.investmentSubCategory}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          investmentSubCategory: e.target.value,
+                        })
+                      }
+                      isRequired
+                    >
+                      <option value="Short Term">Short Term</option>
+                      <option value="Long Term">Long Term</option>
+                      <option value="High Risk">High Risk</option>
+                      <option value="Low Risk">Low Risk</option>
+                    </Select>
+                  </>
                 )}
-                <Button type="submit" colorScheme="green">Update Plan</Button>
+                <Textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Description"
+                  isRequired
+                />
+                <HStack spacing={4}>
+                  <Button
+                    type="submit"
+                    colorScheme="green"
+                    isLoading={isLoading}
+                    loadingText="Updating..."
+                    width="full"
+                  >
+                    Update Plan
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditPlan(null);
+                      setFormData(initialFormData);
+                    }}
+                    colorScheme="gray"
+                    width="full"
+                  >
+                    Cancel
+                  </Button>
+                </HStack>
               </VStack>
             </form>
           </Box>
         )}
       </Box>
-    );
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Confirm Deletion</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            Are you sure you want to delete this {planToDelete?.type} plan? This
+            action cannot be undone.
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="red" mr={3} onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Container>
+  );
 }

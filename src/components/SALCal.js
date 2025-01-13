@@ -1,6 +1,8 @@
 "use client";
+import React, { useState } from "react";
 import {
   Box,
+  Text,
   Button,
   Slider,
   SliderMark,
@@ -8,30 +10,34 @@ import {
   SliderFilledTrack,
   SliderThumb,
   Tooltip,
-  Text,
-  Flex,
   Input,
+  Flex,
+  Container,
+  Card,
+  CardBody,
+  CardHeader,
+  Grid,
+  GridItem,
+  Stack,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
 
-const SalaryCalculator = () => {
-  const [basicSalary, setBasicSalary] = useState(10000);
-  const [hra, setHra] = useState(10);
-  const [ta, setTa] = useState(10);
-  const [pf, setPf] = useState(5);
-  const [tax, setTax] = useState(10000);
-  const [otherDeductions, setOtherDeductions] = useState(500);
-  const [grossSalary, setGrossSalary] = useState(null);
-
-  const calculateSalary = () => {
-    const hraAmount = basicSalary * (hra / 100);
-    const pfAmount = basicSalary * (pf / 100);
-
-    const totalGrossSalary =
-      basicSalary + hraAmount + ta - pfAmount - tax - otherDeductions;
-    setGrossSalary(totalGrossSalary.toFixed(2));
-  };
-
+const InputForm = ({
+  basicSalary,
+  setBasicSalary,
+  hra,
+  setHra,
+  ta,
+  setTa,
+  pf,
+  setPf,
+  tax,
+  setTax,
+  otherDeductions,
+  setOtherDeductions,
+  grossSalary,
+  setGrossSalary,
+  onCalculate,
+}) => {
   const renderSliderWithTextbox = (
     label,
     value,
@@ -49,7 +55,6 @@ const SalaryCalculator = () => {
         <Flex alignItems="center">
           <Slider
             flex="1"
-            defaultValue={value}
             min={min}
             max={max}
             step={step}
@@ -102,7 +107,7 @@ const SalaryCalculator = () => {
       alignItems="center"
       justifyContent="center"
       p={6}
-      bg="rgba(45, 55, 72, 0.25)"
+      bg="rgba(45, 55, 72, 0.6)"
       color="white"
       borderRadius="xl"
       shadow="md"
@@ -139,21 +144,111 @@ const SalaryCalculator = () => {
 
       <Button
         color="#ebeff4"
-        bgGradient="linear(to-l, #0075ff ,  #9f7aea)"
+        bgGradient="linear(to-l, #05153f 28.26% ,  #072561 91.2%)"
         _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-        onClick={calculateSalary}
+        onClick={onCalculate}
         width="100%"
         mb={4}
       >
         Calculate Salary
       </Button>
-
-      {grossSalary && (
-        <Text fontSize="lg" color="green.500" mt={4}>
-          Gross Salary: ₹{grossSalary}
-        </Text>
-      )}
     </Box>
+  );
+};
+
+const SalaryCalculator = () => {
+  const [basicSalary, setBasicSalary] = useState(10000);
+  const [hra, setHra] = useState(10);
+  const [ta, setTa] = useState(10);
+  const [pf, setPf] = useState(5);
+  const [tax, setTax] = useState(10000);
+  const [otherDeductions, setOtherDeductions] = useState(500);
+  const [grossSalary, setGrossSalary] = useState(null);
+  const [showResults, setShowResults] = useState(false);
+
+  const calculateSalary = () => {
+    const hraAmount = basicSalary * (hra / 100);
+    const pfAmount = basicSalary * (pf / 100);
+
+    const totalGrossSalary =
+      basicSalary + hraAmount + ta - pfAmount - tax - otherDeductions;
+    setGrossSalary(totalGrossSalary.toFixed(2));
+    setShowResults(true);
+  };
+
+  return (
+    <Container maxW="7xl">
+      {!showResults ? (
+        <Card maxW="md" mx="auto" bg="transparent" boxShadow="none">
+          <CardBody>
+            <InputForm
+              basicSalary={basicSalary}
+              setBasicSalary={setBasicSalary}
+              hra={hra}
+              setHra={setHra}
+              ta={ta}
+              setTa={setTa}
+              pf={pf}
+              setPf={setPf}
+              tax={tax}
+              setTax={setTax}
+              otherDeductions={otherDeductions}
+              setOtherDeductions={setOtherDeductions}
+              grossSalary={grossSalary}
+              setGrossSalary={setGrossSalary}
+              onCalculate={calculateSalary}
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <Grid
+          templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+          gap={6}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <GridItem>
+            <Card height="100%" width="30vw" bg="transparent" boxShadow="none">
+              <CardHeader></CardHeader>
+              <CardBody>
+                <InputForm
+                  basicSalary={basicSalary}
+                  setBasicSalary={setBasicSalary}
+                  hra={hra}
+                  setHra={setHra}
+                  ta={ta}
+                  setTa={setTa}
+                  pf={pf}
+                  setPf={setPf}
+                  tax={tax}
+                  setTax={setTax}
+                  otherDeductions={otherDeductions}
+                  setOtherDeductions={setOtherDeductions}
+                  grossSalary={grossSalary}
+                  setGrossSalary={setGrossSalary}
+                  onCalculate={calculateSalary}
+                />
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          <GridItem>
+            <Card height="100%" bg="#567C8D">
+              <CardBody>
+                <Box width="100%" position="relative">
+                  <Stack spacing={4}>
+                    <Text fontSize="lg" color="white">
+                      Gross Salary: ₹{grossSalary}
+                    </Text>
+                  </Stack>
+                </Box>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </Grid>
+      )}
+    </Container>
   );
 };
 
