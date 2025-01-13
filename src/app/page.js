@@ -1,11 +1,19 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
+import { Box, IconButton } from "@chakra-ui/react";
+import { ChatIcon } from "@chakra-ui/icons";
 
-import { Box } from "@chakra-ui/react";
-import Welcome from "../components/Welcome";
-
+import Welcome from "@/components/Welcome";
 import Headers from "@/components/Headers";
-const ProfilePage = () => {
+import Chat from "@/components/chat";
+
+const MainPage = () => {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const toggleChat = () => {
+    setIsChatOpen(!isChatOpen);
+  };
+
   return (
     <>
       <Box
@@ -51,15 +59,45 @@ const ProfilePage = () => {
             boxShadow="lg"
             backdropFilter="blur(50px)"
             bg="rgba(45, 55, 72, 0.2)"
-            // border="1px solid rgba(255, 255, 255)"
-            marginTop="calc(17vh + 40px)" // 17vh (navbar height) + original margin
+            marginTop="calc(17vh + 40px)"
           >
             <Welcome />
           </Box>
+          
+          {isChatOpen && (
+            <Box
+              position="fixed"
+              bottom="20"
+              right="4"
+              width="350px"
+              height="500px"
+              borderRadius="xl"
+              boxShadow="lg"
+              backdropFilter="blur(50px)"
+              bg="rgba(45, 55, 72, 0.2)"
+              zIndex={999}
+            >
+              <Chat />
+            </Box>
+          )}
         </Box>
+        
+        <IconButton
+          position="fixed"
+          bottom="4"
+          right="4"
+          size="lg"
+          borderRadius="full"
+          colorScheme={isChatOpen ? "red" : "blue"}
+          icon={<ChatIcon />}
+          boxShadow="lg"
+          zIndex={1000}
+          aria-label={isChatOpen ? "Close Chat" : "Open Chat"}
+          onClick={toggleChat}
+        />
       </Box>
     </>
   );
 };
 
-export default ProfilePage;
+export default MainPage;
