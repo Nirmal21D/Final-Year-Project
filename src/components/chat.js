@@ -1,241 +1,106 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { useState } from "react";
 
-// Styles object
-const styles = {
-  chatContainer: {
-    width: '100%',
-    maxWidth: '800px',
-    height: '600px',
-    margin: '0 auto',
-    borderRadius: '12px',
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-    display: 'flex',
-    flexDirection: 'column',
-    background: '#ffffff',
-  },
-  chatHeader: {
-    padding: '20px',
-    background: '#2c3e50',
-    color: 'white',
-    borderRadius: '12px 12px 0 0',
-  },
-  headerTitle: {
-    margin: 0,
-    fontSize: '1.5rem',
-  },
-  messagesContainer: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  message: {
-    maxWidth: '70%',
-    padding: '12px 16px',
-    borderRadius: '12px',
-    margin: '4px 0',
-  },
-  userMessage: {
-    alignSelf: 'flex-end',
-    background: '#2c3e50',
-    color: 'white',
-  },
-  assistantMessage: {
-    alignSelf: 'flex-start',
-    background: '#f0f2f5',
-    color: '#000',
-  },
-  errorMessage: {
-    alignSelf: 'center',
-    background: '#ffebee',
-    color: '#c62828',
-  },
-  inputForm: {
-    display: 'flex',
-    padding: '20px',
-    gap: '10px',
-    borderTop: '1px solid #eee',
-  },
-  input: {
-    flex: 1,
-    padding: '12px',
-    border: '1px solid #ddd',
-    borderRadius: '6px',
-    fontSize: '1rem',
-  },
-  button: {
-    padding: '12px 24px',
-    background: '#2c3e50',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'background 0.2s',
-  },
-  buttonDisabled: {
-    background: '#ccc',
-    cursor: 'not-allowed',
-  },
-  typingIndicator: {
-    display: 'flex',
-    gap: '4px',
-    padding: '8px 16px',
-  },
-  typingDot: {
-    width: '8px',
-    height: '8px',
-    background: '#90a4ae',
-    borderRadius: '50%',
-    animation: 'bounce 1.4s infinite ease-in-out',
-  },
-};
-
-// Initialize Gemini AI
-const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(API_KEY);
-
-// Create a single chat session instance
-let chatSession;
-
-// Initialize the chat session
-async function initializeChatSession() {
-  if (!chatSession) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-        systemInstruction: `You are Finance Mastery's AI Assistant...`, // your system instruction
-      });
-      
-      chatSession = model.startChat({
-        generationConfig: {
-          temperature: 1,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 8192,
-          responseMimeType: "text/plain",
-        },
-        history: [],
-      });
-    } catch (error) {
-      console.error("Error initializing chat session:", error);
-      throw error;
-    }
-  }
-  return chatSession;
-}
-
-// Chat Interface Component
-const ChatInterface = () => {
-  const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+export default function ChatComponent() {
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [chatHistory, setChatHistory] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    setLoading(true);
+    setError("");
 
-    const userMessage = { type: 'user', content: inputMessage.trim() };
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
-    setIsLoading(true);
+    // Save user input to chat history
+    setChatHistory((prevHistory) => [
+      ...prevHistory,
+      { role: "user", text: input },
+    ]);
 
     try {
-      const session = await initializeChatSession();
-      const result = await session.sendMessage(inputMessage.trim());
+      console.log("FETCHING..")
+      const res = await fetch("/api/process-input", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input }),
+      });
+      console.log("FETCH REQUEST dONE")
 
-      if (result?.response?.text) {
-        setMessages(prev => [...prev, {
-          type: 'assistant',
-          content: result.response.text()
-        }]);
-      } else {
-        throw new Error('Unexpected response format');
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.statusText}`);
       }
-    } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, {
-        type: 'error',
-        content: `Error: ${error.message || 'There was an error processing your request.'}`
-      }]);
+
+      const data = await res.json();
+      
+      // Add AI response to chat history
+      setChatHistory((prevHistory) => [
+        ...prevHistory,
+        { role: "model", text: data.message },
+      ]);
+    } catch (err) {
+      console.error("Error fetching AI response:", err);
+      setError(err.message || "An error occurred");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+      setInput(""); // Reset input field after sending
     }
   };
 
-  const getMessageStyle = (type) => {
-    switch(type) {
-      case 'user':
-        return { ...styles.message, ...styles.userMessage };
-      case 'assistant':
-        return { ...styles.message, ...styles.assistantMessage };
-      case 'error':
-        return { ...styles.message, ...styles.errorMessage };
-      default:
-        return styles.message;
-    }
+  const formatAIResponse = (responseText) => {
+    // Split the response into individual lines and return each as a bullet point
+    return responseText
+      .split("\n") // Split by new lines
+      .map((line, index) =>
+        line.trim() ? <li key={index}>{line.trim()}</li> : null
+      ) // Only non-empty lines get a bullet point
+      .filter(Boolean); // Remove any null/empty lines
   };
 
   return (
-    <div style={styles.chatContainer}>
-      <div style={styles.chatHeader}>
-        <h2 style={styles.headerTitle}>Finance Mastery Assistant</h2>
-      </div>
-      
-      <div style={styles.messagesContainer}>
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            style={getMessageStyle(message.type)}
-          >
-            <div>{message.content}</div>
-          </div>
-        ))}
-        {isLoading && (
-          <div style={getMessageStyle('assistant')}>
-            <div style={styles.typingIndicator}>
-              <span style={{...styles.typingDot, animationDelay: '-0.32s'}}></span>
-              <span style={{...styles.typingDot, animationDelay: '-0.16s'}}></span>
-              <span style={styles.typingDot}></span>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <form onSubmit={handleSubmit} style={styles.inputForm}>
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Type your financial question..."
-          disabled={isLoading}
-          style={styles.input}
+    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
+      <h1>Finance Mastery AI Assistant</h1>
+      <form onSubmit={handleSubmit}>
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your message here..."
+          rows="4"
+          style={{ width: "100%", marginBottom: "10px", padding: "10px" }}
         />
-        <button 
-          type="submit" 
-          disabled={isLoading || !inputMessage.trim()}
-          style={{
-            ...styles.button,
-            ...(isLoading || !inputMessage.trim() ? styles.buttonDisabled : {})
-          }}
+        <button
+          type="submit"
+          style={{ padding: "10px 20px", cursor: "pointer" }}
+          disabled={loading}
         >
-          Send
+          {loading ? "Loading..." : "Send"}
         </button>
       </form>
+      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+      <div style={{ marginTop: "20px", height: "200px", overflowY: "scroll" }}>
+        <h3>Chat:</h3>
+        <div>
+          {chatHistory.map((msg, index) => (
+            <div
+              key={index}
+              style={{
+                backgroundColor: msg.role === "user" ? "#f0f0f0" : "#d0ffd0",
+                margin: "10px 0",
+                padding: "10px",
+                borderRadius: "5px",
+              }}
+            >
+              <strong>{msg.role === "user" ? "You" : "AI"}:</strong>
+              {msg.role === "model" ? (
+                <ul style={{ paddingLeft: "20px" }}>
+                  {formatAIResponse(msg.text)} {/* Display response as bullet points */}
+                </ul>
+              ) : (
+                <p>{msg.text}</p> // User message is shown normally
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
-};
-
-export default ChatInterface;
+}

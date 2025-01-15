@@ -19,9 +19,11 @@ import {
   Grid,
   GridItem,
   Stack,
+  Checkbox,
+  VStack,
 } from "@chakra-ui/react";
 
-const InputForm = ({ income, setIncome, tax, setTax, onCalculate }) => {
+const InputForm = ({ income, setIncome, tax, setTax, onCalculate, deductions, setDeductions }) => {
   const renderSliderWithTextbox = (
     label,
     value,
@@ -85,6 +87,36 @@ const InputForm = ({ income, setIncome, tax, setTax, onCalculate }) => {
     );
   };
 
+  const renderDeductionOption = (label, key) => (
+    <Box key={key} mb={4}>
+      <Checkbox
+        isChecked={deductions[key]?.enabled}
+        onChange={() =>
+          setDeductions((prev) => ({
+            ...prev,
+            [key]: { ...prev[key], enabled: !prev[key].enabled },
+          }))
+        }
+      >
+        {label}
+      </Checkbox>
+      {deductions[key]?.enabled && (
+        <Input
+          mt={2}
+          placeholder="Enter amount"
+          value={deductions[key]?.amount || ""}
+          onChange={(e) =>
+            setDeductions((prev) => ({
+              ...prev,
+              [key]: { ...prev[key], amount: parseFloat(e.target.value) || 0 },
+            }))
+          }
+          type="number"
+        />
+      )}
+    </Box>
+  );
+
   return (
     <Box
       display="flex"
@@ -114,6 +146,17 @@ const InputForm = ({ income, setIncome, tax, setTax, onCalculate }) => {
         "₹"
       )}
 
+      <VStack align="start" spacing={4} mb={4}>
+        <Text>Select Deduction Options:</Text>
+        {renderDeductionOption("Section 80C (Investments) - Up to ₹1,50,000", "section80C")}
+        {renderDeductionOption("Section 80D (Medical Insurance) - Up to ₹25,000", "section80D")}
+        {renderDeductionOption("Section 80E (Education Loan Interest) - Up to ₹50,000", "section80E")}
+        {renderDeductionOption("Section 80G (Donations) - No limit", "section80G")}
+        {renderDeductionOption("Section 24(b) (Home Loan Interest) - Up to ₹2,00,000", "section24B")}
+        {renderDeductionOption("Section 10(13A) (HRA) - Rent Deduction", "section10HRA")}
+        {renderDeductionOption("Section 80TTA (Interest on Savings Account) - Up to ₹10,000", "section80TTA")}
+      </VStack>
+
       <Button
         color="#ebeff4"
         bgGradient="linear(to-l, #05153f 28.26% ,  #072561 91.2%)"
@@ -132,18 +175,34 @@ const IncomeTaxCalculator = () => {
   const [income, setIncome] = useState(250000);
   const [tax, setTax] = useState(null);
   const [showResults, setShowResults] = useState(false);
+  const [deductions, setDeductions] = useState({
+    section80C: { enabled: false, amount: 0 },
+    section80D: { enabled: false, amount: 0 },
+    section80E: { enabled: false, amount: 0 },
+    section80G: { enabled: false, amount: 0 },
+    section24B: { enabled: false, amount: 0 },
+    section10HRA: { enabled: false, amount: 0 },
+    section80TTA: { enabled: false, amount: 0 },
+  });
 
   const calculateTax = () => {
+    let totalDeductions = Object.values(deductions)
+      .filter((item) => item.enabled)
+      .reduce((sum, item) => sum + (item.amount || 0), 0);
+
+    const taxableIncome = income - totalDeductions;
     let taxAmount = 0;
-    if (income <= 250000) {
+
+    if (taxableIncome <= 250000) {
       taxAmount = 0;
-    } else if (income <= 500000) {
-      taxAmount = (income - 250000) * 0.05;
-    } else if (income <= 1000000) {
-      taxAmount = 12500 + (income - 500000) * 0.2;
+    } else if (taxableIncome <= 500000) {
+      taxAmount = (taxableIncome - 250000) * 0.05;
+    } else if (taxableIncome <= 1000000) {
+      taxAmount = 12500 + (taxableIncome - 500000) * 0.2;
     } else {
-      taxAmount = 112500 + (income - 1000000) * 0.3;
+      taxAmount = 112500 + (taxableIncome - 1000000) * 0.3;
     }
+
     setTax(taxAmount.toFixed(2));
     setShowResults(true);
   };
@@ -159,6 +218,8 @@ const IncomeTaxCalculator = () => {
               tax={tax}
               setTax={setTax}
               onCalculate={calculateTax}
+              deductions={deductions}
+              setDeductions={setDeductions}
             />
           </CardBody>
         </Card>
@@ -180,6 +241,8 @@ const IncomeTaxCalculator = () => {
                   tax={tax}
                   setTax={setTax}
                   onCalculate={calculateTax}
+                  deductions={deductions}
+                  setDeductions={setDeductions}
                 />
               </CardBody>
             </Card>
@@ -190,6 +253,9 @@ const IncomeTaxCalculator = () => {
               <CardBody>
                 <Box width="100%" position="relative">
                   <Stack spacing={4}>
+                    <Text fontSize="lg" color="white">
+                      Income: ₹{income}
+                    </Text>
                     <Text fontSize="lg" color="white">
                       Tax: ₹{tax}
                     </Text>
