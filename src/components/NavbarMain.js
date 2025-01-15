@@ -131,11 +131,11 @@ const NavbarMain = () => {
                 </MenuItem>
                 {activeType === investment.type && (
                   <Box pl={4} bg="#ebeff4">
-                    {investment.plans.map((plan) => (
-                      <MenuItem key={plan.name} bg="#ffffff">
-                        <Link href={plan.link}>{plan.name}</Link>
+                    
+                      <MenuItem key={investment.type} bg="#ffffff">
+                        <Link href={investment.link}>{investment.type}</Link>
                       </MenuItem>
-                    ))}
+                    
                   </Box>
                 )}
               </Box>

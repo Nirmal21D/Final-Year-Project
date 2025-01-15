@@ -199,10 +199,10 @@ const Page = () => {
                 Categories:
               </Text>
               <Checkbox value="Bonds">Bonds</Checkbox>
-              <Checkbox value="Mutual Funds">Mutual Funds</Checkbox>
-              <Checkbox value="Fixed Deposits">Fixed Deposits</Checkbox>
-              <Checkbox value="Gold Investments">Gold Investments</Checkbox>
-              <Checkbox value="Provident Funds">Provident Funds</Checkbox>
+              <Checkbox value="MutualFunds">Mutual Funds</Checkbox>
+              <Checkbox value="FixedDeposits">Fixed Deposits</Checkbox>
+              <Checkbox value="GoldInvestments">Gold Investments</Checkbox>
+              <Checkbox value="ProvidentFunds">Provident Funds</Checkbox>
             </CheckboxGroup>
             <CheckboxGroup
               value={subCategoryFilter}
@@ -218,7 +218,7 @@ const Page = () => {
                   <Checkbox value="Tax-Free Bonds">Tax-Free Bonds</Checkbox>
                 </>
               )}
-              {categoryFilter.includes("Mutual Funds") && (
+              {categoryFilter.includes("MutualFunds") && (
                 <>
                   <Checkbox value="Equity Funds">Equity Funds</Checkbox>
                   <Checkbox value="Hybrid Funds">Hybrid Funds</Checkbox>
@@ -228,7 +228,7 @@ const Page = () => {
                   </Checkbox>
                 </>
               )}
-              {categoryFilter.includes("Gold Investments") && (
+              {categoryFilter.includes("GoldInvestments") && (
                 <>
                   <Checkbox value="Physical Gold">Physical Gold</Checkbox>
                   <Checkbox value="Digital Gold">Digital Gold</Checkbox>

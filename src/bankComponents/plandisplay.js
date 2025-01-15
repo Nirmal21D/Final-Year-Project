@@ -581,6 +581,14 @@ export default function PlanDisplay() {
   const [formData, setFormData] = useState(initialFormData);
   const [isEditingLoan, setIsEditingLoan] = useState(false);
 
+  const subCategories = {
+    Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds"],
+    MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds"],
+    FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit"],
+    GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds"],
+    ProvidentFunds: ["EPF", "PPF", "GPF"],
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       try {
@@ -970,10 +978,11 @@ export default function PlanDisplay() {
                       }
                       isRequired
                     >
-                      <option value="Fixed Deposit">Fixed Deposit</option>
-                      <option value="Mutual Funds">Mutual Funds</option>
-                      <option value="Stocks">Stocks</option>
                       <option value="Bonds">Bonds</option>
+                    <option value="MutualFunds">Mutual Funds</option>
+                    <option value="FixedDeposits">Fixed Deposits</option>
+                    <option value="GoldInvestments">Gold Investments</option>
+                    <option value="ProvidentFunds">Provident Funds</option>
                     </Select>
                     <Select
                       color={"black"}
@@ -987,10 +996,13 @@ export default function PlanDisplay() {
                       }
                       isRequired
                     >
-                      <option value="Short Term">Short Term</option>
-                      <option value="Long Term">Long Term</option>
-                      <option value="High Risk">High Risk</option>
-                      <option value="Low Risk">Low Risk</option>
+                      {subCategories[formData.investmentCategory]?.map(
+                        (subCategory) => (
+                          <option key={subCategory} value={subCategory}>
+                            {subCategory}
+                          </option>
+                        )
+                      )}
                     </Select>
                   </>
                 )}

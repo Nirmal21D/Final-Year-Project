@@ -43,9 +43,11 @@ const AddPlanForm = () => {
 
   // Subcategories for each investment category
   const subCategories = {
-    bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds"],
-    mutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds"],
-    fixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit"],
+    Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds"],
+    MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds"],
+    FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit"],
+    GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds"],
+    ProvidentFunds: ["EPF", "PPF", "GPF"],
   };
 
   useEffect(() => {
@@ -71,6 +73,18 @@ const AddPlanForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (parseFloat(formData.minAmount) > parseFloat(formData.maxAmount)) {
+      toast({
+        title: "Validation Error",
+        description: "Minimum amount cannot be greater than maximum amount.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return; // Exit the function if validation fails
+    }
+
     try {
       const planId = uuidv4();
       const collectionName =
@@ -165,9 +179,12 @@ const AddPlanForm = () => {
                     placeholder="Select Category"
                     bg="white"
                   >
-                    <option value="bonds">Bonds</option>
-                    <option value="mutualFunds">Mutual Funds</option>
-                    <option value="fixedDeposits">Fixed Deposits</option>
+                    <option value="Bonds">Bonds</option>
+                    <option value="MutualFunds">Mutual Funds</option>
+                    <option value="FixedDeposits">Fixed Deposits</option>
+                    <option value="GoldInvestments">Gold Investments</option>
+                    <option value="ProvidentFunds">Provident Funds</option>
+                  
                   </Select>
                 </FormControl>
                 {formData.investmentCategory && (
