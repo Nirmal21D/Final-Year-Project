@@ -27,7 +27,7 @@ export default function ChatComponent() {
       console.log("FETCH REQUEST dONE")
 
       if (!res.ok) {
-        throw new Error(`Server error: ${res.statusText}`);
+        throw new Error('Server error: ${res.statusText}');
       }
 
       const data = await res.json();
@@ -59,24 +59,61 @@ export default function ChatComponent() {
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
       <h1>Finance Mastery AI Assistant</h1>
-      <form onSubmit={handleSubmit}>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message here..."
-          rows="4"
-          style={{ width: "100%", marginBottom: "10px", padding: "10px" }}
-        />
-        <button
-          type="submit"
-          style={{ padding: "10px 20px", cursor: "pointer" }}
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "Send"}
-        </button>
+      <form 
+        onSubmit={handleSubmit} 
+        style={{
+          position: "sticky",
+          bottom: 0,
+          backgroundColor: "#f0f0f0",
+          padding: "10px 20px",         // Adjusted padding for a cleaner look
+          borderTop: "1px solid #ddd",
+          borderRadius: "10px",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <div style={{ 
+          display: "flex", 
+          gap: "10px",
+          width: "100%",
+          maxWidth: "800px",
+          flex: 1,                     // Allow the input area to take available space
+        }}>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message here..."
+            rows="1"                     // Keep the height reduced
+            style={{ 
+              flex: 1,
+              padding: "10px",            // Increased padding for better usability
+              borderRadius: "5px",
+              border: "1px solid #ddd",
+              backgroundColor: "white",
+              resize: "none",
+            }}
+          />
+          <button
+            type="submit"
+            style={{ 
+              padding: "10px 15px",       // Adjusted padding for a better button size
+              cursor: "pointer",
+              borderRadius: "5px",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              height: "fit-content",
+              alignSelf: "flex-start",     // Align button to the top
+              marginLeft: "5px",           // Added margin for spacing
+            }}
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Send"}
+          </button>
+        </div>
       </form>
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
-      <div style={{ marginTop: "20px", height: "200px", overflowY: "scroll" }}>
+      <div style={{ marginTop: "20px", height: "350px", overflowY: "scroll" }}>
         <h3>Chat:</h3>
         <div>
           {chatHistory.map((msg, index) => (
