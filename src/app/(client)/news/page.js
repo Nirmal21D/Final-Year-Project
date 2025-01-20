@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Headers from "@/components/Headers";
-
 import axios from "axios";
 import {
   Box,
@@ -20,11 +19,18 @@ const formatDate = (date) => {
   return date.toISOString().split("T")[0]; // YYYY-MM-DD format
 };
 
+const getWeekOfMonth = (date) => {
+  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+  const diff = date.getDate() - firstDayOfMonth.getDate();
+  return Math.floor(diff / 7) + 1;
+};
+
 const NewsPage = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [groupedNews, setGroupedNews] = useState({});
   const toast = useToast();
   const router = useRouter();
 
@@ -32,7 +38,7 @@ const NewsPage = () => {
     setLoading(true);
     try {
       const endDate = new Date();
-      const startDate = new Date(endDate - 3 * 24 * 60 * 60 * 1000);
+      const startDate = new Date(endDate - 30 * 24 * 60 * 60 * 1000); // Fetch news from the last 30 days
 
       const newsFromApi = await axios.get("https://newsapi.org/v2/everything", {
         params: {
@@ -48,8 +54,23 @@ const NewsPage = () => {
         },
       });
 
-      const filteredNews = newsFromApi.data.articles || [];
-      setNews(filteredNews.slice(0, 3)); // Display the latest 3 news
+      const articles = newsFromApi.data.articles || [];
+      const formattedArticles = articles.map((article) => {
+        // Add a week and month property to each article
+        const publishedDate = new Date(article.publishedAt);
+        const weekOfMonth = getWeekOfMonth(publishedDate);
+        const month = publishedDate.getMonth() + 1; // Months are 0-based
+
+        return {
+          ...article,
+          weekOfMonth,
+          month,
+          publishedDate,
+        };
+      });
+
+      setNews(formattedArticles);
+      groupNewsByWeek(formattedArticles);
       setLastUpdated(new Date());
       setLoading(false);
     } catch (err) {
@@ -64,6 +85,25 @@ const NewsPage = () => {
         isClosable: true,
       });
     }
+  };
+
+  const groupNewsByWeek = (articles) => {
+    const weeks = {};
+    const months = {};
+
+    // Group articles by week and month
+    articles.forEach((article) => {
+      const weekKey = `${article.publishedDate.getFullYear()}-W${article.weekOfMonth}`;
+      const monthKey = `${article.publishedDate.getFullYear()}-${article.month}`;
+
+      if (!weeks[weekKey]) weeks[weekKey] = [];
+      weeks[weekKey].push(article);
+
+      if (!months[monthKey]) months[monthKey] = [];
+      months[monthKey].push(article);
+    });
+
+    setGroupedNews({ weeks, months });
   };
 
   useEffect(() => {
@@ -118,7 +158,7 @@ const NewsPage = () => {
               Informative
             </Button>
             <Text fontSize="sm">
-              {lastUpdated ?' Last updated: ${lastUpdated.toLocaleTimeString()}' : "Loading..."}
+              {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : "Loading..."}
             </Text>
           </Box>
         </Box>
@@ -137,39 +177,91 @@ const NewsPage = () => {
             <Text>No finance news available at the moment.</Text>
           </Box>
         ) : (
-          <Grid
-            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
-            gap={6}
-          >
-            {news.map((article, index) => (
-              <GridItem
-                key={index}
-                bg="white"
-                color="gray.800"
-                p={5}
-                borderRadius="md"
-                boxShadow="md"
-                _hover={{ boxShadow: "lg" }}
-              >
-                <Heading size="md" mb={2}>
-                  {article.title}
+          <Box>
+            {/* Render News Grouped by Week */}
+            {Object.keys(groupedNews.weeks).map((weekKey) => (
+              <Box key={weekKey} mb={10}>
+                <Heading size="lg" mb={4}>
+                  Week {weekKey} - Latest News
                 </Heading>
-                <Text fontSize="sm" noOfLines={3} mb={4}>
-                  {article.description}
-                </Text>
-                <Button
-                  as="a"
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  colorScheme="blue"
-                  size="sm"
+                <Grid
+                  templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+                  gap={6}
                 >
-                  Read more
-                </Button>
-              </GridItem>
+                  {groupedNews.weeks[weekKey].map((article, index) => (
+                    <GridItem
+                      key={index}
+                      bg="white"
+                      color="gray.800"
+                      p={5}
+                      borderRadius="md"
+                      boxShadow="md"
+                      _hover={{ boxShadow: "lg" }}
+                    >
+                      <Heading size="md" mb={2}>
+                        {article.title}
+                      </Heading>
+                      <Text fontSize="sm" noOfLines={3} mb={4}>
+                        {article.description}
+                      </Text>
+                      <Button
+                        as="a"
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        colorScheme="blue"
+                        size="sm"
+                      >
+                        Read more
+                      </Button>
+                    </GridItem>
+                  ))}
+                </Grid>
+              </Box>
             ))}
-          </Grid>
+
+            {/* Render News Grouped by Month */}
+            {Object.keys(groupedNews.months).map((monthKey) => (
+              <Box key={monthKey} mb={10}>
+                <Heading size="lg" mb={4}>
+                  Month {monthKey} - Latest News
+                </Heading>
+                <Grid
+                  templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+                  gap={6}
+                >
+                  {groupedNews.months[monthKey].map((article, index) => (
+                    <GridItem
+                      key={index}
+                      bg="white"
+                      color="gray.800"
+                      p={5}
+                      borderRadius="md"
+                      boxShadow="md"
+                      _hover={{ boxShadow: "lg" }}
+                    >
+                      <Heading size="md" mb={2}>
+                        {article.title}
+                      </Heading>
+                      <Text fontSize="sm" noOfLines={3} mb={4}>
+                        {article.description}
+                      </Text>
+                      <Button
+                        as="a"
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        colorScheme="blue"
+                        size="sm"
+                      >
+                        Read more
+                      </Button>
+                    </GridItem>
+                  ))}
+                </Grid>
+              </Box>
+            ))}
+          </Box>
         )}
       </Box>
     </>
