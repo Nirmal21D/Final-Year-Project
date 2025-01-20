@@ -91,6 +91,7 @@ const NavbarMain = () => {
         justify="space-evenly"
         w="full"
       >
+        <Divider orientation="vertical" height="35px" />
         <Link href="/">
           <Menu>
             <MenuButton
@@ -208,6 +209,20 @@ const NavbarMain = () => {
           </Link>
         </Menu>
         <Divider orientation="vertical" height="35px" />
+        <Menu>
+          <Link href=" /news">
+            <MenuButton
+              as={Button}
+              bg="#567C8D"
+              color="#e9ecef"
+              width="full"
+              _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
+            >
+              News
+            </MenuButton>
+          </Link>
+        </Menu>
+        <Divider orientation="vertical" height="35px" />
         {!user ? (
           <>
             <Menu>
@@ -237,6 +252,7 @@ const NavbarMain = () => {
                 </MenuButton>
               </Link>
             </Menu>
+            <Divider orientation="vertical" height="35px" />
           </>
         ) : (
           <>
