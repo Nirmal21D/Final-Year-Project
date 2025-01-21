@@ -1,11 +1,32 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // Changed from next/router
 import BankSidenav from "@/bankComponents/BankSidenav";
 
 import { Box, Flex } from "@chakra-ui/react";
 import PlanDisplay from "@/bankComponents/plandisplay";
 import BankHeaders from "@/bankComponents/BankHeaders";
-const page = () => {
+import { getAuth } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
+
+const BankPlans = () => {
+  const [user, setUser] = useState(null);
+  const router = useRouter(); // Initialize useRouter
+  const auth = getAuth();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+        router.push('/login'); // Redirect to login page if user is not logged in
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]); // Add router to dependency array
+
   return (
     <>
       <Flex h="auto">
@@ -43,4 +64,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default BankPlans;

@@ -5,8 +5,26 @@ import { Box, Flex } from "@chakra-ui/react";
 import BankSidenav from "@/bankComponents/BankSidenav";
 import BankHeaders from "@/bankComponents/BankHeaders";
 import AddPlanForm from "@/bankComponents/AddPlanForm";
+import { useRouter } from "next/navigation";
+import { auth } from "@/firebase";
 
-const page = () => {
+const AddPlans = () => {
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+        router.push('/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
   return (
     <>
       <Flex h="auto">
@@ -43,4 +61,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default AddPlans;

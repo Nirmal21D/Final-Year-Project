@@ -16,6 +16,11 @@ import {
   NumberInputField,
   Textarea,
   Select,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+  Wrap,
+  WrapItem,
 } from "@chakra-ui/react";
 import { auth, db } from "@/firebase";
 import { useRouter } from "next/navigation";
@@ -36,7 +41,10 @@ const AddPlanForm = () => {
     loanName: "",
     investmentCategory: "",
     investmentSubCategory: "",
+    createdBy: "", // Added createdBy field
   });
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
 
   const router = useRouter();
   const toast = useToast();
@@ -49,6 +57,19 @@ const AddPlanForm = () => {
     GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds"],
     ProvidentFunds: ["EPF", "PPF", "GPF"],
   };
+
+  // Predefined tags for financial products
+  const suggestedTags = [
+    "High Risk", "Low Risk", "Medium Risk",
+    "Short Term", "Long Term",
+    "Tax Saving", "High Returns",
+    "Senior Citizen", "Youth",
+    "Beginner Friendly", "Fixed Income",
+    "Regular Income", "Wealth Creation",
+    "Retirement", "Education",
+    "Real Estate", "Technology",
+    "Healthcare", "Green Energy"
+  ];
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -67,8 +88,19 @@ const AddPlanForm = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "investmentCategory" && { investmentSubCategory: "" }), // Reset subcategory when category changes
+      ...(name === "investmentCategory" && { investmentSubCategory: "" }),
     }));
+  };
+
+  const handleAddTag = (tag) => {
+    if (!tags.includes(tag) && tags.length < 5) {
+      setTags([...tags, tag]);
+    }
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -82,25 +114,34 @@ const AddPlanForm = () => {
         duration: 3000,
         isClosable: true,
       });
-      return; // Exit the function if validation fails
+      return;
     }
 
     try {
       const planId = uuidv4();
-      const collectionName =
-        formData.planType === "loan" ? "loanplans" : "investmentplans";
-      await setDoc(doc(collection(db, collectionName), planId), {
+      const collectionName = formData.planType === "loan" ? "loanplans" : "investmentplans";
+      
+      const planData = {
         ...formData,
+        tags,
         planId,
-        createdBy: user.uid,
-      });
+        createdBy: user.uid, // Ensure createdBy is set to user.uid
+        status: "pending",
+        isVerified: false,
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+      };
+
+      await setDoc(doc(collection(db, collectionName), planId), planData);
+      
       toast({
         title: "Success",
-        description: "Plan added successfully!",
+        description: "Plan added successfully! Awaiting admin verification.",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+      
       setFormData({
         planType: "",
         planName: "",
@@ -113,6 +154,7 @@ const AddPlanForm = () => {
         loanName: "",
         investmentCategory: "",
         investmentSubCategory: "",
+        createdBy: "", // Reset createdBy field
       });
     } catch (error) {
       toast({
@@ -184,7 +226,6 @@ const AddPlanForm = () => {
                     <option value="FixedDeposits">Fixed Deposits</option>
                     <option value="GoldInvestments">Gold Investments</option>
                     <option value="ProvidentFunds">Provident Funds</option>
-                  
                   </Select>
                 </FormControl>
                 {formData.investmentCategory && (
@@ -288,6 +329,55 @@ const AddPlanForm = () => {
                 onChange={handleInputChange}
                 bg="white"
               />
+            </FormControl>
+
+            {/* Tags Section */}
+            <FormControl>
+              <FormLabel>Tags (up to 5)</FormLabel>
+              <HStack mb={2}>
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  placeholder="Add tags"
+                />
+                <Button
+                  onClick={() => handleAddTag(tagInput)}
+                  isDisabled={tags.length >= 5 || !tagInput.trim()}
+                >
+                  Add
+                </Button>
+              </HStack>
+              
+              {/* Display selected tags */}
+              <Wrap spacing={2} mb={4}>
+                {tags.map((tag) => (
+                  <WrapItem key={tag}>
+                    <Tag size="md" colorScheme="blue" borderRadius="full">
+                      <TagLabel>{tag}</TagLabel>
+                      <TagCloseButton onClick={() => handleRemoveTag(tag)} />
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
+
+              {/* Suggested tags */}
+              <Text mb={2} fontWeight="bold">Suggested Tags:</Text>
+              <Wrap spacing={2}>
+                {suggestedTags.map((tag) => (
+                  <WrapItem key={tag}>
+                    <Tag
+                      size="md"
+                      colorScheme="gray"
+                      borderRadius="full"
+                      cursor="pointer"
+                      onClick={() => handleAddTag(tag)}
+                      _hover={{ bg: "blue.100" }}
+                    >
+                      <TagLabel>{tag}</TagLabel>
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
             </FormControl>
 
             <Button type="submit" colorScheme="teal" width="full" mt={4}>
