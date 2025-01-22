@@ -24,7 +24,7 @@ import {
 } from "@chakra-ui/react";
 import { auth, db } from "@/firebase";
 import { useRouter } from "next/navigation";
-import { collection, setDoc, doc } from "firebase/firestore";
+import { collection, setDoc, doc, getDocs } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
 const AddPlanForm = () => {
@@ -44,7 +44,8 @@ const AddPlanForm = () => {
     createdBy: "", // Added createdBy field
   });
   const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState([]);
+  const [fetchedTags, setFetchedTags] = useState([]);
 
   const router = useRouter();
   const toast = useToast();
@@ -58,19 +59,6 @@ const AddPlanForm = () => {
     ProvidentFunds: ["EPF", "PPF", "GPF"],
   };
 
-  // Predefined tags for financial products
-  const suggestedTags = [
-    "High Risk", "Low Risk", "Medium Risk",
-    "Short Term", "Long Term",
-    "Tax Saving", "High Returns",
-    "Senior Citizen", "Youth",
-    "Beginner Friendly", "Fixed Income",
-    "Regular Income", "Wealth Creation",
-    "Retirement", "Education",
-    "Real Estate", "Technology",
-    "Healthcare", "Green Energy"
-  ];
-
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       if (currentUser) {
@@ -82,6 +70,15 @@ const AddPlanForm = () => {
 
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      const tagsCollection = await getDocs(collection(db, "tags"));
+      const tagsList = tagsCollection.docs.map(doc => doc.data().tag);
+      setFetchedTags(tagsList);
+    };
+    fetchTags();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -134,6 +131,11 @@ const AddPlanForm = () => {
 
       await setDoc(doc(collection(db, collectionName), planId), planData);
       
+      // Store tags in a separate collection
+      for (const tag of tags) {
+        await setDoc(doc(collection(db, "tags"), tag), { tag });
+      }
+      
       toast({
         title: "Success",
         description: "Plan added successfully! Awaiting admin verification.",
@@ -156,6 +158,7 @@ const AddPlanForm = () => {
         investmentSubCategory: "",
         createdBy: "", // Reset createdBy field
       });
+      setTags([]); // Reset tags after submission
     } catch (error) {
       toast({
         title: "Error",
@@ -342,7 +345,7 @@ const AddPlanForm = () => {
                 />
                 <Button
                   onClick={() => handleAddTag(tagInput)}
-                  isDisabled={tags.length >= 5 || !tagInput.trim()}
+                  isDisabled={tags.length >= 5 || !tagInput}
                 >
                   Add
                 </Button>
@@ -360,10 +363,10 @@ const AddPlanForm = () => {
                 ))}
               </Wrap>
 
-              {/* Suggested tags */}
-              <Text mb={2} fontWeight="bold">Suggested Tags:</Text>
+              {/* Display fetched tags */}
+              <Text mb={2} fontWeight="bold">Fetched Tags:</Text>
               <Wrap spacing={2}>
-                {suggestedTags.map((tag) => (
+                {fetchedTags.map((tag) => (
                   <WrapItem key={tag}>
                     <Tag
                       size="md"

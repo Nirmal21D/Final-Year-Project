@@ -282,38 +282,42 @@ export default function PlanDisplay() {
     );
   }
 
-  const PlanCard = ({ plan, type }) => (
-    <Box
-      borderWidth="1px"
-      borderRadius="lg"
-      overflow="hidden"
-      p={4}
-      mb={4}
-      bg="rgba(0, 0, 0, 0.1)"
-    >
-      <Heading size="md" color="teal.300">
-        {type === "loan" ? plan.loanName : plan.planName}
-      </Heading>
-      <Text color="gray.600">Interest Rate: <Badge colorScheme="teal">{plan.interestRate}%</Badge></Text>
-      <Text color="gray.600">Amount Range: {`${Number(plan.minAmount).toLocaleString()} - ${Number(plan.maxAmount).toLocaleString()}`}</Text>
-      <Text color="gray.600">Tenure: {plan.tenure} months</Text>
-      {type === "investment" && (
-        <>
-          <Text color="gray.600">Category: {plan.investmentCategory}</Text>
-          <Text color="gray.600">Sub Category: {plan.investmentSubCategory}</Text>
-        </>
-      )}
-      <Text color="gray.600">Description: {plan.description}</Text>
-      <HStack spacing={2} mt={4}>
-        <Button size="sm" colorScheme="teal" onClick={() => handleEdit(plan, type)}>
-          Edit
-        </Button>
-        <Button size="sm" colorScheme="red" onClick={() => handleDeleteClick(plan.id, type)}>
-          Delete
-        </Button>
-      </HStack>
-    </Box>
-  );
+  const PlanCard = ({ plan, type }) => {
+    const router = useRouter();
+
+    return (
+      <Box
+        borderWidth="1px"
+        borderRadius="lg"
+        overflow="hidden"
+        p={4}
+        mb={4}
+        bg="rgba(0, 0, 0, 0.1)"
+      >
+        <Heading size="md" color="teal.300">
+          {type === "loan" ? plan.loanName : plan.planName}
+        </Heading>
+        <Text color="gray.600">Interest Rate: <Badge colorScheme="teal">{plan.interestRate}%</Badge></Text>
+        <Text color="gray.600">Amount Range: {`${Number(plan.minAmount).toLocaleString()} - ${Number(plan.maxAmount).toLocaleString()}`}</Text>
+        <Text color="gray.600">Tenure: {plan.tenure} months</Text>
+        {type === "investment" && (
+          <>
+            <Text color="gray.600">Category: {plan.investmentCategory}</Text>
+            <Text color="gray.600">Sub Category: {plan.investmentSubCategory}</Text>
+          </>
+        )}
+        <Text color="gray.600">Description: {plan.description}</Text>
+        <HStack spacing={2} mt={4}>
+          <Button size="sm" colorScheme="teal" onClick={() => router.push(`/editplan/${plan.id}`)}>
+            Edit
+          </Button>
+          <Button size="sm" colorScheme="red" onClick={() => handleDeleteClick(plan.id, type)}>
+            Delete
+          </Button>
+        </HStack>
+      </Box>
+    );
+  };
 
   return (
     <Container maxW="container.xl" p={5}>

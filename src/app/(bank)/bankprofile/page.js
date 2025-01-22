@@ -4,12 +4,13 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BankSidenav from "@/bankComponents/BankSidenav";
 import BankHeaders from "@/bankComponents/BankHeaders";
-
+import { getAuth } from "firebase/auth";
 import { Box, Flex } from "@chakra-ui/react";
 
 const BankProfile = () => {
   const [user, setUser] = useState(null);
   const router = useRouter();
+  const auth = getAuth();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
