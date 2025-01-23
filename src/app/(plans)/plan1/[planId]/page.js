@@ -39,6 +39,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { FiClock, FiDollarSign, FiPercent, FiTrendingUp } from "react-icons/fi";
 import Headers from "@/components/Headers";
+import Script from "next/script";
 
 const PlanDetails = () => {
   const { planId } = useParams();
@@ -155,7 +156,75 @@ const PlanDetails = () => {
       duration: 3000,
       isClosable: true,
     });
-    onClose();
+    onClose(); // Close the modal after investment is confirmed
+  };
+
+  const handlePayment = async (amount) => {
+    
+    try {
+      const response = await fetch('/api/process-input', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input: 'Investment Payment', amount }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const options = {
+          key: "rzp_test_NJWnOpRjPVFmkA", // Replace with your Razorpay key
+          amount: data.order.amount, // Amount in paise
+          currency: "INR",
+          name: "Investment",
+          description: "Investment Payment",
+          order_id: data.order.id, // Use the order ID returned from the server
+          handler: function (response) {
+            console.log(response);
+            toast({
+              title: "Success",
+              description: "Payment successful",
+              status: "success",
+              duration: 3000,
+              isClosable: true,
+            });
+          },
+          prefill: {
+            name: user?.name || "",
+            email: user?.email || "",
+          },
+          theme: {
+            color: "#3399cc",
+          },
+        };
+
+        // Check if Razorpay is loaded before creating an instance
+        if (window.Razorpay) {
+          const razorpay = new window.Razorpay(options);
+          razorpay.open();
+        } else {
+          throw new Error("Razorpay SDK not loaded");
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: data.message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error("Error initiating payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to initiate payment",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   if (loading) {
@@ -176,6 +245,9 @@ const PlanDetails = () => {
 
   return (
     <Box bg="gray.50" minH="100vh">
+      <Script 
+      type ="text/javascript"
+      src="https://checkout.razorpay.com/v1/checkout.js"></Script>
       <Headers />
 
       <Container maxW="container.xl" py={4}>
@@ -322,7 +394,7 @@ const PlanDetails = () => {
                 <VStack align="start" spacing={1}>
                   <Text fontWeight="semibold">Investment Limits:</Text>
                   <Text fontSize="sm">
-                    Minimum: ₹{plan.minimumInvestment}
+                    Minimum: ₹{plan.minAmount}
                     <br />
                     Maximum: ₹{plan.maxAmount}
                   </Text>
@@ -347,7 +419,10 @@ const PlanDetails = () => {
                 size="lg"
                 mt={6}
                 width="full"
-                onClick={handleInvest}
+                onClick={() => {
+                  handlePayment(parseFloat(investmentAmount));
+                  onClose(); // Close the modal after payment is initiated
+                }}
                 height="16"
                 fontSize="lg"
               >
