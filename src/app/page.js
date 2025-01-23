@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Box, IconButton, Spinner } from "@chakra-ui/react";
+import { Box, IconButton, Spinner, Card, CardBody, Text, Heading, Link } from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db, auth } from "@/firebase"; // Import auth from firebase
 
 import Welcome from "@/components/Welcome";
 import Headers from "@/components/Headers";
@@ -12,12 +12,14 @@ import Chat from "@/components/chat";
 const MainPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [plans, setPlans] = useState([]);
+  const [userInterests, setUserInterests] = useState([]); // State to hold user interests
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null); // State to hold user information
 
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const plansCollection = collection(db, "plans");
+        const plansCollection = collection(db, "investmentplans");
         const plansSnapshot = await getDocs(plansCollection);
         const plansData = plansSnapshot.docs.map(doc => ({
           id: doc.id,
@@ -34,9 +36,29 @@ const MainPage = () => {
     fetchPlans();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setUser(user); // Set user state based on authentication status
+      if (user) {
+        const userDoc = await getDocs(collection(db, "users")); // Assuming user interests are stored in a "users" collection
+        const userData = userDoc.docs.find(doc => doc.id === user.uid);
+        if (userData) {
+          setUserInterests(userData.data().interests || []); // Set user interests from user document
+        }
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup subscription on unmount
+  }, []);
+
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen);
   };
+
+  // Filter plans based on user interests
+  const filteredPlans = plans.filter(plan => 
+    plan.tags && plan.tags.some(tag => userInterests.includes(tag))
+  );
 
   return (
     <>
@@ -109,43 +131,28 @@ const MainPage = () => {
                 justifyContent="space-around"
                 gap="6"
               >
-                {plans.map((plan) => (
-                  <Box
+                {filteredPlans.map((plan) => (
+                  <Card
                     key={plan.id}
-                    flex="1"
-                    p="6"
+                    width="auto"
+                    height="auto"
+                    maxW="300px"
                     borderRadius="lg"
                     bg="rgba(255, 255, 255, 0.1)"
-                    textAlign="center"
-                    transform={plan.isRecommended ? "scale(1.05)" : "none"}
-                    boxShadow={plan.isRecommended ? "xl" : "none"}
+                    boxShadow="lg"
                     position="relative"
+                    as={Link} href={`/plan1/${plan.id}`} isExternal
                   >
-                    {plan.isRecommended && (
-                      <Box
-                        position="absolute"
-                        top="-3"
-                        right="-3"
-                        bg="green.500"
-                        color="white"
-                        px="3"
-                        py="1"
-                        borderRadius="full"
-                        fontSize="sm"
-                      >
-                        Recommended
-                      </Box>
-                    )}
-                    <Box fontSize="2xl" fontWeight="bold" mb="4">{plan.name}</Box>
-                    <Box fontSize="4xl" mb="4">
-                      ${plan.price}<Box as="span" fontSize="sm">/month</Box>
-                    </Box>
-                    <Box mb="4">
-                      {plan.features && plan.features.map((feature, idx) => (
-                        <Box key={idx} mb="2">✓ {feature}</Box>
-                      ))}
-                    </Box>
-                  </Box>
+                    <CardBody>
+                      <Heading size="md" mb="4">{plan.planName}</Heading>
+                      <Text fontSize="xl" mb="4">
+                        ${plan.minAmount}<Box as="span" fontSize="sm">/month</Box>
+                      </Text>
+                      <Text mb="4">
+                        Interest Rate: {plan.interestRate}%
+                      </Text>
+                    </CardBody>
+                  </Card>
                 ))}
               </Box>
             )}

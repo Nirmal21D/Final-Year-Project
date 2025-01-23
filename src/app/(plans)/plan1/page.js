@@ -7,7 +7,6 @@ import { collection, getDocs, query, where, getDoc, doc } from "firebase/firesto
 import { auth, db } from "@/firebase";
 
 import Headers from "@/components/Headers";
-import Plancards from "@/components/Plancards";
 
 const Page = () => {
   const [plans, setPlans] = useState([]);
@@ -427,13 +426,13 @@ const Page = () => {
                 borderWidth={1} 
                 borderRadius="lg" 
                 width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
-                bg="white"
-                boxShadow="sm"
+                bg="linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)"
+                boxShadow="lg"
                 transition="all 0.2s"
-                _hover={{ boxShadow: "md" }}
+                _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
               >
-                <Heading size="sm">{plan.planName}</Heading>
-                <Text mt={2} noOfLines={2}>{plan.description}</Text>
+                <Heading size="sm" color="#2C319F">{plan.planName}</Heading>
+                <Text mt={2} noOfLines={2} color="gray.700">{plan.description}</Text>
                 <Wrap mt={2}>
                   {plan.tags?.map((tag) => (
                     <Tag key={tag} size="sm" colorScheme="blue">
@@ -465,17 +464,22 @@ const Page = () => {
             key={plan.id} 
             width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
           >
-            <Plancards
-              header={plan.planName}
-              summary={plan.description}
-              investmentCategory={plan.investmentCategory}
-              investmentSubCategory={plan.investmentSubCategory}
-              interestRate={plan.interestRate}
-              cagr={plan.cagr}
-              riskLevel={plan.riskLevel}
-              minimumInvestment={plan.minimumInvestment}
-              planId ={plan.id}
-            />
+            <Box 
+              p={4} 
+              borderWidth={1} 
+              borderRadius="lg" 
+              bg="linear-gradient(135deg, #e2e2e2 0%, #ffffff 100%)"
+              boxShadow="lg"
+              transition="all 0.2s"
+              _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
+            >
+              <Heading size="sm" color="#2C319F">{plan.planName}</Heading>
+              <Text mt={2} noOfLines={2} color="gray.700">{plan.description}</Text>
+              <Text mt={2} fontWeight="bold" color="green.600">Interest Rate: {plan.interestRate}%</Text>
+              <Text color="orange.600">CAGR: {plan.cagr.toFixed(2)}%</Text>
+              <Text color="red.600">Risk Level: {plan.riskLevel}</Text>
+              <Text color="blue.600">Min Investment: ₹{plan.minimumInvestment?.toLocaleString()}</Text>
+            </Box>
             <Button
               colorScheme={comparePlans.includes(plan) ? "red" : "blue"}
               mt={2}
