@@ -40,6 +40,7 @@ import {
   query,
   where,
   getDocs,
+  setDoc,
 } from "firebase/firestore";
 import { db, auth } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -187,7 +188,7 @@ const PlanDetails = () => {
           name: "Investment",
           description: "Investment Payment",
           order_id: data.order.id, // Use the order ID returned from the server
-          handler: function (response) {
+          handler: async function (response) {
             console.log(response);
             toast({
               title: "Success",
@@ -196,6 +197,24 @@ const PlanDetails = () => {
               duration: 3000,
               isClosable: true,
             });
+
+            // Store investment info in user database
+            if (user) {
+              const userDocRef = doc(db, "users", user.uid);
+              await setDoc(
+                userDocRef,
+                {
+                  investments: {
+                    [planId]: {
+                      amount: parseFloat(investmentAmount),
+                      planName: plan.planName,
+                      timestamp: new Date(),
+                    },
+                  },
+                },
+                { merge: true }
+              );
+            }
           },
           prefill: {
             name: user?.name || "",
