@@ -3,7 +3,10 @@ import React, { useEffect, useState } from "react";
 import SignUpPage from "../../../components/SignUpPage";
 import { Box } from "@chakra-ui/react";
 import SearchBox from "@/components/SearchBar";
-import { useRouter } from "next/navigation"; // Changed from next/router
+import { useRouter } from "next/navigation"; 
+import { getAuth } from "firebase/auth"; // Import getAuth instead
+
+const auth = getAuth(); // Initialize auth
 
 const SignUp = () => {
   const [user, setUser] = useState(null);
