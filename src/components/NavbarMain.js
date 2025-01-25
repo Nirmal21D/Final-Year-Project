@@ -91,7 +91,7 @@ const NavbarMain = () => {
         justify="space-evenly"
         w="full"
       >
-        <Divider orientation="vertical" height="35px" />
+        {/* <Divider orientation="vertical" height="35px" /> */}
         <Link href="/">
           <Menu>
             <MenuButton
@@ -110,8 +110,6 @@ const NavbarMain = () => {
         {/* __________________________________________________________________________________________ */}
 
         <Menu closeOnSelect={false}>
-          {" "}
-          {/* Keep menu open when selecting sub-items */}
           <MenuButton
             as={Button}
             bg="#567C8D"
@@ -132,11 +130,11 @@ const NavbarMain = () => {
                 </MenuItem>
                 {activeType === investment.type && (
                   <Box pl={4} bg="#ebeff4">
-                    
-                      <MenuItem key={investment.type} bg="#ffffff">
-                        <Link href={investment.link}>{investment.type}</Link>
-                      </MenuItem>
-                    
+                    <MenuItem bg="#ffffff">
+                      <Link
+                        href={investment.link}
+                      >{`Explore ${investment.type}`}</Link>
+                    </MenuItem>
                   </Box>
                 )}
               </Box>

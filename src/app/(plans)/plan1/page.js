@@ -535,8 +535,12 @@ const Page = () => {
                 width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
                 bg="linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)"
                 boxShadow="lg"
-                transition="all 0.2s"
-                _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
+                // transition="all 0.2s"
+                // _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
+                _hover={{
+                  transform: "translateY(-5px)",
+                  transition: "transform 0.3s ease",
+                }}
               >
                 <Heading size="sm" color="#2C319F">
                   {plan.planName}
@@ -609,7 +613,7 @@ const Page = () => {
               <Text color="orange.600">CAGR: {plan.cagr.toFixed(2)}%</Text>
               <Text color="red.600">Risk Level: {plan.riskLevel}</Text>
               <Text color="blue.600">
-                Min Investment: ₹{plan.minimumInvestment?.toLocaleString()}
+                Min Investment: ₹{plan.minAmount?.toLocaleString()}
               </Text>
             </Box>
             <Button

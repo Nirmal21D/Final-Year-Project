@@ -69,7 +69,7 @@ const DashStats = () => {
         ))}
       </Grid> */}
       <Grid templateColumns="repeat(3, 1fr)" gap={6}>
-        <GridItem bg="white" p={4} shadow="md" borderRadius="md">
+        {/* <GridItem bg="white" p={4} shadow="md" borderRadius="md">
           <Text fontSize="lg" fontWeight="bold">
             Total Plans
           </Text>
@@ -94,7 +94,7 @@ const DashStats = () => {
           <Text fontSize="2xl" color="orange.500" mt={2}>
             1,245 views
           </Text>
-        </GridItem>
+        </GridItem> */}
 
         <GridItem colSpan={2} bg="white" p={4} shadow="md" borderRadius="md">
           <Text fontSize="lg" fontWeight="bold">
@@ -111,7 +111,7 @@ const DashStats = () => {
           </Link>
         </GridItem>
 
-        <GridItem colSpan={1} bg="white" p={4} shadow="md" borderRadius="md">
+        {/* <GridItem colSpan={1} bg="white" p={4} shadow="md" borderRadius="md">
           <Text fontSize="lg" fontWeight="bold">
             Notifications
           </Text>
@@ -121,7 +121,7 @@ const DashStats = () => {
           <Button mt={4} colorScheme="blue">
             View Notifications
           </Button>
-        </GridItem>
+        </GridItem> */}
       </Grid>
     </>
   );

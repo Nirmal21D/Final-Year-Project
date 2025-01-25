@@ -12,7 +12,7 @@ const BankHeaders = () => {
       display="flex"
       justifyContent="space-between"
       alignItems="center"
-      bg="rgba(0, 58, 92, 0.2)"
+      bg="gray.300"
       zIndex="10"
       px={10}
     >
