@@ -9,10 +9,25 @@ import {
   Button,
   Text,
   Checkbox,
+  Box,
+  Stack,
 } from "@chakra-ui/react";
+import { useRouter } from "next/navigation";
 
-const Plancards = ({ header, summary, onClick, onCheckboxChange }) => {
+const Plancards = ({
+  header,
+  summary,
+  interestRate,
+  investmentCategory,
+  investmentSubCategory,
+  maxAmount,
+  minAmount,
+  tenure,
+  planId,
+  onCheckboxChange,
+}) => {
   const [isChecked, setIsChecked] = useState(false);
+  const router = useRouter();
 
   const handleCheckboxChange = (e) => {
     const checked = e.target.checked;
@@ -22,36 +37,65 @@ const Plancards = ({ header, summary, onClick, onCheckboxChange }) => {
     }
   };
 
+  const handleViewDetails = () => {
+    router.push(`/plan1/${planId}`);
+  };
+
   return (
     <Card
       display="flex"
+      flexDirection="column"
       alignItems="center"
-      justifyContent="center"
-      width={300}
-      bg="rgba(10, 14, 35, 0.49)"
+      justifyContent="space-between"
+      width="400px"
+      height="500px"
+      bg="rgba(10, 14, 35, 0.7)"
       color="#ebeff4"
+      boxShadow="lg"
+      borderRadius="md"
+      p={4}
     >
       <CardHeader>
-        <Heading size="md" noOfLines={2} wordBreak="break-word">
+        <Heading size="lg" noOfLines={2} wordBreak="break-word">
           {header}
         </Heading>
       </CardHeader>
       <CardBody>
-        <Text noOfLines={3} wordBreak="break-word">
+        <Text noOfLines={4} wordBreak="break-word" mb={2}>
           {summary}
         </Text>
+        <Text fontSize="sm" color="gray.300">
+          Interest Rate: {interestRate}%
+        </Text>
+        <Text fontSize="sm" color="gray.300">
+          Category: {investmentCategory}
+        </Text>
+        <Text fontSize="sm" color="gray.300">
+          Subcategory: {investmentSubCategory}
+        </Text>
+        <Text fontSize="sm" color="gray.300">
+          Max Amount: ₹{maxAmount}
+        </Text>
+        <Text fontSize="sm" color="gray.300">
+          Min Amount: ₹{minAmount}
+        </Text>
+        <Text fontSize="sm" color="gray.300">
+          Tenure: {tenure} months
+        </Text>
       </CardBody>
-      <CardFooter display="flex" flexDirection="column" alignItems="center" gap={2}>
-        <Button bg="#ebeff4" color="#0f1535" onClick={onClick}>
-          View here
-        </Button>
-        <Checkbox
-          isChecked={isChecked}
-          onChange={handleCheckboxChange}
-          colorScheme="teal"
-        >
-          Select for Comparing
-        </Checkbox>
+      <CardFooter>
+        <Stack spacing={3} align="center">
+          <Button bg="#ebeff4" color="#0f1535" onClick={handleViewDetails} _hover={{ bg: "#d1d9e6" }}>
+            View Details
+          </Button>
+          <Checkbox
+            isChecked={isChecked}
+            onChange={handleCheckboxChange}
+            colorScheme="teal"
+          >
+            Select for Comparison
+          </Checkbox>
+        </Stack>
       </CardFooter>
     </Card>
   );

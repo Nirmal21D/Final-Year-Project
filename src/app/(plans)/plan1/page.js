@@ -1,163 +1,329 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Box, Flex, Text, Button, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { Box, Flex, Text, Button, Table, Tbody, Td, Th, Thead, Tr, Checkbox, CheckboxGroup, Heading, Wrap, Tag, Select, Stack, Alert, AlertIcon, Spinner, useToast } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
-import { collection, getDocs, query } from "firebase/firestore";
+import { collection, getDocs, query, where, getDoc, doc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 
 import Headers from "@/components/Headers";
-import Plancards from "@/components/Plancards";
 
 const Page = () => {
   const [plans, setPlans] = useState([]);
   const [user, setUser] = useState(null);
   const [comparePlans, setComparePlans] = useState([]);
   const [comparisonResults, setComparisonResults] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState([]);
+  const [subCategoryFilter, setSubCategoryFilter] = useState([]);
+  const [recommendedPlans, setRecommendedPlans] = useState([]);
+  const [userTags, setUserTags] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("interestRate");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   const router = useRouter();
+  const toast = useToast();
 
-  // Helper function to calculate CAGR
+  // Enhanced CAGR calculation with compound interest
   const calculateCAGR = (interestRate, tenureMonths) => {
     const years = tenureMonths / 12;
-    const principal = 1; // Normalized principal
-    const finalValue = principal * (1 + interestRate * years); // Approximate final value using simple interest
-    return ((finalValue / principal) ** (1 / years) - 1) * 100; // Convert to percentage
+    const monthlyRate = interestRate / 12 / 100;
+    const periods = tenureMonths;
+    const finalValue = (1 + monthlyRate) ** periods;
+    return ((finalValue ** (1 / years)) - 1) * 100;
   };
 
-  // Helper function to calculate Risk
+  // Enhanced risk calculation with weighted factors
   const calculateRisk = (interestRate, tenure, minimumInvestment) => {
-    // Risk calculation logic
-    const riskFromInterest = interestRate > 10 ? 3 : interestRate > 5 ? 2 : 1; // Higher interest rate, higher risk
-    const riskFromTenure = tenure > 60 ? 3 : tenure > 36 ? 2 : 1; // Longer tenure, higher risk
-    const riskFromInvestment = minimumInvestment > 100000 ? 3 : minimumInvestment > 50000 ? 2 : 1; // Higher investment, higher risk
+    const interestWeight = 0.4;
+    const tenureWeight = 0.35;
+    const investmentWeight = 0.25;
 
-    // Combine the risks into a single score (higher score means higher risk)
-    const totalRisk = riskFromInterest + riskFromTenure + riskFromInvestment;
+    const riskFromInterest = (interestRate > 15 ? 5 : interestRate > 12 ? 4 : interestRate > 9 ? 3 : interestRate > 6 ? 2 : 1) * interestWeight;
+    const riskFromTenure = (tenure > 120 ? 5 : tenure > 60 ? 4 : tenure > 36 ? 3 : tenure > 12 ? 2 : 1) * tenureWeight;
+    const riskFromInvestment = (minimumInvestment > 500000 ? 5 : minimumInvestment > 100000 ? 4 : minimumInvestment > 50000 ? 3 : minimumInvestment > 10000 ? 2 : 1) * investmentWeight;
 
-    return totalRisk;
+    return Math.round((riskFromInterest + riskFromTenure + riskFromInvestment) * 2) / 2;
   };
 
-  // Compare plans logic with ROI, CAGR, and other factors
+  // Enhanced comparison logic with more factors
   const handleCompare = () => {
-    if (comparePlans.length >= 2) {
-      const compareAllPlans = comparePlans.map((plan) => {
-        const calculateScore = (plan) => {
-          const roiWeight = 0.5; // ROI has 50% weight
-          const cagrWeight = 0.4; // CAGR has 40% weight
-          const tenureWeight = 0.1; // Tenure has 10% weight (shorter tenure is better)
-
-          const roiScore = plan.interestRate * roiWeight;
-          const cagrScore = plan.cagr * cagrWeight;
-          const tenureScore = (1 / plan.tenure) * tenureWeight;
-
-          return roiScore + cagrScore + tenureScore;
-        };
-
-        return {
-          plan,
-          score: calculateScore(plan),
-        };
+    if (comparePlans.length < 2) {
+      toast({
+        title: "Comparison Error",
+        description: "Please select at least 2 plans to compare",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
       });
+      return;
+    }
 
-      compareAllPlans.sort((a, b) => b.score - a.score);
+    const compareAllPlans = comparePlans.map((plan) => {
+      const calculateScore = (plan) => {
+        if (!plan) return 0;
 
-      // Generate reasoning for the best plan
-      const generateReasoning = (bestPlan, otherPlans) => {
-        const reasoning = [];
-        otherPlans.forEach((otherPlan) => {
-          if (bestPlan.interestRate > otherPlan.interestRate) {
-            reasoning.push(`${bestPlan.planName} has a higher interest rate than ${otherPlan.planName}.`);
-          }
-          if (bestPlan.cagr > otherPlan.cagr) {
-            reasoning.push(`${bestPlan.planName} has a higher CAGR than ${otherPlan.planName}.`);
-          }
-          if (bestPlan.tenure < otherPlan.tenure) {
-            reasoning.push(`${bestPlan.planName} has a shorter tenure than ${otherPlan.planName}.`);
-          }
-          if (bestPlan.riskLevel < otherPlan.riskLevel) {
-            reasoning.push(`${bestPlan.planName} has a lower risk level than ${otherPlan.planName}.`);
-          }
-          if (bestPlan.minimumInvestment < otherPlan.minimumInvestment) {
-            reasoning.push(`${bestPlan.planName} has a lower minimum investment requirement than ${otherPlan.planName}.`);
-          }
-        });
+        const weights = {
+          roi: 0.35,
+          cagr: 0.25,
+          risk: 0.2,
+          tenure: 0.1,
+          minimumInvestment: 0.1
+        };
 
-        return reasoning;
+        const normalizedROI = plan.interestRate / 20; // Assuming max ROI of 20%
+        const normalizedCAGR = plan.cagr / 20; // Assuming max CAGR of 20%
+        const normalizedRisk = (5 - plan.riskLevel) / 5; // Inverse risk (lower is better)
+        const normalizedTenure = Math.min(plan.tenure, 120) / 120; // Normalize to max 10 years
+        const normalizedInvestment = 1 - (Math.min(plan.minimumInvestment || 0, 500000) / 500000); // Inverse (lower is better)
+
+        return (
+          normalizedROI * weights.roi +
+          normalizedCAGR * weights.cagr +
+          normalizedRisk * weights.risk +
+          normalizedTenure * weights.tenure +
+          normalizedInvestment * weights.minimumInvestment
+        );
       };
 
-      const bestPlan = compareAllPlans[0].plan;
-      const otherPlans = compareAllPlans.slice(1).map((item) => item.plan);
+      return {
+        plan,
+        score: calculateScore(plan),
+      };
+    });
 
-      const reasoning = generateReasoning(bestPlan, otherPlans);
+    compareAllPlans.sort((a, b) => b.score - a.score);
 
-      setComparisonResults({
-        bestPlan,
-        otherPlans,
-        reasoning,
+    const generateDetailedReasoning = (bestPlan, otherPlans) => {
+      if (!bestPlan || !otherPlans) return [];
+      
+      const reasoning = [];
+      
+      otherPlans.forEach((otherPlan) => {
+        if (!otherPlan) return;
+        
+        const comparisons = [];
+        
+        if (bestPlan.interestRate > otherPlan.interestRate) {
+          comparisons.push(`higher interest rate (${bestPlan.interestRate}% vs ${otherPlan.interestRate}%)`);
+        }
+        if (bestPlan.cagr > otherPlan.cagr) {
+          comparisons.push(`better CAGR (${bestPlan.cagr.toFixed(2)}% vs ${otherPlan.cagr.toFixed(2)}%)`);
+        }
+        if (bestPlan.riskLevel < otherPlan.riskLevel) {
+          comparisons.push(`lower risk (${bestPlan.riskLevel} vs ${otherPlan.riskLevel})`);
+        }
+        if (bestPlan.minimumInvestment && otherPlan.minimumInvestment && bestPlan.minimumInvestment < otherPlan.minimumInvestment) {
+          comparisons.push(`lower minimum investment (₹${bestPlan.minimumInvestment.toLocaleString()} vs ₹${otherPlan.minimumInvestment.toLocaleString()})`);
+        }
+
+        if (comparisons.length > 0) {
+          reasoning.push(`Compared to ${otherPlan.planName}, it offers ${comparisons.join(', ')}`);
+        }
       });
-    }
+
+      return reasoning;
+    };
+
+    const bestPlan = compareAllPlans[0]?.plan;
+    const otherPlans = compareAllPlans.slice(1).map((item) => item?.plan).filter(Boolean);
+
+    setComparisonResults({
+      bestPlan,
+      otherPlans,
+      reasoning: generateDetailedReasoning(bestPlan, otherPlans),
+      scores: compareAllPlans.map(({ plan, score }) => ({
+        planName: plan?.planName,
+        score: (score * 100).toFixed(2)
+      }))
+    });
   };
 
-  // Select plans for comparison
   const handleSelectForCompare = (plan) => {
     if (comparePlans.includes(plan)) {
       setComparePlans((prev) => prev.filter((p) => p !== plan));
+    } else if (comparePlans.length >= 4) {
+      toast({
+        title: "Selection Limit",
+        description: "You can compare up to 4 plans at a time",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
     } else {
       setComparePlans((prev) => [...prev, plan]);
     }
   };
 
-  // Auth listener to protect the page
+  // Enhanced similarity calculation with weighted tags
+  const calculateSimilarity = (userTags, planTags) => {
+    if (!userTags?.length || !planTags?.length) return 0;
+    
+    const weightedTags = {
+      riskLevel: 2,
+      investmentCategory: 2,
+      investmentGoal: 1.5,
+      default: 1
+    };
+
+    let weightedIntersection = 0;
+    let weightedUnion = 0;
+
+    const allTags = [...new Set([...userTags, ...planTags])];
+    
+    allTags.forEach(tag => {
+      const weight = weightedTags[tag.split(':')[0]] || weightedTags.default;
+      if (userTags.includes(tag) && planTags.includes(tag)) {
+        weightedIntersection += weight;
+      }
+      if (userTags.includes(tag) || planTags.includes(tag)) {
+        weightedUnion += weight;
+      }
+    });
+
+    return weightedIntersection / weightedUnion;
+  };
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       if (currentUser) {
         setUser(currentUser);
       } else {
-        router.push("/login");
+        setUser(null);
+        router.push('/login');
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [router]);
 
-  // Fetch investment plans with calculated CAGR and Risk
   useEffect(() => {
     const fetchInvestmentPlans = async () => {
       try {
-        const plansQuery = query(collection(db, "investmentplans"));
+        setLoading(true);
+        const plansQuery = query(
+          collection(db, "investmentplans"),
+          where("status", "==", "approved")
+        );
+        
         const querySnapshot = await getDocs(plansQuery);
 
-        const fetchedPlans = querySnapshot.docs.map((doc) => {
+        let fetchedPlans = querySnapshot.docs.map((doc) => {
           const data = doc.data();
-
-          // Calculate CAGR if not already provided
-          const cagr = data.cagr ?? calculateCAGR(data.interestRate / 100, data.tenure);
-
-          // Calculate risk using the new helper function
+          const cagr = calculateCAGR(data.interestRate, data.tenure);
           const riskLevel = calculateRisk(data.interestRate, data.tenure, data.minimumInvestment);
 
           return {
             id: doc.id,
             ...data,
-            cagr, // Add calculated CAGR
-            riskLevel, // Add calculated risk level
+            cagr,
+            riskLevel,
           };
+        });
+
+        // Apply filters
+        if (categoryFilter.length) {
+          fetchedPlans = fetchedPlans.filter(plan => 
+            categoryFilter.includes(plan.investmentCategory)
+          );
+        }
+
+        if (subCategoryFilter.length) {
+          fetchedPlans = fetchedPlans.filter(plan => 
+            subCategoryFilter.includes(plan.investmentSubCategory)
+          );
+        }
+
+        // Apply sorting
+        fetchedPlans.sort((a, b) => {
+          const multiplier = sortOrder === "desc" ? -1 : 1;
+          return (a[sortBy] - b[sortBy]) * multiplier;
         });
 
         setPlans(fetchedPlans);
       } catch (error) {
         console.error("Error fetching plans:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch investment plans",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setLoading(false);
       }
     };
 
     if (user) {
       fetchInvestmentPlans();
     }
+  }, [user, categoryFilter, subCategoryFilter, sortBy, sortOrder]);
+
+  useEffect(() => {
+    const fetchUserInterestsAndRecommend = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const interests = userData.interests || [];
+            setUserTags(interests);
+
+            const plansQuery = query(
+              collection(db, "investmentplans"),
+              where("status", "==", "approved")
+            );
+            const querySnapshot = await getDocs(plansQuery);
+            const allPlans = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+
+            const plansWithScores = allPlans.map(plan => ({
+              ...plan,
+              similarityScore: calculateSimilarity(interests, plan.tags || [])
+            }));
+
+            const recommended = plansWithScores
+              .sort((a, b) => b.similarityScore - a.similarityScore)
+              .filter(plan => plan.similarityScore > 0.2) // Only show relevant recommendations
+              .slice(0, 5);
+
+            setRecommendedPlans(recommended);
+          }
+        } catch (error) {
+          console.error("Error fetching recommendations:", error);
+          toast({
+            title: "Error",
+            description: "Failed to fetch personalized recommendations",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      }
+    };
+
+    fetchUserInterestsAndRecommend();
   }, [user]);
 
+  if (loading) {
+    return (
+      <Flex height="100vh" align="center" justify="center">
+        <Spinner size="xl" color="blue.500" />
+      </Flex>
+    );
+  }
+
   if (!user) {
-    return <Box>Loading...</Box>;
+    return (
+      <Alert status="warning">
+        <AlertIcon />
+        Please log in to view investment plans
+      </Alert>
+    );
   }
 
   return (
@@ -171,45 +337,177 @@ const Page = () => {
       p={5}
     >
       <Headers />
-      <Flex wrap="wrap" justifyContent="center" mt={5}>
+      
+      <Stack spacing={4} width="100%" maxW="1200px" mb={6}>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+          <Box flex="1">
+            <Text fontWeight="bold" color="#2C319F" mb={2}>
+              Categories:
+            </Text>
+            <CheckboxGroup value={categoryFilter} onChange={setCategoryFilter}>
+              <Stack direction={["column", "row"]} spacing={[2, 4]}>
+                <Checkbox value="Bonds">Bonds</Checkbox>
+                <Checkbox value="MutualFunds">Mutual Funds</Checkbox>
+                <Checkbox value="FixedDeposits">Fixed Deposits</Checkbox>
+                <Checkbox value="GoldInvestments">Gold Investments</Checkbox>
+                <Checkbox value="ProvidentFunds">Provident Funds</Checkbox>
+              </Stack>
+            </CheckboxGroup>
+          </Box>
+
+          <Box>
+            <Stack direction="row" spacing={4}>
+              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <option value="interestRate">Interest Rate</option>
+                <option value="cagr">CAGR</option>
+                <option value="riskLevel">Risk Level</option>
+                <option value="minimumInvestment">Minimum Investment</option>
+              </Select>
+              <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                <option value="desc">High to Low</option>
+                <option value="asc">Low to High</option>
+              </Select>
+            </Stack>
+          </Box>
+        </Flex>
+
+        {categoryFilter.length > 0 && (
+          <Box>
+            <Text fontWeight="bold" color="#2C319F" mb={2}>
+              Subcategories:
+            </Text>
+            <CheckboxGroup value={subCategoryFilter} onChange={setSubCategoryFilter}>
+              <Stack direction={["column", "row"]} spacing={[2, 4]} wrap="wrap">
+                {categoryFilter.includes("Bonds") && (
+                  <>
+                    <Checkbox value="Government Bonds">Government Bonds</Checkbox>
+                    <Checkbox value="Corporate Bonds">Corporate Bonds</Checkbox>
+                    <Checkbox value="Tax-Free Bonds">Tax-Free Bonds</Checkbox>
+                  </>
+                )}
+                {categoryFilter.includes("MutualFunds") && (
+                  <>
+                    <Checkbox value="Equity Funds">Equity Funds</Checkbox>
+                    <Checkbox value="Hybrid Funds">Hybrid Funds</Checkbox>
+                    <Checkbox value="Index Funds">Index Funds</Checkbox>
+                    <Checkbox value="Real Estate Funds">Real Estate Funds</Checkbox>
+                  </>
+                )}
+                {categoryFilter.includes("GoldInvestments") && (
+                  <>
+                    <Checkbox value="Physical Gold">Physical Gold</Checkbox>
+                    <Checkbox value="Digital Gold">Digital Gold</Checkbox>
+                    <Checkbox value="Gold ETFs">Gold ETFs</Checkbox>
+                    <Checkbox value="Sovereign Gold Bonds">Sovereign Gold Bonds</Checkbox>
+                  </>
+                )}
+                {categoryFilter.includes("ProvidentFunds") && (
+                  <>
+                    <Checkbox value="Employee Provident Fund (EPF)">EPF</Checkbox>
+                    <Checkbox value="Public Provident Fund (PPF)">PPF</Checkbox>
+                    <Checkbox value="General Provident Fund (GPF)">GPF</Checkbox>
+                  </>
+                )}
+              </Stack>
+            </CheckboxGroup>
+          </Box>
+        )}
+      </Stack>
+
+      {/* Recommended Plans Section */}
+      {recommendedPlans.length > 0 && (
+        <Box width="100%" maxW="1200px" mb={8}>
+          <Heading size="md" mb={4}>Recommended for You</Heading>
+          <Flex wrap="wrap" gap={4} justify="center">
+            {recommendedPlans.map((plan) => (
+              <Box 
+                key={plan.id} 
+                p={4} 
+                borderWidth={1} 
+                borderRadius="lg" 
+                width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
+                bg="linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)"
+                boxShadow="lg"
+                transition="all 0.2s"
+                _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
+              >
+                <Heading size="sm" color="#2C319F">{plan.planName}</Heading>
+                <Text mt={2} noOfLines={2} color="gray.700">{plan.description}</Text>
+                <Wrap mt={2}>
+                  {plan.tags?.map((tag) => (
+                    <Tag key={tag} size="sm" colorScheme="blue">
+                      {tag}
+                    </Tag>
+                  ))}
+                </Wrap>
+                <Text mt={2} fontWeight="bold" color="green.600">
+                  Match Score: {(plan.similarityScore * 100).toFixed(1)}%
+                </Text>
+                <Button
+                  mt={3}
+                  size="sm"
+                  colorScheme={comparePlans.includes(plan) ? "red" : "blue"}
+                  onClick={() => handleSelectForCompare(plan)}
+                  width="100%"
+                >
+                  {comparePlans.includes(plan) ? "Remove from Comparison" : "Add to Compare"}
+                </Button>
+              </Box>
+            ))}
+          </Flex>
+        </Box>
+      )}
+
+      <Flex wrap="wrap" justify="center" gap={4} width="100%" maxW="1200px">
         {plans.map((plan) => (
-          <Box key={plan.id} m={2}>
-            <Plancards
-              header={plan.planName}
-              summary={plan.description}
-              investmentCategory={plan.investmentCategory}
-              investmentSubCategory={plan.investmentSubCategory}
-            />
+          <Box 
+            key={plan.id} 
+            width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
+          >
+            <Box 
+              p={4} 
+              borderWidth={1} 
+              borderRadius="lg" 
+              bg="linear-gradient(135deg, #e2e2e2 0%, #ffffff 100%)"
+              boxShadow="lg"
+              transition="all 0.2s"
+              _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
+            >
+              <Heading size="sm" color="#2C319F">{plan.planName}</Heading>
+              <Text mt={2} noOfLines={2} color="gray.700">{plan.description}</Text>
+              <Text mt={2} fontWeight="bold" color="green.600">Interest Rate: {plan.interestRate}%</Text>
+              <Text color="orange.600">CAGR: {plan.cagr.toFixed(2)}%</Text>
+              <Text color="red.600">Risk Level: {plan.riskLevel}</Text>
+              <Text color="blue.600">Min Investment: ₹{plan.minimumInvestment?.toLocaleString()}</Text>
+            </Box>
             <Button
               colorScheme={comparePlans.includes(plan) ? "red" : "blue"}
               mt={2}
+              width="100%"
               onClick={() => handleSelectForCompare(plan)}
             >
-              {comparePlans.includes(plan) ? "Remove" : "Compare"}
+              {comparePlans.includes(plan) ? "Remove from Comparison" : "Add to Compare"}
             </Button>
           </Box>
         ))}
       </Flex>
 
       {comparePlans.length >= 2 && (
-        <Button colorScheme="green" mt={4} onClick={handleCompare}>
-          Compare Plans
+        <Button 
+          colorScheme="green" 
+          mt={6} 
+          size="lg"
+          onClick={handleCompare}
+        >
+          Compare Selected Plans ({comparePlans.length})
         </Button>
       )}
 
       {comparisonResults.bestPlan && (
-        <Box
-          mt={5}
-          p={5}
-          bg="white"
-          borderRadius="md"
-          shadow="md"
-          width="80%"
-          maxW="1200px"
-        >
-          <Text fontSize="lg" fontWeight="bold" color="blue.500">
-            Comparison of Selected Plans
-          </Text>
+        <Box mt={8} p={6} bg="white" borderRadius="lg" shadow="lg" width="100%" maxW="1200px">
+          <Heading size="md" color="blue.600" mb={4}>
+            Plan Comparison Results
+          </Heading>
 
           <Table variant="simple" mt={4}>
             <Thead>
@@ -218,7 +516,7 @@ const Page = () => {
                 {comparisonResults.otherPlans.map((plan) => (
                   <Th key={plan.id}>{plan.planName}</Th>
                 ))}
-                <Th>{comparisonResults.bestPlan.planName}</Th>
+                <Th bg="green.50">{comparisonResults.bestPlan.planName}</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -227,72 +525,72 @@ const Page = () => {
                 {comparisonResults.otherPlans.map((plan) => (
                   <Td key={plan.id}>{plan.interestRate}%</Td>
                 ))}
-                <Td>{comparisonResults.bestPlan.interestRate}%</Td>
+                <Td bg="green.50">{comparisonResults.bestPlan.interestRate}%</Td>
               </Tr>
               <Tr>
                 <Td>CAGR</Td>
                 {comparisonResults.otherPlans.map((plan) => (
                   <Td key={plan.id}>{plan.cagr.toFixed(2)}%</Td>
                 ))}
-                <Td>{comparisonResults.bestPlan.cagr.toFixed(2)}%</Td>
+                <Td bg="green.50">{comparisonResults.bestPlan.cagr.toFixed(2)}%</Td>
               </Tr>
               <Tr>
-                <Td>Tenure (Months)</Td>
+                <Td>Risk Level</Td>
                 {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.tenure}</Td>
+                  <Td key={plan.id}>
+                    <Tag colorScheme={plan.riskLevel <= 2 ? "green" : plan.riskLevel <= 3.5 ? "yellow" : "red"}>
+                      {plan.riskLevel}
+                    </Tag>
+                  </Td>
                 ))}
-                <Td>{comparisonResults.bestPlan.tenure}</Td>
+                <Td bg="green.50">
+                  <Tag colorScheme={comparisonResults.bestPlan.riskLevel <= 2 ? "green" : comparisonResults.bestPlan.riskLevel <= 3.5 ? "yellow" : "red"}>
+                    {comparisonResults.bestPlan.riskLevel}
+                  </Tag>
+                </Td>
+              </Tr>
+              <Tr>
+                <Td>Minimum Investment</Td>
+                {comparisonResults.otherPlans.map((plan) => (
+                  <Td key={plan.id}>₹{plan.minimumInvestment?.toLocaleString() || 'N/A'}</Td>
+                ))}
+                <Td bg="green.50">₹{comparisonResults.bestPlan.minimumInvestment?.toLocaleString() || 'N/A'}</Td>
               </Tr>
               <Tr>
                 <Td>Category</Td>
                 {comparisonResults.otherPlans.map((plan) => (
                   <Td key={plan.id}>{plan.investmentCategory}</Td>
                 ))}
-                <Td>{comparisonResults.bestPlan.investmentCategory}</Td>
+                <Td bg="green.50">{comparisonResults.bestPlan.investmentCategory}</Td>
               </Tr>
               <Tr>
                 <Td>Subcategory</Td>
                 {comparisonResults.otherPlans.map((plan) => (
                   <Td key={plan.id}>{plan.investmentSubCategory}</Td>
                 ))}
-                <Td>{comparisonResults.bestPlan.investmentSubCategory}</Td>
+                <Td bg="green.50">{comparisonResults.bestPlan.investmentSubCategory}</Td>
               </Tr>
               <Tr>
-                <Td>Risk Level</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.riskLevel}</Td>
+                <Td>Comparison Score</Td>
+                {comparisonResults.scores.slice(1).map((score) => (
+                  <Td key={score.planName}>{score.score}%</Td>
                 ))}
-                <Td>{comparisonResults.bestPlan.riskLevel}</Td>
-              </Tr>
-              <Tr>
-                <Td>Minimum Investment</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.minimumInvestment}</Td>
-                ))}
-                <Td>{comparisonResults.bestPlan.minimumInvestment}</Td>
-              </Tr>
-              <Tr>
-                <Td>Description</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.description}</Td>
-                ))}
-                <Td>{comparisonResults.bestPlan.description}</Td>
+                <Td bg="green.50">{comparisonResults.scores[0].score}%</Td>
               </Tr>
             </Tbody>
           </Table>
 
-          <Box mt={5} p={4} borderRadius="md" bg="green.100">
-            <Text fontSize="lg" fontWeight="bold" color="green.600">
-              Why This Plan is Better
-            </Text>
-            <Text mt={2}>
-              {comparisonResults.bestPlan.planName} outperforms the other selected plans in the following areas:
-            </Text>
-            <ul>
+          <Box mt={6} p={4} borderRadius="md" bg="blue.50">
+            <Heading size="sm" color="blue.700" mb={3}>
+              Detailed Analysis
+            </Heading>
+            <Stack spacing={2}>
               {comparisonResults.reasoning.map((reason, index) => (
-                <li key={index}>{reason}</li>
+                <Text key={index} fontSize="sm">
+                  • {reason}
+                </Text>
               ))}
-            </ul>
+            </Stack>
           </Box>
         </Box>
       )}

@@ -3,7 +3,27 @@ import React, { useEffect, useState } from "react";
 import SignUpPage from "../../../components/SignUpPage";
 import { Box } from "@chakra-ui/react";
 import SearchBox from "@/components/SearchBar";
-const signup = () => {
+import { useRouter } from "next/navigation"; // Changed from next/router
+
+const SignUp = () => {
+  const [user, setUser] = useState(null);
+  const router = useRouter(); // Initialize useRouter
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        router.push('/'); // Redirect to home if user is already logged in
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]); // Add router to dependency array
+
+  const [isVerified, setIsVerified] = useState(false); // Set isVerified to false when creating a bank account
+
   return (
     <>
       <Box
@@ -40,7 +60,7 @@ const signup = () => {
         </Box>
         <Box id="lower" w="full">
           <Box id="signup">
-            <SignUpPage />
+            <SignUpPage isVerified={isVerified} /> {/* Pass isVerified to SignUpPage */}
           </Box>
         </Box>
       </Box>
@@ -48,4 +68,4 @@ const signup = () => {
   );
 };
 
-export default signup;
+export default SignUp;

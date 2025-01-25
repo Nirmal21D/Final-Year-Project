@@ -16,10 +16,15 @@ import {
   NumberInputField,
   Textarea,
   Select,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+  Wrap,
+  WrapItem,
 } from "@chakra-ui/react";
 import { auth, db } from "@/firebase";
 import { useRouter } from "next/navigation";
-import { collection, setDoc, doc } from "firebase/firestore";
+import { collection, setDoc, doc, getDocs } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
 const AddPlanForm = () => {
@@ -36,16 +41,22 @@ const AddPlanForm = () => {
     loanName: "",
     investmentCategory: "",
     investmentSubCategory: "",
+    createdBy: "", // Added createdBy field
   });
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState([]);
+  const [fetchedTags, setFetchedTags] = useState([]);
 
   const router = useRouter();
   const toast = useToast();
 
   // Subcategories for each investment category
   const subCategories = {
-    bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds"],
-    mutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds"],
-    fixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit"],
+    Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds"],
+    MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds"],
+    FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit"],
+    GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds"],
+    ProvidentFunds: ["EPF", "PPF", "GPF"],
   };
 
   useEffect(() => {
@@ -60,33 +71,79 @@ const AddPlanForm = () => {
     return () => unsubscribe();
   }, [router]);
 
+  useEffect(() => {
+    const fetchTags = async () => {
+      const tagsCollection = await getDocs(collection(db, "tags"));
+      const tagsList = tagsCollection.docs.map(doc => doc.data().tag);
+      setFetchedTags(tagsList);
+    };
+    fetchTags();
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "investmentCategory" && { investmentSubCategory: "" }), // Reset subcategory when category changes
+      ...(name === "investmentCategory" && { investmentSubCategory: "" }),
     }));
+  };
+
+  const handleAddTag = (tag) => {
+    if (!tags.includes(tag) && tags.length < 5) {
+      setTags([...tags, tag]);
+    }
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (parseFloat(formData.minAmount) > parseFloat(formData.maxAmount)) {
+      toast({
+        title: "Validation Error",
+        description: "Minimum amount cannot be greater than maximum amount.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
       const planId = uuidv4();
-      const collectionName =
-        formData.planType === "loan" ? "loanplans" : "investmentplans";
-      await setDoc(doc(collection(db, collectionName), planId), {
+      const collectionName = formData.planType === "loan" ? "loanplans" : "investmentplans";
+      
+      const planData = {
         ...formData,
+        tags,
         planId,
-        createdBy: user.uid,
-      });
+        createdBy: user.uid, // Ensure createdBy is set to user.uid
+        status: "pending",
+        isVerified: false,
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+      };
+
+      await setDoc(doc(collection(db, collectionName), planId), planData);
+      
+      // Store tags in a separate collection
+      for (const tag of tags) {
+        await setDoc(doc(collection(db, "tags"), tag), { tag });
+      }
+      
       toast({
         title: "Success",
-        description: "Plan added successfully!",
+        description: "Plan added successfully! Awaiting admin verification.",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+      
       setFormData({
         planType: "",
         planName: "",
@@ -99,7 +156,9 @@ const AddPlanForm = () => {
         loanName: "",
         investmentCategory: "",
         investmentSubCategory: "",
+        createdBy: "", // Reset createdBy field
       });
+      setTags([]); // Reset tags after submission
     } catch (error) {
       toast({
         title: "Error",
@@ -165,9 +224,11 @@ const AddPlanForm = () => {
                     placeholder="Select Category"
                     bg="white"
                   >
-                    <option value="bonds">Bonds</option>
-                    <option value="mutualFunds">Mutual Funds</option>
-                    <option value="fixedDeposits">Fixed Deposits</option>
+                    <option value="Bonds">Bonds</option>
+                    <option value="MutualFunds">Mutual Funds</option>
+                    <option value="FixedDeposits">Fixed Deposits</option>
+                    <option value="GoldInvestments">Gold Investments</option>
+                    <option value="ProvidentFunds">Provident Funds</option>
                   </Select>
                 </FormControl>
                 {formData.investmentCategory && (
@@ -271,6 +332,55 @@ const AddPlanForm = () => {
                 onChange={handleInputChange}
                 bg="white"
               />
+            </FormControl>
+
+            {/* Tags Section */}
+            <FormControl>
+              <FormLabel>Tags (up to 5)</FormLabel>
+              <HStack mb={2}>
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  placeholder="Add tags"
+                />
+                <Button
+                  onClick={() => handleAddTag(tagInput)}
+                  isDisabled={tags.length >= 5 || !tagInput}
+                >
+                  Add
+                </Button>
+              </HStack>
+              
+              {/* Display selected tags */}
+              <Wrap spacing={2} mb={4}>
+                {tags.map((tag) => (
+                  <WrapItem key={tag}>
+                    <Tag size="md" colorScheme="blue" borderRadius="full">
+                      <TagLabel>{tag}</TagLabel>
+                      <TagCloseButton onClick={() => handleRemoveTag(tag)} />
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
+
+              {/* Display fetched tags */}
+              <Text mb={2} fontWeight="bold">Fetched Tags:</Text>
+              <Wrap spacing={2}>
+                {fetchedTags.map((tag) => (
+                  <WrapItem key={tag}>
+                    <Tag
+                      size="md"
+                      colorScheme="gray"
+                      borderRadius="full"
+                      cursor="pointer"
+                      onClick={() => handleAddTag(tag)}
+                      _hover={{ bg: "blue.100" }}
+                    >
+                      <TagLabel>{tag}</TagLabel>
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
             </FormControl>
 
             <Button type="submit" colorScheme="teal" width="full" mt={4}>
