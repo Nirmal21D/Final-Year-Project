@@ -19,13 +19,13 @@ const MainPage = () => {
       try {
         const plansCollection = collection(db, "plans");
         const plansSnapshot = await getDocs(plansCollection);
-        const plansData = plansSnapshot.docs.map(doc => ({
+        const plansData = plansSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
         setPlans(plansData);
       } catch (error) {
-        console.error('Error fetching plans from Firebase:', error);
+        console.error("Error fetching plans from Firebase:", error);
       } finally {
         setIsLoading(false);
       }
@@ -46,7 +46,8 @@ const MainPage = () => {
         flexDirection="column"
         justifyItems="center"
         alignItems="center"
-        backgroundImage="url(/images/newbg.png)"
+        // backgroundImage="url(/images/newbg.png)"
+        bg="gray.50"
         backgroundPosition="center"
         backgroundSize="cover"
         backgroundAttachment="fixed"
@@ -99,7 +100,12 @@ const MainPage = () => {
             p="6"
           >
             {isLoading ? (
-              <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                height="200px"
+              >
                 <Spinner size="xl" />
               </Box>
             ) : (
@@ -136,21 +142,29 @@ const MainPage = () => {
                         Recommended
                       </Box>
                     )}
-                    <Box fontSize="2xl" fontWeight="bold" mb="4">{plan.name}</Box>
+                    <Box fontSize="2xl" fontWeight="bold" mb="4">
+                      {plan.name}
+                    </Box>
                     <Box fontSize="4xl" mb="4">
-                      ${plan.price}<Box as="span" fontSize="sm">/month</Box>
+                      ${plan.price}
+                      <Box as="span" fontSize="sm">
+                        /month
+                      </Box>
                     </Box>
                     <Box mb="4">
-                      {plan.features && plan.features.map((feature, idx) => (
-                        <Box key={idx} mb="2">✓ {feature}</Box>
-                      ))}
+                      {plan.features &&
+                        plan.features.map((feature, idx) => (
+                          <Box key={idx} mb="2">
+                            ✓ {feature}
+                          </Box>
+                        ))}
                     </Box>
                   </Box>
                 ))}
               </Box>
             )}
           </Box>
-          
+
           {isChatOpen && (
             <Box
               position="fixed"
@@ -168,7 +182,7 @@ const MainPage = () => {
             </Box>
           )}
         </Box>
-        
+
         <IconButton
           position="fixed"
           bottom="4"

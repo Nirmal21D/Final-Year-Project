@@ -93,8 +93,12 @@ const NewsPage = () => {
 
     // Group articles by week and month
     articles.forEach((article) => {
-      const weekKey = `${article.publishedDate.getFullYear()}-W${article.weekOfMonth}`;
-      const monthKey = `${article.publishedDate.getFullYear()}-${article.month}`;
+      const weekKey = `${article.publishedDate.getFullYear()}-W${
+        article.weekOfMonth
+      }`;
+      const monthKey = `${article.publishedDate.getFullYear()}-${
+        article.month
+      }`;
 
       if (!weeks[weekKey]) weeks[weekKey] = [];
       weeks[weekKey].push(article);
@@ -121,7 +125,8 @@ const NewsPage = () => {
       </Box>
       {/* Add padding to the content to prevent overlap with the fixed header */}
       <Box
-        bgImage="url(/images/newbg.png)"
+        // bgImage="url(/images/newbg.png)"
+        bg="gray.50"
         bgPosition="center"
         bgSize="cover"
         bgAttachment="fixed"
@@ -139,12 +144,22 @@ const NewsPage = () => {
           boxShadow="lg"
           mb={6}
           textAlign="center"
-          marginTop={50}
+          marginTop={18}
         >
           <Heading mb={2}>Latest Finance News</Heading>
           <Text>Stay updated with the latest Indian finance news.</Text>
-          <Box mt={4} display="flex" justifyContent="center" alignItems="center" gap={4}>
-            <Button colorScheme="blue" onClick={handleRefresh} isLoading={loading}>
+          <Box
+            mt={4}
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            gap={4}
+          >
+            <Button
+              colorScheme="blue"
+              onClick={handleRefresh}
+              isLoading={loading}
+            >
               Refresh News
             </Button>
             <Button
@@ -158,7 +173,9 @@ const NewsPage = () => {
               Informative
             </Button>
             <Text fontSize="sm">
-              {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : "Loading..."}
+              {lastUpdated
+                ? `Last updated: ${lastUpdated.toLocaleTimeString()}`
+                : "Loading..."}
             </Text>
           </Box>
         </Box>
@@ -185,7 +202,11 @@ const NewsPage = () => {
                   Week {weekKey} - Latest News
                 </Heading>
                 <Grid
-                  templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+                  templateColumns={{
+                    base: "1fr",
+                    md: "repeat(2, 1fr)",
+                    lg: "repeat(3, 1fr)",
+                  }}
                   gap={6}
                 >
                   {groupedNews.weeks[weekKey].map((article, index) => (
@@ -227,7 +248,11 @@ const NewsPage = () => {
                   Month {monthKey} - Latest News
                 </Heading>
                 <Grid
-                  templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+                  templateColumns={{
+                    base: "1fr",
+                    md: "repeat(2, 1fr)",
+                    lg: "repeat(3, 1fr)",
+                  }}
                   gap={6}
                 >
                   {groupedNews.months[monthKey].map((article, index) => (
