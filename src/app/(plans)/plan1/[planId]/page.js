@@ -33,13 +33,15 @@ import {
   VStack,
   HStack,
 } from "@chakra-ui/react";
-import { doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, setDoc, arrayUnion  } from "firebase/firestore";
 import { db, auth } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { FiClock, FiDollarSign, FiPercent, FiTrendingUp } from "react-icons/fi";
 import Headers from "@/components/Headers";
 import Script from "next/script";
+import jsPDF from "jspdf"; // Import jsPDF for PDF generation
+
 
 const PlanDetails = () => {
   const { planId } = useParams();
@@ -160,7 +162,6 @@ const PlanDetails = () => {
   };
 
   const handlePayment = async (amount) => {
-    
     try {
       const response = await fetch('/api/process-input', {
         method: 'POST',
@@ -193,15 +194,17 @@ const PlanDetails = () => {
             // Store investment info in user database
             if (user) {
               const userDocRef = doc(db, "users", user.uid);
+              const pdfBase64 = await generateReceiptPDF(user, plan, investmentAmount);
               await setDoc(userDocRef, {
-                investments: {
-                  [planId]: {
-                    amount: parseFloat(investmentAmount),
-                    planName: plan.planName,
-                    timestamp: new Date(),
-                  }
-                }
+                investments: arrayUnion({
+                  planId: planId,
+                  amount: parseFloat(investmentAmount),
+                  planName: plan.planName,
+                  timestamp: new Date(),
+                  receipts: [pdfBase64] // Store PDF in base64 format
+                })
               }, { merge: true });
+              
             }
           },
           prefill: {
@@ -239,6 +242,21 @@ const PlanDetails = () => {
         isClosable: true,
       });
     }
+  };
+
+  const generateReceiptPDF = async (user, plan, investmentAmount) => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text("Investment Receipt", 20, 20);
+    doc.setFontSize(12);
+    doc.text(`User Name: ${user.name}`, 20, 40);
+    doc.text(`User Email: ${user.email}`, 20, 50);
+    doc.text(`Plan Name: ${plan.planName}`, 20, 60);
+    doc.text(`Investment Amount: ₹${investmentAmount}`, 20, 70);
+    doc.text(`Investment Date: ${new Date().toLocaleString()}`, 20, 80);
+    
+    const pdfOutput = doc.output('datauristring'); // Get PDF as base64
+    return pdfOutput; // Return base64 string
   };
 
   if (loading) {

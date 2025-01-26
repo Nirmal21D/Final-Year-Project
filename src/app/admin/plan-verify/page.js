@@ -21,7 +21,8 @@ import {
 } from "@chakra-ui/react";
 
 export default function PlanVerifyPage() {
-  const [plans, setPlans] = useState([]);
+  const [investmentPlans, setInvestmentPlans] = useState([]);
+  const [loanPlans, setLoanPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -31,25 +32,44 @@ export default function PlanVerifyPage() {
   useEffect(() => {
     const fetchUnverifiedPlans = async () => {
       try {
-        const plansRef = collection(db, "investmentplans");
-        const q = query(plansRef, where("status", "==", "pending"));
-        const querySnapshot = await getDocs(q);
-        const pendingPlans = querySnapshot.docs.map(async (docSnapshot) => {
+        const investmentPlansRef = collection(db, "investmentplans");
+        const loanPlansRef = collection(db, "loanplans");
+        
+        const investmentQuery = query(investmentPlansRef, where("status", "==", "pending"));
+        const loanQuery = query(loanPlansRef, where("status", "==", "pending"));
+
+        const investmentSnapshot = await getDocs(investmentQuery);
+        const loanSnapshot = await getDocs(loanQuery);
+
+        const pendingInvestmentPlans = investmentSnapshot.docs.map(async (docSnapshot) => {
           const planData = docSnapshot.data();
-          console.log(planData);
           const bankRef = doc(db, "Banks", planData.createdBy);
           const bankDoc = await getDoc(bankRef);
           const bankData = bankDoc.data();
-          console.log(bankData);
           return {
             id: docSnapshot.id,
             ...planData,
             bankName: bankData?.bankName || 'N/A',
           };
         });
-        const resolvedPlans = await Promise.all(pendingPlans);
-        setPlans(resolvedPlans);
-        console.log(resolvedPlans);
+
+        const pendingLoanPlans = loanSnapshot.docs.map(async (docSnapshot) => {
+          const planData = docSnapshot.data();
+          const bankRef = doc(db, "Banks", planData.createdBy);
+          const bankDoc = await getDoc(bankRef);
+          const bankData = bankDoc.data();
+          return {
+            id: docSnapshot.id,
+            ...planData,
+            bankName: bankData?.bankName || 'N/A',
+          };
+        });
+
+        const resolvedInvestmentPlans = await Promise.all(pendingInvestmentPlans);
+        const resolvedLoanPlans = await Promise.all(pendingLoanPlans);
+
+        setInvestmentPlans(resolvedInvestmentPlans);
+        setLoanPlans(resolvedLoanPlans);
       } catch (error) {
         console.error("Error fetching plans:", error);
         toast({
@@ -65,16 +85,20 @@ export default function PlanVerifyPage() {
     fetchUnverifiedPlans();
   }, [toast]);
 
-  const handleVerifyPlan = async (planId, isApproved) => {
+  const handleVerifyPlan = async (planId, isApproved, isLoanPlan = false) => {
     try {
-      const planRef = doc(db, "investmentplans", planId);
+      const planRef = doc(db, isLoanPlan ? "loanplans" : "investmentplans", planId);
       if (isApproved) {
         await updateDoc(planRef, {
           isVerified: true,
           status: "approved",
           lastUpdated: new Date(),
         });
-        setPlans(plans.filter((plan) => plan.id !== planId));
+        if (isLoanPlan) {
+          setLoanPlans(loanPlans.filter((plan) => plan.id !== planId));
+        } else {
+          setInvestmentPlans(investmentPlans.filter((plan) => plan.id !== planId));
+        }
       }
     } catch (error) {
       console.error("Error updating plan:", error);
@@ -114,7 +138,7 @@ export default function PlanVerifyPage() {
       setShowRejectModal(false);
       setRejectionReason("");
       setSelectedPlanId(null);
-      setPlans(plans.filter((plan) => plan.id !== selectedPlanId));
+      setInvestmentPlans(investmentPlans.filter((plan) => plan.id !== selectedPlanId));
     } catch (error) {
       console.error("Error rejecting plan:", error);
       toast({
@@ -146,15 +170,16 @@ export default function PlanVerifyPage() {
     <Box bg="#F0F4FB" minH="100vh">
       <Container maxW="85%" py={6}>
         <Flex justify="space-between" align="center" mb={6}>
-          <Heading colorScheme="green" size="lg">Verify Investment Plans</Heading>
+          <Heading colorScheme="green" size="lg">Verify Investment and Loan Plans</Heading>
           <Flex align="center" gap={4}>
             <Text color="gray.600">Hello, Admin</Text>
             <Avatar src="/admin-avatar.png" size="md" />
           </Flex>
         </Flex>
 
+        <Heading size="md" mb={4}>Investment Plans</Heading>
         <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
-          {plans.map((plan) => (
+          {investmentPlans.map((plan) => (
             <Card key={plan.id} variant="outline" transition="all 0.2s" _hover={{ shadow: "xl" }}>
               <CardBody>
                 <Flex justify="space-between" align="start" mb={4}>
@@ -198,10 +223,56 @@ export default function PlanVerifyPage() {
           ))}
         </Grid>
 
+        <Heading size="md" mb={4} mt={8}>Loan Plans</Heading>
+        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
+          {loanPlans.map((plan) => (
+            <Card key={plan.id} variant="outline" transition="all 0.2s" _hover={{ shadow: "xl" }}>
+              <CardBody>
+                <Flex justify="space-between" align="start" mb={4}>
+                  <Heading size="md" color="gray.800">{plan.name}</Heading>
+                  <Badge colorScheme="blue" px={2} py={1} borderRadius="md">
+                    {plan.loanCategory}
+                  </Badge>
+                </Flex>
+
+                <Text color="gray.600" mb={4} noOfLines={2}>
+                  {plan.description}
+                </Text>
+
+                <Stack spacing={2} mb={4}>
+                  <Text color="gray.500"><span className="font-semibold">Bank:</span> {plan.bankName}</Text>
+                  <Text color="gray.500"><span className="font-semibold">Interest Rate:</span> {plan.interestRate}%</Text>
+                  <Text color="gray.500"><span className="font-semibold">Duration:</span> {plan.duration} months</Text>
+                  <Text color="gray.500"><span className="font-semibold">Minimum Loan:</span> ${plan.minimumLoan}</Text>
+                  <Text color="gray.500"><span className="font-semibold">Maximum Loan:</span> ${plan.maximumLoan}</Text>
+                  <Text color="gray.500"><span className="font-semibold">Risk Level:</span> {plan.riskLevel}</Text>
+                </Stack>
+
+                <Flex justify="space-between" gap={4} mb={4}>
+                  <Button
+                    onClick={() => handleVerifyPlan(plan.id, true, true)}
+                    colorScheme="green"
+                    size="md"
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    onClick={() => handleRejectClick(plan.id)}
+                    colorScheme="red"
+                    size="md"
+                  >
+                    Reject
+                  </Button>
+                </Flex>
+              </CardBody>
+            </Card>
+          ))}
+        </Grid>
+
         {showRejectModal && (
           <Box position="fixed" inset={0} bg="blackAlpha.300" zIndex={50}>
             <Box bg="white" rounded="lg" p={6} maxW="md" mx="auto" mt="20vh">
-              <Heading size="md" mb={4}>Reject Investment Plan</Heading>
+              <Heading size="md" mb={4}>Reject Plan</Heading>
               <Text mb={4}>Please provide a reason for rejection</Text>
               <Textarea
                 value={rejectionReason}

@@ -1,7 +1,7 @@
 "use client";
-import { Box, Button, Input, Text, Flex, useToast, VStack, HStack, Wrap, WrapItem, Tag, TagLabel, TagCloseButton, Image, Avatar } from "@chakra-ui/react";
+import { Box, Button, Input, Text, Flex, useToast, VStack, HStack, Wrap, WrapItem, Tag, TagLabel, TagCloseButton, Avatar, Tabs, TabList, Tab, TabPanels, TabPanel, Table, Thead, Tbody, Tr, Th, Td, Link } from "@chakra-ui/react";
 import React, { useState, useEffect, useRef } from "react";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc, collection, getDocs, arrayUnion } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -19,18 +19,11 @@ const ProfilePage = () => {
   const [userTags, setUserTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [user, setUser] = useState(null);
-
-  const suggestedTags = [
-    "High Risk Tolerance", "Low Risk Tolerance", "Medium Risk Tolerance",
-    "Short Term Goals", "Long Term Goals", 
-    "Tax Saving", "High Returns Seeking",
-    "Senior Citizen", "Youth",
-    "Beginner Investor", "Fixed Income",
-    "Regular Income", "Wealth Creation",
-    "Retirement Planning", "Education Planning",
-    "Real Estate Interest", "Technology Interest",
-    "Healthcare Interest", "Green Energy Interest"
-  ];
+  const [certificates, setCertificates] = useState([]);
+  const [suggestedTags, setSuggestedTags] = useState([]);
+  const [investments, setInvestments] = useState([]); // Added state for investments
+  const [receipts, setReceipts] = useState([]); // Added state for receipts
+  const [interests, setInterests] = useState([]); // Added state for interests
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -54,6 +47,10 @@ const ProfilePage = () => {
             setUserTags(userData.interests || []);
             setFundsHistory(userData.fundsHistory || ["No transaction history"]);
             setProfilePhoto(userData.profilePhoto || "");
+            setInvestments(userData.investments || []);
+            console.log(userData.investments[0].receipts[0])
+            setReceipts(userData.investments.receipts || []); // Fetch receipts
+           
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -69,6 +66,36 @@ const ProfilePage = () => {
     };
     fetchUserData();
   }, [user, toast]);
+
+  useEffect(() => {
+    const fetchSuggestedTags = async () => {
+      try {
+        const tagsCollection = collection(db, "tags");
+        const tagsSnapshot = await getDocs(tagsCollection);
+        const tagsList = tagsSnapshot.docs.map(doc => doc.data().tag);
+        
+        setSuggestedTags(tagsList);
+      } catch (error) {
+        console.error("Error fetching suggested tags:", error);
+      }
+    };
+
+    
+    fetchSuggestedTags();
+  }, []);
+
+  useEffect(() => {
+    const fetchInterests = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userData = userDoc.data();
+        setInterests(userData.interests || []);
+        console.log(interests)
+        
+      }
+    };
+    fetchInterests();
+  }, [user]);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -185,6 +212,24 @@ const ProfilePage = () => {
     </Flex>
   );
 
+  useEffect(() => {
+    const fetchCertificates = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const certificates = userData.certificates || [];
+            setCertificates(certificates);
+          }
+        } catch (error) {
+          console.error("Error fetching certificates:", error);
+        }
+      }
+    };
+    fetchCertificates();
+  }, [user]);
+
   return (
     <Box
       display="flex"
@@ -204,113 +249,239 @@ const ProfilePage = () => {
         Profile Page
       </Text>
 
-      {/* Profile Photo Section */}
-      <Box mb={6} textAlign="center">
-        <Avatar 
-          size="2xl" 
-          src={profilePhoto} 
-          mb={4}
-        />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-        />
-        <Button
-          onClick={() => fileInputRef.current.click()}
-          size="sm"
-          colorScheme="blue"
-        >
-          Change Profile Photo
-        </Button>
-      </Box>
+      <Tabs variant="enclosed" width="100%">
+        <TabList>
+          <Tab>User Info</Tab>
+          <Tab>Certificates</Tab>
+          <Tab>Investments & Receipts</Tab>
+        </TabList>
 
-      {renderHorizontalInput("Email", email, setEmail, "email")}
-      {renderHorizontalInput("Password", passwd, setPasswd, "password")}
-      {renderHorizontalInput("Phone", phone, setPhone, "number")}
-      {renderHorizontalInput("Salary", salary, setSalary)}
-      {renderHorizontalInput("Username", username, setUsername)}
-
-      <Box mb={4} width="100%">
-        <Text fontSize="lg" mb={2}>
-          History:
-        </Text>
-        <Box
-          bg="transparent"
-          borderRadius="md"
-          p={4}
-          color="gray.800"
-          maxHeight="100px"
-          overflowY="auto"
-        >
-          {fundsHistory.map((fund, index) => (
-            <Text key={index}>{fund}</Text>
-          ))}
-        </Box>
-      </Box>
-
-      {/* Interest Tags Section */}
-      <Box w="100%">
-        <Text fontSize="xl" fontWeight="bold" mb={4}>Your Investment Interests</Text>
-        
-        <HStack mb={2}>
-          <Input
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            placeholder="Add your interests"
-          />
-          <Button
-            onClick={() => handleAddTag(tagInput)}
-            isDisabled={userTags.length >= 5 || !tagInput.trim()}
-          >
-            Add
-          </Button>
-        </HStack>
-
-        {/* Display user's tags */}
-        <Wrap spacing={2} mb={4}>
-          {userTags.map((tag) => (
-            <WrapItem key={tag}>
-              <Tag size="md" colorScheme="blue" borderRadius="full">
-                <TagLabel>{tag}</TagLabel>
-                <TagCloseButton onClick={() => handleRemoveTag(tag)} />
-              </Tag>
-            </WrapItem>
-          ))}
-        </Wrap>
-
-        {/* Suggested tags */}
-        <Text mb={2} fontWeight="bold">Suggested Interests:</Text>
-        <Wrap spacing={2}>
-          {suggestedTags.map((tag) => (
-            <WrapItem key={tag}>
-              <Tag
-                size="md"
-                colorScheme="gray"
-                borderRadius="full"
-                cursor="pointer"
-                onClick={() => handleAddTag(tag)}
-                _hover={{ bg: "blue.100" }}
+        <TabPanels>
+          <TabPanel>
+            {/* User Info Section */}
+            <Box mb={6} textAlign="center">
+              <Avatar 
+                size="2xl" 
+                src={profilePhoto} 
+                mb={4}
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+              />
+              <Button
+                onClick={() => fileInputRef.current.click()}
+                size="sm"
+                colorScheme="blue"
               >
-                <TagLabel>{tag}</TagLabel>
-              </Tag>
-            </WrapItem>
-          ))}
-        </Wrap>
-      </Box>
+                Change Profile Photo
+              </Button>
+            </Box>
 
-      <Button
-        color="#ebeff4"
-        bgGradient="linear(to-l, #141727 , #3a416f)"
-        _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-        onClick={saveProfile}
-        width="100%"
-        mb={4}
-      >
-        Save Profile
-      </Button>
+            {renderHorizontalInput("Email", email, setEmail, "email")}
+            {renderHorizontalInput("Password", passwd, setPasswd, "password")}
+            {renderHorizontalInput("Phone", phone, setPhone, "number")}
+            {renderHorizontalInput("Salary", salary, setSalary)}
+            {renderHorizontalInput("Username", username, setUsername)}
+
+            <Box mb={4} width="100%">
+              <Text fontSize="lg" mb={2}>
+                History:
+              </Text>
+              <Box
+                bg="transparent"
+                borderRadius="md"
+                p={4}
+                color="gray.800"
+                maxHeight="100px"
+                overflowY="auto"
+              >
+                {fundsHistory.map((fund, index) => (
+                  <Text key={index}>{fund}</Text>
+                ))}
+              </Box>
+            </Box>
+
+            {/* Interest Tags Section */}
+            <Box w="100%">
+              <Text fontSize="xl" fontWeight="bold" mb={4}>Your Investment Interests</Text>
+              
+              <HStack mb={2}>
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  placeholder="Add your interests"
+                />
+                <Button
+                  onClick={() => handleAddTag(tagInput)}
+                  isDisabled={userTags.length >= 5 || !tagInput.trim()}
+                >
+                  Add
+                </Button>
+              </HStack>
+
+              {/* Display user's tags */}
+              <Wrap spacing={2} mb={4}>
+                {userTags.map((tag) => (
+                  <WrapItem key={tag}>
+                    <Tag size="md" colorScheme="blue" borderRadius="full">
+                      <TagLabel>{tag}</TagLabel>
+                      <TagCloseButton onClick={() => handleRemoveTag(tag)} />
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
+
+              {/* Suggested tags */}
+              <Text mb={2} fontWeight="bold">Suggested Interests:</Text>
+              <Wrap spacing={2}>
+                {suggestedTags.map((tag) => (
+                  <WrapItem key={tag}>
+                    <Tag
+                      size="md"
+                      colorScheme="gray"
+                      borderRadius="full"
+                      cursor="pointer"
+                      onClick={() => handleAddTag(tag)}
+                      _hover={{ bg: "blue.100" }}
+                    >
+                      <TagLabel>{tag}</TagLabel>
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
+            </Box>
+
+            <Button
+              color="#ebeff4"
+              bgGradient="linear(to-l, #141727 , #3a416f)"
+              _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
+              onClick={saveProfile}
+              width="100%"
+              mb={4}
+            >
+              Save Profile
+            </Button>
+          </TabPanel>
+
+          <TabPanel>
+            {/* Certificates Section */}
+            <Text fontSize="lg" mb={4}>Your Certificates:</Text>
+            <VStack spacing={4} align="start">
+              {certificates.length > 0 ? (
+                certificates.map((certificate) => (
+                  <Text key={certificate.id}>{certificate.name}</Text>
+                ))
+              ) : (
+                <Text>No certificates found.</Text>
+              )}
+            </VStack>
+          </TabPanel>
+
+          <TabPanel>
+            {/* Investments & Receipts Section */}
+            <VStack spacing={6} align="stretch">
+              <Box>
+                <Text fontSize="xl" fontWeight="bold" mb={4}>Your Investment Plans</Text>
+                <Table variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th>Plan Name</Th>
+                      <Th>Amount</Th>
+                      <Th>Date</Th>
+                      <Th>Status</Th>
+                      <Th>Receipt</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {investments.length > 0 ? (
+                      investments.map((investment) => (
+                        <Tr key={investment.planId}>
+                          <Td>{investment.planName}</Td>
+                          <Td>${investment.amount}</Td>
+                          <Td>
+                            {investment.receipts ? (
+                              <HStack spacing={2}>
+                                <Link href={investment.receipts[0]} >
+                                  <Button size="sm" colorScheme="blue"
+                                  onClick={() => window.open(investment.receipts)}>View</Button>
+                                </Link>
+                                <Button 
+                                  size="sm" 
+                                  colorScheme="green"
+                                  onClick={() => window.open(investment.receipts)}
+                                >
+                                  Download
+                                </Button>
+                              </HStack>
+                            ) : (
+                              <Text>No receipt</Text>
+                            )}
+                          </Td>
+                        </Tr>
+                      ))
+                    ) : (
+                      <Tr>
+                        <Td colSpan={5}>No investment plans found.</Td>
+                      </Tr>
+                    )}
+                  </Tbody>
+                </Table>
+              </Box>
+
+              <Box>
+                <Text fontSize="xl" fontWeight="bold" mb={4}>Your Receipts</Text>
+                <Table variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th>Receipt ID</Th>
+                      <Th>Description</Th>
+                      <Th>Amount</Th>
+                      <Th>Date</Th>
+                      <Th>Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {receipts.length > 0 ? (
+                      receipts.map((receipt) => (
+                        <Tr key={receipt}>
+                          <Td>{receipt.id}</Td>
+                          <Td>{receipt.description}</Td>
+                          <Td>${receipt.amount}</Td>
+                          <Td>{new Date(receipt.date).toLocaleDateString()}</Td>
+                          <Td>
+                            {receipt.url && (
+                              <HStack spacing={2}>
+                                <Link href={receipt.url} isExternal>
+                                  <Button size="sm" colorScheme="blue">View</Button>
+                                </Link>
+                                <Button 
+                                  size="sm" 
+                                  colorScheme="green"
+                                  onClick={() => window.open(receipt.url, '_blank', 'noopener,noreferrer')}
+                                >
+                                  Download
+                                </Button>
+                              </HStack>
+                            )}
+                          </Td>
+                        </Tr>
+                      ))
+                    ) : (
+                      <Tr>
+                        <Td colSpan={5}>No receipts found.</Td>
+                      </Tr>
+                    )}
+                  </Tbody>
+                </Table>
+              </Box>
+            </VStack>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </Box>
   );
 };

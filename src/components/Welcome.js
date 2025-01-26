@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Box, Text, Button, Input, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@chakra-ui/react";
+import { Box, Text, Button, Input, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, VStack } from "@chakra-ui/react";
 import { auth, db } from "@/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
@@ -10,6 +10,8 @@ const Welcome = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [salaryInput, setSalaryInput] = useState("");
+  const [ageInput, setAgeInput] = useState("");
+  const [cibilInput, setCibilInput] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -22,8 +24,10 @@ const Welcome = () => {
           if (userSnap.exists()) {
             const data = userSnap.data();
 
-            // Check if salary is missing
-            if (!data.salary || data.salary.trim() === "") {
+            // Check if salary, age or cibil score is missing
+            if (!data.salary || data.salary.trim() === "" || 
+                !data.age || data.age.trim() === "" ||
+                !data.cibilScore || data.cibilScore.trim() === "") {
               setIsDialogOpen(true);
             }
 
@@ -44,19 +48,36 @@ const Welcome = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleSalarySubmit = async () => {
+  const handleSubmit = async () => {
     if (salaryInput.trim() === "") {
       alert("Salary cannot be empty!");
+      return;
+    }
+    if (ageInput.trim() === "") {
+      alert("Age cannot be empty!");
+      return;
+    }
+    if (cibilInput.trim() === "") {
+      alert("CIBIL Score cannot be empty!");
       return;
     }
 
     try {
       const userDoc = doc(db, "users", auth.currentUser.uid);
-      await updateDoc(userDoc, { salary: salaryInput });
-      setUserData((prev) => ({ ...prev, salary: salaryInput })); // Update local state
+      await updateDoc(userDoc, { 
+        salary: salaryInput,
+        age: ageInput,
+        cibilScore: cibilInput
+      });
+      setUserData((prev) => ({ 
+        ...prev, 
+        salary: salaryInput,
+        age: ageInput,
+        cibilScore: cibilInput
+      }));
       setIsDialogOpen(false);
     } catch (error) {
-      console.error("Error updating salary: ", error);
+      console.error("Error updating user data: ", error);
     }
   };
 
@@ -87,25 +108,45 @@ const Welcome = () => {
           Your salary: {userData.salary || "Not Provided"}
         </Text>
         <Text fontSize="lg" color="#666d74">
+          Your age: {userData.age || "Not Provided"}
+        </Text>
+        <Text fontSize="lg" color="#666d74">
+          Your CIBIL Score: {userData.cibilScore || "Not Provided"}
+        </Text>
+        <Text fontSize="lg" color="#666d74">
           Glad to see you again!
         </Text>
       </Box>
 
-      {/* Custom Dialog for Salary Input */}
+      {/* Custom Dialog for User Details Input */}
       <Modal isOpen={isDialogOpen} onClose={() => {}}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Enter Your Salary</ModalHeader>
+          <ModalHeader>Enter Your Details</ModalHeader>
           <ModalBody>
-            <Input
-              type="number"
-              placeholder="Enter your salary"
-              value={salaryInput}
-              onChange={(e) => setSalaryInput(e.target.value)}
-            />
+            <VStack spacing={4}>
+              <Input
+                type="number"
+                placeholder="Enter your salary"
+                value={salaryInput}
+                onChange={(e) => setSalaryInput(e.target.value)}
+              />
+              <Input
+                type="number"
+                placeholder="Enter your age"
+                value={ageInput}
+                onChange={(e) => setAgeInput(e.target.value)}
+              />
+              <Input
+                type="number"
+                placeholder="Enter your CIBIL Score"
+                value={cibilInput}
+                onChange={(e) => setCibilInput(e.target.value)}
+              />
+            </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={handleSalarySubmit}>
+            <Button colorScheme="blue" mr={3} onClick={handleSubmit}>
               Submit
             </Button>
           </ModalFooter>

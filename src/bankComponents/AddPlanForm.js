@@ -21,6 +21,9 @@ import {
   TagCloseButton,
   Wrap,
   WrapItem,
+  Radio,
+  RadioGroup,
+  Stack,
 } from "@chakra-ui/react";
 import { auth, db } from "@/firebase";
 import { useRouter } from "next/navigation";
@@ -33,15 +36,30 @@ const AddPlanForm = () => {
     planType: "",
     planName: "",
     interestRate: "",
+    interestRateType: "fixed",
     maxAmount: "",
     minAmount: "",
     tenure: "",
     description: "",
     loanType: "",
     loanName: "",
+    purpose: "",
+    processingFeeType: "fixed",
+    processingFeeAmount: "",
+    processingFeePercentage: "",
+    minMonthlyIncome: "",
+    minAge: "",
+    maxAge: "",
+    employmentType: "",
+    cibilScore: "",
+    repaymentSchedule: "monthly",
+    prepaymentAllowed: "yes",
+    prepaymentCharges: "",
+    otherConditions: "",
     investmentCategory: "",
     investmentSubCategory: "",
-    createdBy: "", // Added createdBy field
+    createdBy: "",
+    loanCategory: "",
   });
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState([]);
@@ -122,16 +140,24 @@ const AddPlanForm = () => {
         ...formData,
         tags,
         planId,
-        createdBy: user.uid, // Ensure createdBy is set to user.uid
+        createdBy: user.uid,
         status: "pending",
         isVerified: false,
         createdAt: new Date(),
         lastUpdated: new Date(),
       };
 
-      await setDoc(doc(collection(db, collectionName), planId), planData);
+      if (formData.planType === "loan") {
+        await setDoc(doc(collection(db, collectionName), planId), {
+          ...planData,
+          loanCategory: formData.loanType,
+          investmentCategory: "",
+          investmentSubCategory: "",
+        });
+      } else {
+        await setDoc(doc(collection(db, collectionName), planId), planData);
+      }
       
-      // Store tags in a separate collection
       for (const tag of tags) {
         await setDoc(doc(collection(db, "tags"), tag), { tag });
       }
@@ -148,17 +174,32 @@ const AddPlanForm = () => {
         planType: "",
         planName: "",
         interestRate: "",
+        interestRateType: "fixed",
         maxAmount: "",
         minAmount: "",
         tenure: "",
         description: "",
         loanType: "",
         loanName: "",
+        purpose: "",
+        processingFeeType: "fixed",
+        processingFeeAmount: "",
+        processingFeePercentage: "",
+        minMonthlyIncome: "",
+        minAge: "",
+        maxAge: "",
+        employmentType: "",
+        cibilScore: "",
+        repaymentSchedule: "monthly",
+        prepaymentAllowed: "yes",
+        prepaymentCharges: "",
+        otherConditions: "",
         investmentCategory: "",
         investmentSubCategory: "",
-        createdBy: "", // Reset createdBy field
+        createdBy: "",
+        loanCategory: "",
       });
-      setTags([]); // Reset tags after submission
+      setTags([]);
     } catch (error) {
       toast({
         title: "Error",
@@ -257,16 +298,6 @@ const AddPlanForm = () => {
             {formData.planType === "loan" && (
               <>
                 <FormControl isRequired>
-                  <FormLabel>Loan Name</FormLabel>
-                  <Input
-                    name="loanName"
-                    value={formData.loanName}
-                    onChange={handleInputChange}
-                    bg="white"
-                    borderRadius="md"
-                  />
-                </FormControl>
-                <FormControl isRequired>
                   <FormLabel>Loan Type</FormLabel>
                   <Select
                     name="loanType"
@@ -277,7 +308,156 @@ const AddPlanForm = () => {
                   >
                     <option value="personal">Personal Loan</option>
                     <option value="home">Home Loan</option>
+                    <option value="education">Education Loan</option>
+                    <option value="auto">Auto Loan</option>
+                    <option value="business">Business Loan</option>
                   </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Loan Name</FormLabel>
+                  <Input
+                    name="loanName"
+                    value={formData.loanName}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Smart Personal Loan"
+                    bg="white"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Purpose</FormLabel>
+                  <Input
+                    name="purpose"
+                    value={formData.purpose}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Home purchase, Vehicle, Business expansion"
+                    bg="white"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Interest Rate Type</FormLabel>
+                  <RadioGroup name="interestRateType" value={formData.interestRateType} onChange={(value) => handleInputChange({ target: { name: 'interestRateType', value }})}>
+                    <Stack direction="row">
+                      <Radio value="fixed">Fixed</Radio>
+                      <Radio value="floating">Floating</Radio>
+                    </Stack>
+                  </RadioGroup>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Processing Fee</FormLabel>
+                  <RadioGroup name="processingFeeType" value={formData.processingFeeType} onChange={(value) => handleInputChange({ target: { name: 'processingFeeType', value }})}>
+                    <Stack direction="row" mb={2}>
+                      <Radio value="fixed">Fixed Amount</Radio>
+                      <Radio value="percentage">Percentage</Radio>
+                    </Stack>
+                  </RadioGroup>
+                  {formData.processingFeeType === 'fixed' ? (
+                    <NumberInput min={0} bg="white">
+                      <NumberInputField
+                        name="processingFeeAmount"
+                        value={formData.processingFeeAmount}
+                        onChange={handleInputChange}
+                        placeholder="Enter fixed amount"
+                      />
+                    </NumberInput>
+                  ) : (
+                    <NumberInput min={0} max={100} bg="white">
+                      <NumberInputField
+                        name="processingFeePercentage"
+                        value={formData.processingFeePercentage}
+                        onChange={handleInputChange}
+                        placeholder="Enter percentage"
+                      />
+                    </NumberInput>
+                  )}
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Eligibility Criteria</FormLabel>
+                  <VStack spacing={2}>
+                    <NumberInput min={0} bg="white">
+                      <NumberInputField
+                        name="minMonthlyIncome"
+                        value={formData.minMonthlyIncome}
+                        onChange={handleInputChange}
+                        placeholder="Minimum Monthly Income"
+                      />
+                    </NumberInput>
+                    <HStack w="100%">
+                      <NumberInput min={18} max={100} bg="white">
+                        <NumberInputField
+                          name="minAge"
+                          value={formData.minAge}
+                          onChange={handleInputChange}
+                          placeholder="Min Age"
+                        />
+                      </NumberInput>
+                      <NumberInput min={18} max={100} bg="white">
+                        <NumberInputField
+                          name="maxAge"
+                          value={formData.maxAge}
+                          onChange={handleInputChange}
+                          placeholder="Max Age"
+                        />
+                      </NumberInput>
+                    </HStack>
+                    <Select
+                      name="employmentType"
+                      value={formData.employmentType}
+                      onChange={handleInputChange}
+                      placeholder="Employment Type"
+                      bg="white"
+                    >
+                      <option value="salaried">Salaried</option>
+                      <option value="self-employed">Self-Employed</option>
+                      <option value="business">Business Owner</option>
+                    </Select>
+                    <NumberInput min={300} max={900} bg="white">
+                      <NumberInputField
+                        name="cibilScore"
+                        value={formData.cibilScore}
+                        onChange={handleInputChange}
+                        placeholder="Minimum CIBIL Score"
+                      />
+                    </NumberInput>
+                  </VStack>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Repayment Schedule</FormLabel>
+                  <Select
+                    name="repaymentSchedule"
+                    value={formData.repaymentSchedule}
+                    onChange={handleInputChange}
+                    bg="white"
+                  >
+                    <option value="monthly">Monthly EMI</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="annual">Annual</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Prepayment Options</FormLabel>
+                  <RadioGroup name="prepaymentAllowed" value={formData.prepaymentAllowed} onChange={(value) => handleInputChange({ target: { name: 'prepaymentAllowed', value }})}>
+                    <Stack direction="row" mb={2}>
+                      <Radio value="yes">Allowed</Radio>
+                      <Radio value="no">Not Allowed</Radio>
+                    </Stack>
+                  </RadioGroup>
+                  {formData.prepaymentAllowed === 'yes' && (
+                    <NumberInput min={0} bg="white">
+                      <NumberInputField
+                        name="prepaymentCharges"
+                        value={formData.prepaymentCharges}
+                        onChange={handleInputChange}
+                        placeholder="Prepayment Charges (%)"
+                      />
+                    </NumberInput>
+                  )}
                 </FormControl>
               </>
             )}
@@ -292,6 +472,7 @@ const AddPlanForm = () => {
                 />
               </NumberInput>
             </FormControl>
+
             <HStack spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Minimum Amount</FormLabel>
@@ -314,6 +495,7 @@ const AddPlanForm = () => {
                 </NumberInput>
               </FormControl>
             </HStack>
+
             <FormControl isRequired>
               <FormLabel>Tenure (months)</FormLabel>
               <NumberInput min={0} bg="white">
@@ -324,6 +506,7 @@ const AddPlanForm = () => {
                 />
               </NumberInput>
             </FormControl>
+
             <FormControl>
               <FormLabel>Description</FormLabel>
               <Textarea
@@ -331,6 +514,18 @@ const AddPlanForm = () => {
                 value={formData.description}
                 onChange={handleInputChange}
                 bg="white"
+                placeholder="A brief summary about the loan/investment"
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Other Conditions</FormLabel>
+              <Textarea
+                name="otherConditions"
+                value={formData.otherConditions}
+                onChange={handleInputChange}
+                bg="white"
+                placeholder="Any additional conditions or requirements"
               />
             </FormControl>
 
