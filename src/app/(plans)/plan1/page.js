@@ -23,6 +23,7 @@ import {
   AlertIcon,
   Spinner,
   useToast,
+  IconButton,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import {
@@ -36,7 +37,7 @@ import {
 import { auth, db } from "@/firebase";
 
 import Headers from "@/components/Headers";
-
+import { FiBookmark } from "react-icons/fi";
 const Page = () => {
   const [plans, setPlans] = useState([]);
   const [user, setUser] = useState(null);
@@ -49,6 +50,7 @@ const Page = () => {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("interestRate");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [bookmarkedPlans, setBookmarkedPlans] = useState([]);
 
   const router = useRouter();
   const toast = useToast();
@@ -394,6 +396,38 @@ const Page = () => {
     fetchUserInterestsAndRecommend();
   }, [user]);
 
+  useEffect(() => {
+    const savedBookmarks = localStorage.getItem("bookmarkedPlans");
+    if (savedBookmarks) {
+      setBookmarkedPlans(JSON.parse(savedBookmarks));
+    }
+  }, []);
+
+  const handleBookmark = (plan) => {
+    setBookmarkedPlans((prev) => {
+      const updatedBookmarks = prev.some((p) => p.id === plan.id)
+        ? prev.filter((p) => p.id !== plan.id)
+        : [...prev, plan];
+
+      localStorage.setItem("bookmarkedPlans", JSON.stringify(updatedBookmarks));
+
+      toast({
+        title: prev.some((p) => p.id === plan.id)
+          ? "Plan removed from booklist"
+          : "Plan added to booklist",
+        status: prev.some((p) => p.id === plan.id) ? "info" : "success",
+        duration: 2000,
+        isClosable: true,
+      });
+
+      return updatedBookmarks;
+    });
+  };
+
+  const goToBooklist = () => {
+    router.push("/booklist");
+  };
+
   if (loading) {
     return (
       <Flex height="100vh" align="center" justify="center">
@@ -422,6 +456,17 @@ const Page = () => {
     >
       <Box id="upper" position="fixed" top="0" left="0" right="0" zIndex="1000">
         <Headers />
+        <Flex justify="space-between" align="center" p={4}>
+          <Box></Box>
+          <Stack direction="row" spacing={4} align="center" mt="2">
+            <IconButton
+              icon={<FiBookmark size={24} color="white" />}
+              onClick={() => router.push("/booklist")}
+              colorScheme="blue"
+              aria-label="Go to Booklist"
+            />
+          </Stack>
+        </Flex>
       </Box>
 
       <Stack spacing={4} width="100%" maxW="1200px" mt="20vh">
@@ -529,18 +574,18 @@ const Page = () => {
             {recommendedPlans.map((plan) => (
               <Box
                 key={plan.id}
+                position="relative" // Add this line
+                as="a"
+                href={`/plan1/${plan.id}`}
                 p={4}
                 borderWidth={1}
                 borderRadius="lg"
-                width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
-                bg="linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)"
+                bg="linear-gradient(135deg, #e2e2e2 0%, #ffffff 100%)"
                 boxShadow="lg"
-                // transition="all 0.2s"
-                // _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
-                _hover={{
-                  transform: "translateY(-5px)",
-                  transition: "transform 0.3s ease",
-                }}
+                transition="all 0.2s"
+                _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
+                textDecoration="none"
+                display="block"
               >
                 <Heading size="sm" color="#2C319F">
                   {plan.planName}
@@ -569,6 +614,27 @@ const Page = () => {
                     ? "Remove from Comparison"
                     : "Add to Compare"}
                 </Button>
+                <IconButton
+                  icon={<FiBookmark size={24} />}
+                  position="absolute"
+                  top={2}
+                  right={2}
+                  size="sm"
+                  colorScheme={
+                    bookmarkedPlans.some((p) => p.id === plan.id)
+                      ? "blue"
+                      : "gray"
+                  }
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleBookmark(plan);
+                  }}
+                  aria-label={
+                    bookmarkedPlans.some((p) => p.id === plan.id)
+                      ? "Remove from Booklist"
+                      : "Add to Booklist"
+                  }
+                />
               </Box>
             ))}
           </Flex>
@@ -584,10 +650,7 @@ const Page = () => {
         my={10}
       >
         {plans.map((plan) => (
-          <Box
-            key={plan.id}
-            // width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
-          >
+          <Box key={plan.id} position="relative" width="calc(33.333% - 40px)">
             <Box
               as="a"
               href={`/plan1/${plan.id}`}
@@ -600,7 +663,30 @@ const Page = () => {
               _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
               textDecoration="none"
               display="block"
+              position="relative"
             >
+              <IconButton
+                icon={<FiBookmark size={24} />}
+                position="absolute"
+                top={2}
+                right={2}
+                size="sm"
+                colorScheme={
+                  bookmarkedPlans.some((p) => p.id === plan.id)
+                    ? "blue"
+                    : "gray"
+                }
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleBookmark(plan);
+                }}
+                aria-label={
+                  bookmarkedPlans.some((p) => p.id === plan.id)
+                    ? "Remove from Booklist"
+                    : "Add to Booklist"
+                }
+                zIndex={10}
+              />
               <Heading size="sm" color="#2C319F">
                 {plan.planName}
               </Heading>
