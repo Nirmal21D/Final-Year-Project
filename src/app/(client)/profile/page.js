@@ -51,7 +51,8 @@ const page = () => {
         flexDirection="column"
         justifyItems="center"
         alignItems="center"
-        backgroundImage="url(/images/newbg.png)"
+        // backgroundImage="url(/images/newbg.png)"
+        bg="gray.50"
         backgroundPosition="center"
         backgroundSize="cover"
         backgroundAttachment="fixed"
@@ -73,7 +74,7 @@ const page = () => {
         </Box>
         <Box id="lower" w="full">
           <Box
-            id="welcome"
+            id="profile"
             // border="1px solid rgba(255, 255, 255)"
             marginTop="calc(17vh + 40px)" // 17vh (navbar height) + original margin
           >

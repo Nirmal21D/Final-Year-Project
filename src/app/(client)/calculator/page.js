@@ -12,7 +12,8 @@ const page = () => {
       <Box
         display="flex"
         flexDirection="column"
-        backgroundImage="url(/images/calbg.png)"
+        // backgroundImage="url(/images/calbg.png)"
+        bg="gray.50"
         backgroundPosition="center"
         backgroundSize="cover"
         backgroundAttachment="fixed"
