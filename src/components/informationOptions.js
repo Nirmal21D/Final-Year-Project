@@ -14,6 +14,8 @@ const InformationOptions = () => {
       router.push("/informative/infoopt/tax");
     } else if (option === "scheme") {
       router.push("/informative/infoopt/scheme");
+    } else if (option == "news") {
+      router.push("/news");
     } else {
       console.log(`Selected option: ${option}`);
     }
@@ -41,6 +43,9 @@ const InformationOptions = () => {
         </Button>
         <Button colorScheme="gray" onClick={() => handleOptionClick("scheme")}>
           Schemes
+        </Button>
+        <Button colorScheme="green" onClick={() => handleOptionClick("news")}>
+          Bank to News
         </Button>
       </HStack>
     </Box>

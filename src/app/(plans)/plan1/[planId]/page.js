@@ -56,7 +56,7 @@ const PlanDetails = () => {
 
   const calculateSimilarity = (planA, planB) => {
     if (!planA.tags || !planB.tags) return 0;
-    const intersection = planA.tags.filter(tag => planB.tags.includes(tag));
+    const intersection = planA.tags.filter((tag) => planB.tags.includes(tag));
     const union = [...new Set([...planA.tags, ...planB.tags])];
     return intersection.length / union.length;
   };
@@ -65,7 +65,7 @@ const PlanDetails = () => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
-        router.push('/login');
+        router.push("/login");
       }
     });
 
@@ -84,7 +84,7 @@ const PlanDetails = () => {
             duration: 3000,
             isClosable: true,
           });
-          router.push('/plans');
+          router.push("/plans");
           return;
         }
 
@@ -97,15 +97,16 @@ const PlanDetails = () => {
         );
         const querySnapshot = await getDocs(plansQuery);
         const allPlans = querySnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(p => p.id !== planId);
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((p) => p.id !== planId);
 
-        const plansWithScores = allPlans.map(p => ({
-          ...p,
-          similarityScore: calculateSimilarity(currentPlan, p)
-        }))
-        .sort((a, b) => b.similarityScore - a.similarityScore)
-        .slice(0, 3);
+        const plansWithScores = allPlans
+          .map((p) => ({
+            ...p,
+            similarityScore: calculateSimilarity(currentPlan, p),
+          }))
+          .sort((a, b) => b.similarityScore - a.similarityScore)
+          .slice(0, 3);
 
         setRelatedPlans(plansWithScores);
       } catch (error) {
@@ -163,12 +164,12 @@ const PlanDetails = () => {
 
   const handlePayment = async (amount) => {
     try {
-      const response = await fetch('/api/process-input', {
-        method: 'POST',
+      const response = await fetch("/api/process-input", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ input: 'Investment Payment', amount }),
+        body: JSON.stringify({ input: "Investment Payment", amount }),
       });
 
       const data = await response.json();
@@ -261,7 +262,13 @@ const PlanDetails = () => {
 
   if (loading) {
     return (
-      <Box p={8} display="flex" justifyContent="center" alignItems="center" minH="100vh">
+      <Box
+        p={8}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minH="100vh"
+      >
         <Text fontSize="xl">Loading...</Text>
       </Box>
     );
@@ -269,7 +276,13 @@ const PlanDetails = () => {
 
   if (!plan) {
     return (
-      <Box p={8} display="flex" justifyContent="center" alignItems="center" minH="100vh">
+      <Box
+        p={8}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minH="100vh"
+      >
         <Text fontSize="xl">Plan not found</Text>
       </Box>
     );
@@ -277,12 +290,15 @@ const PlanDetails = () => {
 
   return (
     <Box bg="gray.50" minH="100vh">
-      <Script 
-      type ="text/javascript"
-      src="https://checkout.razorpay.com/v1/checkout.js"></Script>
-      <Headers />
+      <Script
+        type="text/javascript"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+      ></Script>
+      <Box id="upper" position="fixed" top="0" left="0" right="0" zIndex="1000">
+        <Headers />
+      </Box>
 
-      <Container maxW="container.xl" py={4}>
+      <Container maxW="container.xl" pt="20vh">
         <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
           <GridItem>
             <Box bg="white" p={8} borderRadius="xl" shadow="lg">
@@ -308,8 +324,12 @@ const PlanDetails = () => {
                     <HStack spacing={3}>
                       <Icon as={FiPercent} boxSize={6} color="blue.500" />
                       <Box>
-                        <Text fontWeight="bold" color="gray.700">Interest Rate</Text>
-                        <Text fontSize="xl" color="blue.600">{plan.interestRate}%</Text>
+                        <Text fontWeight="bold" color="gray.700">
+                          Interest Rate
+                        </Text>
+                        <Text fontSize="xl" color="blue.600">
+                          {plan.interestRate}%
+                        </Text>
                       </Box>
                     </HStack>
                   </Box>
@@ -317,8 +337,12 @@ const PlanDetails = () => {
                     <HStack spacing={3}>
                       <Icon as={FiClock} boxSize={6} color="blue.500" />
                       <Box>
-                        <Text fontWeight="bold" color="gray.700">Tenure</Text>
-                        <Text fontSize="xl" color="blue.600">{plan.tenure} months</Text>
+                        <Text fontWeight="bold" color="gray.700">
+                          Tenure
+                        </Text>
+                        <Text fontSize="xl" color="blue.600">
+                          {plan.tenure} months
+                        </Text>
                       </Box>
                     </HStack>
                   </Box>
@@ -326,8 +350,12 @@ const PlanDetails = () => {
                     <HStack spacing={3}>
                       <Icon as={FiDollarSign} boxSize={6} color="blue.500" />
                       <Box>
-                        <Text fontWeight="bold" color="gray.700">Minimum Investment</Text>
-                        <Text fontSize="xl" color="blue.600">₹{plan.minimumInvestment}</Text>
+                        <Text fontWeight="bold" color="gray.700">
+                          Minimum Investment
+                        </Text>
+                        <Text fontSize="xl" color="blue.600">
+                          ₹{plan.minAmount}
+                        </Text>
                       </Box>
                     </HStack>
                   </Box>
@@ -335,8 +363,12 @@ const PlanDetails = () => {
                     <HStack spacing={3}>
                       <Icon as={FiTrendingUp} boxSize={6} color="blue.500" />
                       <Box>
-                        <Text fontWeight="bold" color="gray.700">Maximum Investment</Text>
-                        <Text fontSize="xl" color="blue.600">₹{plan.maxAmount}</Text>
+                        <Text fontWeight="bold" color="gray.700">
+                          Maximum Investment
+                        </Text>
+                        <Text fontSize="xl" color="blue.600">
+                          ₹{plan.maxAmount}
+                        </Text>
                       </Box>
                     </HStack>
                   </Box>
@@ -345,19 +377,23 @@ const PlanDetails = () => {
                 <Divider />
 
                 <Text fontSize="lg" color="gray.700">
-                  <strong>Investment Category:</strong> {plan.investmentCategory}
+                  <strong>Investment Category:</strong>{" "}
+                  {plan.investmentCategory}
                 </Text>
                 <Text fontSize="lg" color="gray.700">
-                  <strong>Investment SubCategory:</strong> {plan.investmentSubCategory}
+                  <strong>Investment SubCategory:</strong>{" "}
+                  {plan.investmentSubCategory}
                 </Text>
                 <Text fontSize="lg" color="gray.700">
                   <strong>Plan Type:</strong> {plan.planType}
                 </Text>
                 <Text fontSize="lg" color="gray.700">
-                  <strong>Created At:</strong> {plan.createdAt.toDate().toString()}
+                  <strong>Created At:</strong>{" "}
+                  {plan.createdAt.toDate().toString()}
                 </Text>
                 <Text fontSize="lg" color="gray.700">
-                  <strong>Last Updated:</strong> {plan.lastUpdated.toDate().toString()}
+                  <strong>Last Updated:</strong>{" "}
+                  {plan.lastUpdated.toDate().toString()}
                 </Text>
 
                 <Button
@@ -366,7 +402,7 @@ const PlanDetails = () => {
                   onClick={onOpen}
                   height="16"
                   fontSize="lg"
-                  _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                  _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
                   transition="all 0.2s"
                 >
                   Invest Now
@@ -377,35 +413,43 @@ const PlanDetails = () => {
 
           <GridItem>
             <Box bg="white" p={6} borderRadius="xl" shadow="lg">
-              <Heading size="md" mb={6}>Similar Investment Plans</Heading>
+              <Heading size="md" mb={6}>
+                Similar Investment Plans
+              </Heading>
               <Stack spacing={4}>
                 {relatedPlans.map((relatedPlan) => (
-                  <Box 
+                  <Box
                     key={relatedPlan.id}
                     p={4}
                     borderWidth={1}
                     borderRadius="lg"
                     cursor="pointer"
                     onClick={() => router.push(`/plans/${relatedPlan.id}`)}
-                    _hover={{ 
+                    _hover={{
                       bg: "blue.50",
-                      transform: 'translateY(-2px)',
-                      boxShadow: 'md'
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
                     }}
                     transition="all 0.2s"
                   >
-                    <Text fontWeight="bold" fontSize="lg" mb={2}>{relatedPlan.planName}</Text>
+                    <Text fontWeight="bold" fontSize="lg" mb={2}>
+                      {relatedPlan.planName}
+                    </Text>
                     <Text fontSize="sm" color="gray.600" noOfLines={2} mb={3}>
                       {relatedPlan.description}
                     </Text>
                     <Flex justify="space-between" align="center">
                       <HStack spacing={1} color="blue.600">
                         <Icon as={FiPercent} />
-                        <Text fontSize="sm" fontWeight="semibold">{relatedPlan.interestRate}%</Text>
+                        <Text fontSize="sm" fontWeight="semibold">
+                          {relatedPlan.interestRate}%
+                        </Text>
                       </HStack>
                       <HStack spacing={1} color="blue.600">
                         <Icon as={FiClock} />
-                        <Text fontSize="sm" fontWeight="semibold">{relatedPlan.tenure} months</Text>
+                        <Text fontSize="sm" fontWeight="semibold">
+                          {relatedPlan.tenure} months
+                        </Text>
                       </HStack>
                     </Flex>
                   </Box>
@@ -432,7 +476,7 @@ const PlanDetails = () => {
                   </Text>
                 </VStack>
               </Alert>
-              
+
               <FormControl>
                 <FormLabel fontSize="lg">Investment Amount (₹)</FormLabel>
                 <NumberInput

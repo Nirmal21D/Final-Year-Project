@@ -1,9 +1,11 @@
+
 "use client";
 import { Box, Button, Input, Text, Flex, useToast, VStack, HStack, Wrap, WrapItem, Tag, TagLabel, TagCloseButton, Avatar, Tabs, TabList, Tab, TabPanels, TabPanel, Table, Thead, Tbody, Tr, Th, Td, Link } from "@chakra-ui/react";
 import React, { useState, useEffect, useRef } from "react";
 import { doc, updateDoc, getDoc, collection, getDocs, arrayUnion } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import Link from "next/link";
 
 const ProfilePage = () => {
   const [email, setEmail] = useState("");
@@ -12,12 +14,14 @@ const ProfilePage = () => {
   const [salary, setSalary] = useState("");
   const [username, setUsername] = useState("");
   const [fundsHistory, setFundsHistory] = useState(["funds"]);
-  const [profilePhoto, setProfilePhoto] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState(
+    "/images/photo-placeholder.jpg"
+  );
   const fileInputRef = useRef(null);
   const toast = useToast();
 
   const [userTags, setUserTags] = useState([]);
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [user, setUser] = useState(null);
   const [certificates, setCertificates] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
@@ -113,10 +117,10 @@ const ProfilePage = () => {
     if (!userTags.includes(tag) && userTags.length < 5) {
       const newTags = [...userTags, tag];
       setUserTags(newTags);
-      
+
       try {
         await updateDoc(doc(db, "users", user.uid), {
-          interests: newTags
+          interests: newTags,
         });
         toast({
           title: "Interest Added",
@@ -136,16 +140,16 @@ const ProfilePage = () => {
         });
       }
     }
-    setTagInput('');
+    setTagInput("");
   };
 
   const handleRemoveTag = async (tagToRemove) => {
-    const newTags = userTags.filter(tag => tag !== tagToRemove);
+    const newTags = userTags.filter((tag) => tag !== tagToRemove);
     setUserTags(newTags);
-    
+
     try {
       await updateDoc(doc(db, "users", user.uid), {
-        interests: newTags
+        interests: newTags,
       });
       toast({
         title: "Interest Removed",
@@ -173,7 +177,7 @@ const ProfilePage = () => {
         phone,
         salary,
         username,
-        profilePhoto
+        profilePhoto,
       });
       toast({
         title: "Profile Updated",
@@ -231,22 +235,15 @@ const ProfilePage = () => {
   }, [user]);
 
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      p={6}
-      bg="rgba(117, 122, 140,0.299)"
-      color="black"
-      borderRadius="xl"
-      shadow="md"
-      width="100%"
-      maxWidth="600px"
-      mx="auto"
-    >
-      <Text fontSize="2xl" fontWeight="bold" mb={6} textAlign="center">
-        Profile Page
+    <Box pb={8} px={16} maxWidth="1200px" margin="auto">
+      <Text fontSize="3xl" fontWeight="bold" mb={2}>
+        COMPLETE YOUR
+      </Text>
+      <Text fontSize="3xl" fontWeight="bold" mb={4}>
+        PROFILE
+      </Text>
+      <Text fontSize="sm" mb={8}>
+        This information will be used to personalize your experience.
       </Text>
 
       <Tabs variant="enclosed" width="100%">

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { useState, useEffect } from "react";
 import { db } from "@/firebase";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
@@ -16,9 +16,9 @@ import {
   Stack,
   Avatar,
   useToast,
-  Spinner
+  Spinner,
 } from "@chakra-ui/react";
-
+import AdminSideNav from "@/adminComponents/AdminSideNav";
 export default function AllPlansPage() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,10 @@ export default function AllPlansPage() {
       try {
         const plansRef = collection(db, "investmentplans");
         const querySnapshot = await getDocs(plansRef);
-        const plansData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const plansData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
         setPlans(plansData);
       } catch (error) {
         console.error("Error fetching plans:", error);
@@ -52,7 +55,7 @@ export default function AllPlansPage() {
       try {
         const planRef = doc(db, "investmentplans", planId);
         await deleteDoc(planRef);
-        setPlans(prevPlans => prevPlans.filter(plan => plan.id !== planId));
+        setPlans((prevPlans) => prevPlans.filter((plan) => plan.id !== planId));
         toast({
           title: "Plan deleted successfully",
           status: "success",
@@ -73,9 +76,14 @@ export default function AllPlansPage() {
 
   return (
     <Box bg="gray.50" minH="100vh">
-      <Container maxW="85%" py={6}>
+      <Box w="20%" bg="gray.800" color="white" p={4} position="fixed" h="full">
+        <AdminSideNav />
+      </Box>
+      <Container maxW="80%" py={6} position="relative" left={140}>
         <Flex justify="space-between" align="center" mb={6}>
-          <Heading color="green.400" size="lg">Plans Management</Heading>
+          <Heading color="green.400" size="lg">
+            Plans Management
+          </Heading>
           <Flex align="center" gap={4}>
             <Text color="gray.600">Hello, Admin</Text>
             <Avatar src="/admin-avatar.png" size="md" />
@@ -87,12 +95,26 @@ export default function AllPlansPage() {
             <Spinner size="xl" />
           </Flex>
         ) : (
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
+          <Grid
+            templateColumns={{
+              base: "1fr",
+              md: "repeat(2, 1fr)",
+              lg: "repeat(3, 1fr)",
+            }}
+            gap={6}
+          >
             {plans.map((plan) => (
-              <Card key={plan.id} variant="outline" transition="all 0.2s" _hover={{ shadow: "xl" }}>
+              <Card
+                key={plan.id}
+                variant="outline"
+                transition="all 0.2s"
+                _hover={{ shadow: "xl" }}
+              >
                 <CardBody>
                   <Flex justify="space-between" align="start" mb={4}>
-                    <Heading size="md" color="gray.800">{plan.planName}</Heading>
+                    <Heading size="md" color="gray.800">
+                      {plan.planName}
+                    </Heading>
                     <Badge colorScheme="blue" px={2} py={1} borderRadius="md">
                       {plan.investmentCategory}
                     </Badge>
@@ -107,7 +129,7 @@ export default function AllPlansPage() {
                       <Text mr={2}>💰</Text>
                       <Text>Interest Rate: {plan.interestRate}%</Text>
                     </Flex>
-                    
+
                     <Flex align="center">
                       <Text mr={2}>⏳</Text>
                       <Text>Tenure: {plan.tenure} months</Text>
@@ -120,7 +142,9 @@ export default function AllPlansPage() {
 
                     <Flex align="center">
                       <Text mr={2}>💵</Text>
-                      <Text>Minimum Investment: {plan.minimumInvestment} INR</Text>
+                      <Text>
+                        Minimum Investment: {plan.minimumInvestment} INR
+                      </Text>
                     </Flex>
 
                     <Flex align="center">

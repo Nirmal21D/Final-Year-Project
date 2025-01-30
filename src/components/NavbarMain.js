@@ -91,7 +91,7 @@ const NavbarMain = () => {
         justify="space-evenly"
         w="full"
       >
-        <Divider orientation="vertical" height="35px" />
+        {/* <Divider orientation="vertical" height="35px" /> */}
         <Link href="/">
           <Menu>
             <MenuButton

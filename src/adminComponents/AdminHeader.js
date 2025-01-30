@@ -1,9 +1,8 @@
 "use client";
 
 import { Box, Text } from "@chakra-ui/react";
-import BankWelcome from "./BankWelcome";
 
-const BankHeaders = () => {
+const AdminHeader = () => {
   return (
     <Box
       id="main"
@@ -26,26 +25,8 @@ const BankHeaders = () => {
           Finance Mastery
         </Text>
       </Box>
-
-      {/* Right Section: Profile */}
-      <Box id="right">
-        <Box display="flex" alignItems="center" gap={2}>
-          <Box
-            width="2vw"
-            height="2vw"
-            borderRadius="50%"
-            bg="red"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            B
-          </Box>
-          <Text>View Profile</Text>
-        </Box>
-      </Box>
     </Box>
   );
 };
 
-export default BankHeaders;
+export default AdminHeader;
