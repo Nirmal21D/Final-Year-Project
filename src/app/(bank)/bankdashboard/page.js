@@ -162,7 +162,7 @@ const BankDashboard = () => {
               </StatHelpText>
             </Stat>
           </SimpleGrid>
-          <DashStats />
+        
         </Box>
       </Box>
     </Flex>
