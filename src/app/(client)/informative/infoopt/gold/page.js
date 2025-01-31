@@ -24,7 +24,7 @@ const GoldPage = () => {
       </Box>
 
       {/* Information Options Section */}
-      <Box mt={52}>
+      <Box mt={36}>
         <InformationOptions />
       </Box>
 

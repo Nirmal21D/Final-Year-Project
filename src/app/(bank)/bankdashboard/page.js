@@ -1,13 +1,33 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Flex, Alert, AlertIcon, AlertTitle, AlertDescription, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, StatArrow } from "@chakra-ui/react";
+import {
+  Box,
+  Flex,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  SimpleGrid,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  StatArrow,
+} from "@chakra-ui/react";
 import BankHeaders from "@/bankComponents/BankHeaders";
 import BankSidenav from "@/bankComponents/BankSidenav";
 import DashStats from "@/bankComponents/DashStats";
 import { auth, db } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 
 const BankDashboard = () => {
   const [isVerified, setIsVerified] = useState(true);
@@ -20,7 +40,7 @@ const BankDashboard = () => {
     monthlyGrowth: 0,
     totalLoanPlans: 0,
     activeLoanPlans: 0,
-    loanUtilization: 0
+    loanUtilization: 0,
   });
   const router = useRouter();
 
@@ -30,7 +50,7 @@ const BankDashboard = () => {
         setUser(currentUser);
         const bankDocRef = doc(db, "Banks", currentUser.uid);
         const bankDocSnap = await getDoc(bankDocRef);
-        
+
         if (bankDocSnap.exists()) {
           const bankData = bankDocSnap.data();
           if (!bankData.isVerified) {
@@ -39,37 +59,56 @@ const BankDashboard = () => {
           } else {
             // Fetch analytics data
             const investmentPlansRef = collection(db, "investmentplans");
-            const investmentPlansQuery = query(investmentPlansRef, where("createdBy", "==", currentUser.uid));
+            const investmentPlansQuery = query(
+              investmentPlansRef,
+              where("createdBy", "==", currentUser.uid)
+            );
             const investmentPlansSnapshot = await getDocs(investmentPlansQuery);
-            
+
             const customersRef = collection(db, "Customers");
-            const customersQuery = query(customersRef, where("createdBy", "==", currentUser.uid));
+            const customersQuery = query(
+              customersRef,
+              where("createdBy", "==", currentUser.uid)
+            );
             const customersSnapshot = await getDocs(customersQuery);
 
-            const activeInvestmentPlans = investmentPlansSnapshot.docs.filter(doc => doc.data().status === 'approved').length;
+            const activeInvestmentPlans = investmentPlansSnapshot.docs.filter(
+              (doc) => doc.data().status === "approved"
+            ).length;
 
             // Fetch loan plans data
             const loanPlansRef = collection(db, "loanplans");
-            const loanPlansQuery = query(loanPlansRef, where("createdBy", "==", currentUser.uid));
+            const loanPlansQuery = query(
+              loanPlansRef,
+              where("createdBy", "==", currentUser.uid)
+            );
             const loanPlansSnapshot = await getDocs(loanPlansQuery);
 
-            const activeLoanPlans = loanPlansSnapshot.docs.filter(doc => doc.data().status === 'approved').length;
+            const activeLoanPlans = loanPlansSnapshot.docs.filter(
+              (doc) => doc.data().status === "approved"
+            ).length;
 
             setAnalytics({
               totalInvestmentPlans: investmentPlansSnapshot.size,
               activeInvestmentPlans: activeInvestmentPlans,
               totalCustomers: customersSnapshot.size,
-              monthlyGrowth: ((activeInvestmentPlans / investmentPlansSnapshot.size) * 100).toFixed(1),
+              monthlyGrowth: (
+                (activeInvestmentPlans / investmentPlansSnapshot.size) *
+                100
+              ).toFixed(1),
               totalLoanPlans: loanPlansSnapshot.size,
               activeLoanPlans: activeLoanPlans,
-              loanUtilization: ((activeLoanPlans / loanPlansSnapshot.size) * 100).toFixed(1)
+              loanUtilization: (
+                (activeLoanPlans / loanPlansSnapshot.size) *
+                100
+              ).toFixed(1),
             });
           }
         }
       } else {
         setUser(null);
         setTimeout(() => {
-          router.push('/login');
+          router.push("/login");
         }, 5000);
       }
       setLoading(false);
@@ -122,47 +161,35 @@ const BankDashboard = () => {
             <Stat p={4} bg="white" borderRadius="lg" boxShadow="sm">
               <StatLabel>Active Investment Plans</StatLabel>
               <StatNumber>{analytics.activeInvestmentPlans}</StatNumber>
-              <StatHelpText>
-                Currently active
-              </StatHelpText>
+              <StatHelpText>Currently active</StatHelpText>
             </Stat>
             <Stat p={4} bg="white" borderRadius="lg" boxShadow="sm">
               <StatLabel>Total Customers</StatLabel>
               <StatNumber>{analytics.totalCustomers}</StatNumber>
-              <StatHelpText>
-                Registered users
-              </StatHelpText>
+              <StatHelpText>Registered users</StatHelpText>
             </Stat>
             <Stat p={4} bg="white" borderRadius="lg" boxShadow="sm">
               <StatLabel>Plan Utilization</StatLabel>
               <StatNumber>{analytics.monthlyGrowth}%</StatNumber>
-              <StatHelpText>
-                Active vs Total Investment Plans
-              </StatHelpText>
+              <StatHelpText>Active vs Total Investment Plans</StatHelpText>
             </Stat>
             <Stat p={4} bg="white" borderRadius="lg" boxShadow="sm">
               <StatLabel>Total Loan Plans</StatLabel>
               <StatNumber>{analytics.totalLoanPlans}</StatNumber>
-              <StatHelpText>
-                All time
-              </StatHelpText>
+              <StatHelpText>All time</StatHelpText>
             </Stat>
             <Stat p={4} bg="white" borderRadius="lg" boxShadow="sm">
               <StatLabel>Active Loan Plans</StatLabel>
               <StatNumber>{analytics.activeLoanPlans}</StatNumber>
-              <StatHelpText>
-                Currently active
-              </StatHelpText>
+              <StatHelpText>Currently active</StatHelpText>
             </Stat>
             <Stat p={4} bg="white" borderRadius="lg" boxShadow="sm">
               <StatLabel>Loan Utilization</StatLabel>
               <StatNumber>{analytics.loanUtilization}%</StatNumber>
-              <StatHelpText>
-                Active vs Total Loan Plans
-              </StatHelpText>
+              <StatHelpText>Active vs Total Loan Plans</StatHelpText>
             </Stat>
           </SimpleGrid>
-          <DashStats />
+        
         </Box>
       </Box>
     </Flex>

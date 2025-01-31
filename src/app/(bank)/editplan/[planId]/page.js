@@ -19,30 +19,76 @@ import {
   HStack,
   Divider,
   Heading,
+  Select,
+  NumberInput,
+  NumberInputField,
+  Radio,
+  RadioGroup,
+  Stack,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
 
 const EditPlan = () => {
   const { planId } = useParams();
   const [formData, setFormData] = useState({
+    planType: "",
     planName: "",
     interestRate: "",
+    interestRateType: "fixed",
     maxAmount: "",
     minAmount: "",
     tenure: "",
     description: "",
+    loanType: "",
     loanName: "",
+    purpose: "",
+    processingFeeType: "fixed",
+    processingFeeAmount: "",
+    processingFeePercentage: "",
+    minMonthlyIncome: "",
+    minAge: "",
+    maxAge: "",
+    employmentType: "",
+    cibilScore: "",
+    repaymentSchedule: "monthly",
+    prepaymentAllowed: "yes",
+    prepaymentCharges: "",
+    otherConditions: "",
     investmentCategory: "",
     investmentSubCategory: "",
-    planType: "",
   });
+
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
+  const [availableTags, setAvailableTags] = useState([]);
   const toast = useToast();
   const router = useRouter();
 
+  const subCategories = {
+    Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds"],
+    MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds"],
+    FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit"],
+    GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds"],
+    ProvidentFunds: ["EPF", "PPF", "GPF"],
+  };
+
   useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const tagsRef = collection(db, "tags");
+        const tagsSnapshot = await getDocs(tagsRef);
+        const tagsList = tagsSnapshot.docs.map(doc => doc.data().tag);
+        setAvailableTags(tagsList);
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+      }
+    };
+
     const fetchPlanData = async () => {
       try {
         const planRef = doc(db, "investmentplans", planId);
@@ -81,6 +127,7 @@ const EditPlan = () => {
       }
     };
 
+    fetchTags();
     fetchPlanData();
   }, [planId, toast, router]);
 
@@ -89,6 +136,7 @@ const EditPlan = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+      ...(name === "investmentCategory" && { investmentSubCategory: "" }),
     }));
   };
 
@@ -105,13 +153,37 @@ const EditPlan = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (parseFloat(formData.minAmount) > parseFloat(formData.maxAmount)) {
+      toast({
+        title: "Validation Error",
+        description: "Minimum amount cannot be greater than maximum amount.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
       const collectionName = formData.planType === "loan" ? "loanplans" : "investmentplans";
-      await setDoc(doc(db, collectionName, planId), {
+      const planData = {
         ...formData,
         tags,
-        updatedAt: new Date(),
-      });
+        lastUpdated: new Date(),
+      };
+
+      if (formData.planType === "loan") {
+        await setDoc(doc(db, collectionName, planId), {
+          ...planData,
+          loanCategory: formData.loanType,
+          investmentCategory: "",
+          investmentSubCategory: "",
+        });
+      } else {
+        await setDoc(doc(db, collectionName, planId), planData);
+      }
+
       toast({
         title: "Success",
         description: `${formData.planType === "loan" ? "Loan" : "Investment"} plan updated successfully`,
@@ -139,69 +211,258 @@ const EditPlan = () => {
       <Divider mb={4} />
       <form onSubmit={handleSubmit}>
         <VStack spacing={4} align="stretch">
-          <FormControl isRequired>
-            <FormLabel>{formData.planType === "loan" ? "Loan Name" : "Plan Name"}</FormLabel>
-            <Input
-              name={formData.planType === "loan" ? "loanName" : "planName"}
-              value={formData.planType === "loan" ? formData.loanName : formData.planName}
-              onChange={handleInputChange}
-              placeholder={`Enter ${formData.planType === "loan" ? "loan" : "investment"} plan name`}
-              variant="filled"
-            />
-          </FormControl>
+          {formData.planType === "investment" && (
+            <>
+              <FormControl isRequired>
+                <FormLabel>Plan Name</FormLabel>
+                <Input
+                  name="planName"
+                  value={formData.planName}
+                  onChange={handleInputChange}
+                  variant="filled"
+                />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel>Category</FormLabel>
+                <Select
+                  name="investmentCategory"
+                  value={formData.investmentCategory}
+                  onChange={handleInputChange}
+                  variant="filled"
+                >
+                  <option value="Bonds">Bonds</option>
+                  <option value="MutualFunds">Mutual Funds</option>
+                  <option value="FixedDeposits">Fixed Deposits</option>
+                  <option value="GoldInvestments">Gold Investments</option>
+                  <option value="ProvidentFunds">Provident Funds</option>
+                </Select>
+              </FormControl>
+              {formData.investmentCategory && (
+                <FormControl isRequired>
+                  <FormLabel>Subcategory</FormLabel>
+                  <Select
+                    name="investmentSubCategory"
+                    value={formData.investmentSubCategory}
+                    onChange={handleInputChange}
+                    variant="filled"
+                  >
+                    {subCategories[formData.investmentCategory]?.map(
+                      (subCategory) => (
+                        <option key={subCategory} value={subCategory}>
+                          {subCategory}
+                        </option>
+                      )
+                    )}
+                  </Select>
+                </FormControl>
+              )}
+            </>
+          )}
+
+          {formData.planType === "loan" && (
+            <>
+              <FormControl isRequired>
+                <FormLabel>Loan Type</FormLabel>
+                <Select
+                  name="loanType"
+                  value={formData.loanType}
+                  onChange={handleInputChange}
+                  variant="filled"
+                >
+                  <option value="personal">Personal Loan</option>
+                  <option value="home">Home Loan</option>
+                  <option value="education">Education Loan</option>
+                  <option value="auto">Auto Loan</option>
+                  <option value="business">Business Loan</option>
+                </Select>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Loan Name</FormLabel>
+                <Input
+                  name="loanName"
+                  value={formData.loanName}
+                  onChange={handleInputChange}
+                  variant="filled"
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Purpose</FormLabel>
+                <Input
+                  name="purpose"
+                  value={formData.purpose}
+                  onChange={handleInputChange}
+                  variant="filled"
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Interest Rate Type</FormLabel>
+                <RadioGroup name="interestRateType" value={formData.interestRateType} onChange={(value) => handleInputChange({ target: { name: 'interestRateType', value }})}>
+                  <Stack direction="row">
+                    <Radio value="fixed">Fixed</Radio>
+                    <Radio value="floating">Floating</Radio>
+                  </Stack>
+                </RadioGroup>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Processing Fee</FormLabel>
+                <RadioGroup name="processingFeeType" value={formData.processingFeeType} onChange={(value) => handleInputChange({ target: { name: 'processingFeeType', value }})}>
+                  <Stack direction="row" mb={2}>
+                    <Radio value="fixed">Fixed Amount</Radio>
+                    <Radio value="percentage">Percentage</Radio>
+                  </Stack>
+                </RadioGroup>
+                {formData.processingFeeType === 'fixed' ? (
+                  <NumberInput min={0} variant="filled">
+                    <NumberInputField
+                      name="processingFeeAmount"
+                      value={formData.processingFeeAmount}
+                      onChange={handleInputChange}
+                    />
+                  </NumberInput>
+                ) : (
+                  <NumberInput min={0} max={100} variant="filled">
+                    <NumberInputField
+                      name="processingFeePercentage"
+                      value={formData.processingFeePercentage}
+                      onChange={handleInputChange}
+                    />
+                  </NumberInput>
+                )}
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Eligibility Criteria</FormLabel>
+                <VStack spacing={2}>
+                  <NumberInput min={0} variant="filled">
+                    <NumberInputField
+                      name="minMonthlyIncome"
+                      value={formData.minMonthlyIncome}
+                      onChange={handleInputChange}
+                      placeholder="Minimum Monthly Income"
+                    />
+                  </NumberInput>
+                  <HStack w="100%">
+                    <NumberInput min={18} max={100} variant="filled">
+                      <NumberInputField
+                        name="minAge"
+                        value={formData.minAge}
+                        onChange={handleInputChange}
+                        placeholder="Min Age"
+                      />
+                    </NumberInput>
+                    <NumberInput min={18} max={100} variant="filled">
+                      <NumberInputField
+                        name="maxAge"
+                        value={formData.maxAge}
+                        onChange={handleInputChange}
+                        placeholder="Max Age"
+                      />
+                    </NumberInput>
+                  </HStack>
+                  <Select
+                    name="employmentType"
+                    value={formData.employmentType}
+                    onChange={handleInputChange}
+                    variant="filled"
+                  >
+                    <option value="salaried">Salaried</option>
+                    <option value="self-employed">Self-Employed</option>
+                    <option value="business">Business Owner</option>
+                  </Select>
+                  <NumberInput min={300} max={900} variant="filled">
+                    <NumberInputField
+                      name="cibilScore"
+                      value={formData.cibilScore}
+                      onChange={handleInputChange}
+                      placeholder="Minimum CIBIL Score"
+                    />
+                  </NumberInput>
+                </VStack>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Repayment Schedule</FormLabel>
+                <Select
+                  name="repaymentSchedule"
+                  value={formData.repaymentSchedule}
+                  onChange={handleInputChange}
+                  variant="filled"
+                >
+                  <option value="monthly">Monthly EMI</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="annual">Annual</option>
+                </Select>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Prepayment Options</FormLabel>
+                <RadioGroup name="prepaymentAllowed" value={formData.prepaymentAllowed} onChange={(value) => handleInputChange({ target: { name: 'prepaymentAllowed', value }})}>
+                  <Stack direction="row" mb={2}>
+                    <Radio value="yes">Allowed</Radio>
+                    <Radio value="no">Not Allowed</Radio>
+                  </Stack>
+                </RadioGroup>
+                {formData.prepaymentAllowed === 'yes' && (
+                  <NumberInput min={0} variant="filled">
+                    <NumberInputField
+                      name="prepaymentCharges"
+                      value={formData.prepaymentCharges}
+                      onChange={handleInputChange}
+                      placeholder="Prepayment Charges (%)"
+                    />
+                  </NumberInput>
+                )}
+              </FormControl>
+            </>
+          )}
 
           <FormControl isRequired>
             <FormLabel>Interest Rate (%)</FormLabel>
-            <Input
-              type="number"
-              name="interestRate"
-              value={formData.interestRate}
-              onChange={handleInputChange}
-              min={0}
-              placeholder="Enter interest rate"
-              variant="filled"
-            />
+            <NumberInput min={0} max={100} step={0.1} variant="filled">
+              <NumberInputField
+                name="interestRate"
+                value={formData.interestRate}
+                onChange={handleInputChange}
+              />
+            </NumberInput>
           </FormControl>
 
           <HStack spacing={4}>
             <FormControl isRequired>
               <FormLabel>Minimum Amount</FormLabel>
-              <Input
-                type="number"
-                name="minAmount"
-                value={formData.minAmount}
-                onChange={handleInputChange}
-                min={0}
-                placeholder="Enter minimum amount"
-                variant="filled"
-              />
+              <NumberInput min={0} variant="filled">
+                <NumberInputField
+                  name="minAmount"
+                  value={formData.minAmount}
+                  onChange={handleInputChange}
+                />
+              </NumberInput>
             </FormControl>
-
             <FormControl isRequired>
               <FormLabel>Maximum Amount</FormLabel>
-              <Input
-                type="number"
-                name="maxAmount"
-                value={formData.maxAmount}
-                onChange={handleInputChange}
-                min={0}
-                placeholder="Enter maximum amount"
-                variant="filled"
-              />
+              <NumberInput min={0} variant="filled">
+                <NumberInputField
+                  name="maxAmount"
+                  value={formData.maxAmount}
+                  onChange={handleInputChange}
+                />
+              </NumberInput>
             </FormControl>
           </HStack>
 
           <FormControl isRequired>
             <FormLabel>Tenure (months)</FormLabel>
-            <Input
-              type="number"
-              name="tenure"
-              value={formData.tenure}
-              onChange={handleInputChange}
-              min={1}
-              placeholder="Enter tenure in months"
-              variant="filled"
-            />
+            <NumberInput min={0} variant="filled">
+              <NumberInputField
+                name="tenure"
+                value={formData.tenure}
+                onChange={handleInputChange}
+              />
+            </NumberInput>
           </FormControl>
 
           <FormControl>
@@ -210,12 +471,20 @@ const EditPlan = () => {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder={`Enter ${formData.planType === "loan" ? "loan" : "investment"} plan description`}
               variant="filled"
             />
           </FormControl>
 
-          {/* Tags Section */}
+          <FormControl>
+            <FormLabel>Other Conditions</FormLabel>
+            <Textarea
+              name="otherConditions"
+              value={formData.otherConditions}
+              onChange={handleInputChange}
+              variant="filled"
+            />
+          </FormControl>
+
           <FormControl>
             <FormLabel>Tags (up to 5)</FormLabel>
             <Wrap spacing={2} mb={4}>
@@ -229,10 +498,22 @@ const EditPlan = () => {
               ))}
             </Wrap>
             <HStack>
+              <Menu>
+                <MenuButton as={Button} colorScheme="teal" isDisabled={tags.length >= 5}>
+                  Select Tag
+                </MenuButton>
+                <MenuList>
+                  {availableTags.map((tag) => (
+                    <MenuItem key={tag} onClick={() => handleAddTag(tag)}>
+                      {tag}
+                    </MenuItem>
+                  ))}
+                </MenuList>
+              </Menu>
               <Input
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Add tags"
+                placeholder="Or add custom tag"
                 variant="filled"
               />
               <Button
@@ -240,7 +521,7 @@ const EditPlan = () => {
                 isDisabled={tags.length >= 5 || !tagInput.trim()}
                 colorScheme="teal"
               >
-                Add
+                Add Custom
               </Button>
             </HStack>
           </FormControl>
@@ -254,4 +535,4 @@ const EditPlan = () => {
   );
 };
 
-export default EditPlan; 
+export default EditPlan;

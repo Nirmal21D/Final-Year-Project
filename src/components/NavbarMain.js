@@ -91,7 +91,7 @@ const NavbarMain = () => {
         justify="space-evenly"
         w="full"
       >
-        <Divider orientation="vertical" height="35px" />
+        {/* <Divider orientation="vertical" height="35px" /> */}
         <Link href="/">
           <Menu>
             <MenuButton
@@ -109,9 +109,10 @@ const NavbarMain = () => {
 
         {/* __________________________________________________________________________________________ */}
 
-        <Menu closeOnSelect={false}>
+        <Menu >
           {" "}
           {/* Keep menu open when selecting sub-items */}
+          <Link href="/plan1">
           <MenuButton
             as={Button}
             bg="#567C8D"
@@ -120,51 +121,21 @@ const NavbarMain = () => {
           >
             Investment Plans
           </MenuButton>
-          <MenuList bg="#ebeff4">
-            {investmentPlans.map((investment) => (
-              <Box key={investment.type}>
-                <MenuItem
-                  bg="#ffffff"
-                  onClick={() => togglePlans(investment.type)}
-                  _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-                >
-                  {investment.type}
-                </MenuItem>
-                {activeType === investment.type && (
-                  <Box pl={4} bg="#ebeff4">
-                    
-                      <MenuItem key={investment.type} bg="#ffffff">
-                        <Link href={investment.link}>{investment.type}</Link>
-                      </MenuItem>
-                    
-                  </Box>
-                )}
-              </Box>
-            ))}
-          </MenuList>
+          </Link>
         </Menu>
         <Divider orientation="vertical" height="35px" />
         {/* __________________________________________________________________________________________ */}
         <Menu>
+          <Link href="/loanplans">
           <MenuButton
             as={Button}
             bg="#567C8D"
             color="#e9ecef"
             _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
           >
-            Banks
+            Loan Plans
           </MenuButton>
-          <MenuList>
-            <MenuItem as={Link} href="/bank1">
-              Bank 1
-            </MenuItem>
-            <MenuItem as={Link} href="/bank2">
-              Bank 2
-            </MenuItem>
-            <MenuItem as={Link} href="/bank3">
-              Bank 3
-            </MenuItem>
-          </MenuList>
+         </Link>
         </Menu>
         <Divider orientation="vertical" height="35px" />
         <Menu>
