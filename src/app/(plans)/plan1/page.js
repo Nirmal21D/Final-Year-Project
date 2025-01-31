@@ -464,7 +464,9 @@ const Page = () => {
             key={plan.id} 
             width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
           >
-            <Box 
+            <Box
+              as="a"
+              href={`/plan1/${plan.id}`}
               p={4} 
               borderWidth={1} 
               borderRadius="lg" 
@@ -472,6 +474,8 @@ const Page = () => {
               boxShadow="lg"
               transition="all 0.2s"
               _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
+              textDecoration="none"
+              display="block"
             >
               <Heading size="sm" color="#2C319F">{plan.planName}</Heading>
               <Text mt={2} noOfLines={2} color="gray.700">{plan.description}</Text>

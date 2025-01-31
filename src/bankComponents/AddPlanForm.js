@@ -42,6 +42,21 @@ const AddPlanForm = () => {
     investmentCategory: "",
     investmentSubCategory: "",
     createdBy: "", // Added createdBy field
+    purpose: "",
+    interestRateType: "fixed",
+    interestRateMin: "",
+    interestRateMax: "",
+    processingFeeType: "percentage",
+    processingFeeValue: "",
+    minimumMonthlyIncome: "",
+    minAge: "",
+    maxAge: "",
+    employmentType: "",
+    cibilScore: "",
+    repaymentSchedule: "monthly",
+    prepaymentAllowed: "yes",
+    prepaymentCharges: "",
+    additionalConditions: "",
   });
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState([]);
@@ -157,6 +172,21 @@ const AddPlanForm = () => {
         investmentCategory: "",
         investmentSubCategory: "",
         createdBy: "", // Reset createdBy field
+        purpose: "",
+        interestRateType: "fixed",
+        interestRateMin: "",
+        interestRateMax: "",
+        processingFeeType: "percentage",
+        processingFeeValue: "",
+        minimumMonthlyIncome: "",
+        minAge: "",
+        maxAge: "",
+        employmentType: "",
+        cibilScore: "",
+        repaymentSchedule: "monthly",
+        prepaymentAllowed: "yes",
+        prepaymentCharges: "",
+        additionalConditions: "",
       });
       setTags([]); // Reset tags after submission
     } catch (error) {
@@ -257,16 +287,6 @@ const AddPlanForm = () => {
             {formData.planType === "loan" && (
               <>
                 <FormControl isRequired>
-                  <FormLabel>Loan Name</FormLabel>
-                  <Input
-                    name="loanName"
-                    value={formData.loanName}
-                    onChange={handleInputChange}
-                    bg="white"
-                    borderRadius="md"
-                  />
-                </FormControl>
-                <FormControl isRequired>
                   <FormLabel>Loan Type</FormLabel>
                   <Select
                     name="loanType"
@@ -277,7 +297,207 @@ const AddPlanForm = () => {
                   >
                     <option value="personal">Personal Loan</option>
                     <option value="home">Home Loan</option>
+                    <option value="education">Education Loan</option>
+                    <option value="auto">Auto Loan</option>
+                    <option value="business">Business Loan</option>
                   </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Loan Name</FormLabel>
+                  <Input
+                    name="loanName"
+                    value={formData.loanName}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Smart Personal Loan"
+                    bg="white"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Purpose</FormLabel>
+                  <Input
+                    name="purpose"
+                    value={formData.purpose}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Home purchase, Vehicle, Business expansion"
+                    bg="white"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Interest Rate Type</FormLabel>
+                  <Select
+                    name="interestRateType"
+                    value={formData.interestRateType}
+                    onChange={handleInputChange}
+                    bg="white"
+                  >
+                    <option value="fixed">Fixed</option>
+                    <option value="floating">Floating</option>
+                  </Select>
+                </FormControl>
+
+                <HStack spacing={4}>
+                  <FormControl isRequired>
+                    <FormLabel>Min Interest Rate (%)</FormLabel>
+                    <NumberInput min={0} max={100} bg="white">
+                      <NumberInputField
+                        name="interestRateMin"
+                        value={formData.interestRateMin}
+                        onChange={handleInputChange}
+                      />
+                    </NumberInput>
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Max Interest Rate (%)</FormLabel>
+                    <NumberInput min={0} max={100} bg="white">
+                      <NumberInputField
+                        name="interestRateMax"
+                        value={formData.interestRateMax}
+                        onChange={handleInputChange}
+                      />
+                    </NumberInput>
+                  </FormControl>
+                </HStack>
+
+                <FormControl isRequired>
+                  <FormLabel>Processing Fee Type</FormLabel>
+                  <Select
+                    name="processingFeeType"
+                    value={formData.processingFeeType}
+                    onChange={handleInputChange}
+                    bg="white"
+                  >
+                    <option value="percentage">Percentage of Loan Amount</option>
+                    <option value="fixed">Fixed Amount</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>
+                    Processing Fee {formData.processingFeeType === "percentage" ? "(%)" : "(₹)"}
+                  </FormLabel>
+                  <NumberInput min={0} bg="white">
+                    <NumberInputField
+                      name="processingFeeValue"
+                      value={formData.processingFeeValue}
+                      onChange={handleInputChange}
+                    />
+                  </NumberInput>
+                </FormControl>
+
+                <Heading size="sm" mt={4}>Eligibility Criteria</Heading>
+                
+                <FormControl isRequired>
+                  <FormLabel>Minimum Monthly Income (₹)</FormLabel>
+                  <NumberInput min={0} bg="white">
+                    <NumberInputField
+                      name="minimumMonthlyIncome"
+                      value={formData.minimumMonthlyIncome}
+                      onChange={handleInputChange}
+                    />
+                  </NumberInput>
+                </FormControl>
+
+                <HStack spacing={4}>
+                  <FormControl isRequired>
+                    <FormLabel>Minimum Age</FormLabel>
+                    <NumberInput min={18} max={100} bg="white">
+                      <NumberInputField
+                        name="minAge"
+                        value={formData.minAge}
+                        onChange={handleInputChange}
+                      />
+                    </NumberInput>
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Maximum Age</FormLabel>
+                    <NumberInput min={18} max={100} bg="white">
+                      <NumberInputField
+                        name="maxAge"
+                        value={formData.maxAge}
+                        onChange={handleInputChange}
+                      />
+                    </NumberInput>
+                  </FormControl>
+                </HStack>
+
+                <FormControl isRequired>
+                  <FormLabel>Employment Type</FormLabel>
+                  <Select
+                    name="employmentType"
+                    value={formData.employmentType}
+                    onChange={handleInputChange}
+                    bg="white"
+                  >
+                    <option value="salaried">Salaried</option>
+                    <option value="self-employed">Self-Employed</option>
+                    <option value="business">Business Owner</option>
+                    <option value="professional">Professional</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Minimum CIBIL Score</FormLabel>
+                  <NumberInput min={300} max={900} bg="white">
+                    <NumberInputField
+                      name="cibilScore"
+                      value={formData.cibilScore}
+                      onChange={handleInputChange}
+                    />
+                  </NumberInput>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Repayment Schedule</FormLabel>
+                  <Select
+                    name="repaymentSchedule"
+                    value={formData.repaymentSchedule}
+                    onChange={handleInputChange}
+                    bg="white"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="annually">Annually</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Prepayment Allowed</FormLabel>
+                  <Select
+                    name="prepaymentAllowed"
+                    value={formData.prepaymentAllowed}
+                    onChange={handleInputChange}
+                    bg="white"
+                  >
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </Select>
+                </FormControl>
+
+                {formData.prepaymentAllowed === "yes" && (
+                  <FormControl>
+                    <FormLabel>Prepayment Charges (%)</FormLabel>
+                    <NumberInput min={0} max={100} bg="white">
+                      <NumberInputField
+                        name="prepaymentCharges"
+                        value={formData.prepaymentCharges}
+                        onChange={handleInputChange}
+                      />
+                    </NumberInput>
+                  </FormControl>
+                )}
+
+                <FormControl>
+                  <FormLabel>Additional Conditions</FormLabel>
+                  <Textarea
+                    name="additionalConditions"
+                    value={formData.additionalConditions}
+                    onChange={handleInputChange}
+                    placeholder="Enter any additional eligibility criteria or conditions"
+                    bg="white"
+                  />
                 </FormControl>
               </>
             )}

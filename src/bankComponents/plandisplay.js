@@ -59,12 +59,27 @@ export default function PlanDisplay() {
 
   const initialFormData = {
     planName: "",
-    interestRate: "",
-    maxAmount: "",
-    minAmount: "",
-    tenure: "",
-    description: "",
     loanName: "",
+    loanType: "",
+    purpose: "",
+    interestRateType: "fixed",
+    interestRateMin: "",
+    interestRateMax: "",
+    minAmount: "",
+    maxAmount: "",
+    tenure: "",
+    processingFeeType: "percentage",
+    processingFeeValue: "",
+    minimumMonthlyIncome: "",
+    minAge: "",
+    maxAge: "",
+    employmentType: "",
+    cibilScore: "",
+    repaymentSchedule: "monthly",
+    prepaymentAllowed: "yes",
+    prepaymentCharges: "",
+    additionalConditions: "",
+    description: "",
     investmentCategory: "",
     investmentSubCategory: "",
   };
@@ -190,11 +205,13 @@ export default function PlanDisplay() {
     setEditPlan(plan.id);
     setFormData({
       planName: type === "loan" ? plan.loanName : plan.planName,
-      interestRate: plan.interestRate,
-      maxAmount: plan.maxAmount,
-      minAmount: plan.minAmount,
-      tenure: plan.tenure,
-      description: plan.description,
+      interestRateType: plan.interestRateType || "fixed",
+      interestRateMin: plan.interestRateMin || "",
+      interestRateMax: plan.interestRateMax || "",
+      minAmount: plan.minAmount || "",
+      maxAmount: plan.maxAmount || "",
+      tenure: plan.tenure || "",
+      description: plan.description || "",
       investmentCategory: plan.investmentCategory || "",
       investmentSubCategory: plan.investmentSubCategory || "",
     });
@@ -205,21 +222,34 @@ export default function PlanDisplay() {
     setIsLoading(true);
     try {
       const collectionName = isEditingLoan ? "loanplans" : "investmentplans";
-      await setDoc(doc(db, collectionName, editPlan), {
+      const updatedData = {
         ...formData,
         updatedAt: new Date(),
-      });
+        interestRateMin: parseFloat(formData.interestRateMin) || 0,
+        interestRateMax: parseFloat(formData.interestRateMax) || 0,
+        minAmount: parseFloat(formData.minAmount) || 0,
+        maxAmount: parseFloat(formData.maxAmount) || 0,
+        tenure: parseInt(formData.tenure) || 0,
+        processingFeeValue: parseFloat(formData.processingFeeValue) || 0,
+        minimumMonthlyIncome: parseFloat(formData.minimumMonthlyIncome) || 0,
+        minAge: parseInt(formData.minAge) || 0,
+        maxAge: parseInt(formData.maxAge) || 0,
+        cibilScore: parseInt(formData.cibilScore) || 0,
+        prepaymentCharges: parseFloat(formData.prepaymentCharges) || 0,
+      };
+
+      await setDoc(doc(db, collectionName, editPlan), updatedData, { merge: true });
 
       if (isEditingLoan) {
         setLoanPlans((prev) =>
           prev.map((plan) =>
-            plan.id === editPlan ? { ...plan, ...formData } : plan
+            plan.id === editPlan ? { ...plan, ...updatedData } : plan
           )
         );
       } else {
         setInvestmentPlans((prev) =>
           prev.map((plan) =>
-            plan.id === editPlan ? { ...plan, ...formData } : plan
+            plan.id === editPlan ? { ...plan, ...updatedData } : plan
           )
         );
       }
@@ -285,6 +315,24 @@ export default function PlanDisplay() {
   const PlanCard = ({ plan, type }) => {
     const router = useRouter();
 
+    const formatCurrency = (amount) => {
+      if (!amount) return "₹0";
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+      }).format(amount);
+    };
+
+    const getColorScheme = (value, threshold) => {
+      if (!value) return "gray";
+      return value >= threshold ? "green" : "yellow";
+    };
+
+    const formatValue = (value, suffix = "") => {
+      return value ? `${value}${suffix}` : "N/A";
+    };
+
     return (
       <Box
         borderWidth="1px"
@@ -294,27 +342,54 @@ export default function PlanDisplay() {
         mb={4}
         bg="rgba(0, 0, 0, 0.1)"
       >
-        <Heading size="md" color="teal.300">
-          {type === "loan" ? plan.loanName : plan.planName}
-        </Heading>
-        <Text color="gray.600">Interest Rate: <Badge colorScheme="teal">{plan.interestRate}%</Badge></Text>
-        <Text color="gray.600">Amount Range: {`${Number(plan.minAmount).toLocaleString()} - ${Number(plan.maxAmount).toLocaleString()}`}</Text>
-        <Text color="gray.600">Tenure: {plan.tenure} months</Text>
-        {type === "investment" && (
-          <>
-            <Text color="gray.600">Category: {plan.investmentCategory}</Text>
-            <Text color="gray.600">Sub Category: {plan.investmentSubCategory}</Text>
-          </>
-        )}
-        <Text color="gray.600">Description: {plan.description}</Text>
-        <HStack spacing={2} mt={4}>
-          <Button size="sm" colorScheme="teal" onClick={() => router.push(`/editplan/${plan.id}`)}>
-            Edit
-          </Button>
-          <Button size="sm" colorScheme="red" onClick={() => handleDeleteClick(plan.id, type)}>
-            Delete
-          </Button>
-        </HStack>
+        <VStack align="stretch" spacing={3}>
+          <Heading size="md" color="teal.300">
+            {type === "loan" ? plan.loanName || "Unnamed Loan" : plan.planName || "Unnamed Plan"}
+          </Heading>
+
+          {type === "loan" && (
+            <>
+              <HStack justify="space-between">
+                <Text color="gray.600">Loan Type:</Text>
+                <Badge colorScheme="blue">{plan.loanType || "Not Specified"}</Badge>
+              </HStack>
+
+              <Text color="gray.600">Purpose: {plan.purpose || "Not Specified"}</Text>
+
+              <VStack align="stretch" spacing={2}>
+                <Text color="gray.600" fontWeight="bold">Interest Details:</Text>
+                <HStack justify="space-between">
+                  <Text color="gray.600">Type:</Text>
+                  <Badge colorScheme="green">{plan.interestRateType || "Not Specified"}</Badge>
+                </HStack>
+                <HStack justify="space-between">
+                  <Text color="gray.600">Rate Range:</Text>
+                  <Text color="gray.600">
+                    {formatValue(plan.interestRateMin, "%")} - {formatValue(plan.interestRateMax, "%")}
+                  </Text>
+                </HStack>
+              </VStack>
+            </>
+          )}
+
+          <Text color="gray.600">Amount Range: {`${Number(plan.minAmount).toLocaleString()} - ${Number(plan.maxAmount).toLocaleString()}`}</Text>
+          <Text color="gray.600">Tenure: {plan.tenure} months</Text>
+          {type === "investment" && (
+            <>
+              <Text color="gray.600">Category: {plan.investmentCategory}</Text>
+              <Text color="gray.600">Sub Category: {plan.investmentSubCategory}</Text>
+            </>
+          )}
+          <Text color="gray.600">Description: {plan.description}</Text>
+          <HStack spacing={2} mt={4}>
+            <Button size="sm" colorScheme="teal" onClick={() => router.push(`/editplan/${plan.id}`)}>
+              Edit
+            </Button>
+            <Button size="sm" colorScheme="red" onClick={() => handleDeleteClick(plan.id, type)}>
+              Delete
+            </Button>
+          </HStack>
+        </VStack>
       </Box>
     );
   };
@@ -363,24 +438,65 @@ export default function PlanDisplay() {
             </Heading>
             <form onSubmit={handleSubmitEdit}>
               <VStack spacing={4} align="stretch">
-                <Input
-                  name="planName"
-                  value={formData.planName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, planName: e.target.value })
-                  }
-                  placeholder={isEditingLoan ? "Loan Name" : "Plan Name"}
-                  isRequired
-                />
+                {isEditingLoan ? (
+                  <>
+                    <Input
+                      name="loanName"
+                      value={formData.loanName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, loanName: e.target.value })
+                      }
+                      placeholder="Loan Name"
+                      isRequired
+                    />
+                    <Select
+                      name="loanType"
+                      value={formData.loanType}
+                      onChange={(e) =>
+                        setFormData({ ...formData, loanType: e.target.value })
+                      }
+                      placeholder="Select Loan Type"
+                      isRequired
+                    >
+                      <option value="personal">Personal Loan</option>
+                      <option value="home">Home Loan</option>
+                      <option value="education">Education Loan</option>
+                      <option value="auto">Auto Loan</option>
+                      <option value="business">Business Loan</option>
+                    </Select>
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      name="planName"
+                      value={formData.planName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, planName: e.target.value })
+                      }
+                      placeholder="Plan Name"
+                      isRequired
+                    />
+                  </>
+                )}
                 <NumberInput
                   min={0}
-                  value={formData.interestRate}
+                  value={formData.interestRateMin}
                   onChange={(valueString) =>
-                    setFormData({ ...formData, interestRate: valueString })
+                    setFormData({ ...formData, interestRateMin: valueString })
                   }
                   isRequired
                 >
-                  <NumberInputField placeholder="Interest Rate (%)" />
+                  <NumberInputField placeholder="Interest Rate Min (%)" />
+                </NumberInput>
+                <NumberInput
+                  min={0}
+                  value={formData.interestRateMax}
+                  onChange={(valueString) =>
+                    setFormData({ ...formData, interestRateMax: valueString })
+                  }
+                  isRequired
+                >
+                  <NumberInputField placeholder="Interest Rate Max (%)" />
                 </NumberInput>
                 <HStack>
                   <NumberInput
@@ -464,27 +580,14 @@ export default function PlanDisplay() {
                   placeholder="Description"
                   isRequired
                 />
-                <HStack spacing={4}>
-                  <Button
-                    type="submit"
-                    colorScheme="teal"
-                    isLoading={isLoading}
-                    loadingText="Updating..."
-                    width="full"
-                  >
-                    Update Plan
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setEditPlan(null);
-                      setFormData(initialFormData);
-                    }}
-                    colorScheme="gray"
-                    width="full"
-                  >
-                    Cancel
-                  </Button>
-                </HStack>
+                <Button
+                  type="submit"
+                  colorScheme="teal"
+                  isLoading={isLoading}
+                  loadingText="Updating..."
+                >
+                  Update Plan
+                </Button>
               </VStack>
             </form>
           </Box>
