@@ -135,7 +135,7 @@ const Calc2 = () => {
           width="1px"
           borderColor="black"
         >
-          <Divider orientation="vertical" h="100%" />
+          {/* <Divider orientation="vertical" h="100%" /> */}
         </Box>
 
         <Box

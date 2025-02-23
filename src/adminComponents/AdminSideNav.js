@@ -2,7 +2,7 @@
 import React from "react";
 import { Text, VStack, Button, Icon } from "@chakra-ui/react";
 import Link from "next/link";
-import { FiHome, FiFilePlus, FiFileText } from "react-icons/fi";
+import { FiHome, FiFilePlus, FiFileText, FiDollarSign } from "react-icons/fi";
 
 const AdminSideNav = () => {
   return (
@@ -36,7 +36,7 @@ const AdminSideNav = () => {
         <Link href="/admin/all-banks" passHref>
           <Button
             w="full"
-            leftIcon={<Icon as={FiFileText} />}
+            leftIcon={<Icon as={FiDollarSign} />}
             variant="ghost"
             justifyContent="flex-start"
             colorScheme="whiteAlpha"
@@ -55,7 +55,7 @@ const AdminSideNav = () => {
             Plan Verify
           </Button>
         </Link>
-        <Link href="/admin/blogs" passHref>
+        {/* <Link href="/admin/blogs" passHref>
           <Button
             w="full"
             leftIcon={<Icon as={FiFileText} />}
@@ -65,7 +65,7 @@ const AdminSideNav = () => {
           >
             Blogs
           </Button>
-        </Link>
+        </Link> */}
       </VStack>
     </>
   );
