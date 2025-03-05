@@ -28,9 +28,16 @@ import {
   Container,
   Divider,
   Badge,
-  Tooltip,
   SimpleGrid,
   Select,
+  Card,
+  CardBody,
+  CardHeader,
+  Stack,
+  Tag,
+  TagLabel,
+  IconButton,
+  Flex,
 } from "@chakra-ui/react";
 import {
   collection,
@@ -76,7 +83,12 @@ export default function PlanDisplay() {
     Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds"],
     MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds"],
     FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit"],
-    GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds"],
+    GoldInvestments: [
+      "Physical Gold",
+      "Digital Gold",
+      "Gold ETFs",
+      "Sovereign Gold Bonds",
+    ],
     ProvidentFunds: ["EPF", "PPF", "GPF"],
   };
 
@@ -93,7 +105,7 @@ export default function PlanDisplay() {
           setUser(null);
           setInvestmentPlans([]);
           setLoanPlans([]);
-          router.push('/login');
+          router.push("/login");
         }
       } catch (err) {
         setError(err.message);
@@ -286,57 +298,162 @@ export default function PlanDisplay() {
     const router = useRouter();
 
     return (
-      <Box
-        borderWidth="1px"
-        borderRadius="lg"
-        overflow="hidden"
-        p={4}
-        mb={4}
-        bg="rgba(0, 0, 0, 0.1)"
+      <Card
+        variant="elevated"
+        shadow="sm"
+        transition="all 0.2s"
+        _hover={{ shadow: "md", transform: "translateY(-2px)" }}
       >
-        <Heading size="md" color="teal.300">
-          {type === "loan" ? plan.loanName : plan.planName}
-        </Heading>
-        <Text color="gray.600">Interest Rate: <Badge colorScheme="teal">{plan.interestRate}%</Badge></Text>
-        <Text color="gray.600">Amount Range: {`${Number(plan.minAmount).toLocaleString()} - ${Number(plan.maxAmount).toLocaleString()}`}</Text>
-        <Text color="gray.600">Tenure: {plan.tenure} months</Text>
-        {type === "investment" && (
-          <>
-            <Text color="gray.600">Category: {plan.investmentCategory}</Text>
-            <Text color="gray.600">Sub Category: {plan.investmentSubCategory}</Text>
-          </>
-        )}
-        <Text color="gray.600">Description: {plan.description}</Text>
-        <HStack spacing={2} mt={4}>
-          <Button size="sm" colorScheme="teal" onClick={() => router.push(`/editplan/${plan.id}`)}>
-            Edit
-          </Button>
-          <Button size="sm" colorScheme="red" onClick={() => handleDeleteClick(plan.id, type)}>
-            Delete
-          </Button>
-        </HStack>
-      </Box>
+        <CardHeader pb={0}>
+          <Flex justify="space-between" align="center">
+            <Heading size="md" color="teal.600">
+              {type === "loan" ? plan.loanName : plan.planName}
+            </Heading>
+            <Tag size="sm" colorScheme={type === "loan" ? "purple" : "teal"}>
+              <TagLabel>{type === "loan" ? "Loan" : "Investment"}</TagLabel>
+            </Tag>
+          </Flex>
+        </CardHeader>
+
+        <CardBody>
+          <Stack spacing={3}>
+            <Box h={"30vh"}>
+              <Stack spacing={3}>
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="gray.600">
+                    Interest Rate
+                  </Text>
+                  <Badge colorScheme="green">{plan.interestRate}%</Badge>
+                </HStack>
+
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="gray.600">
+                    Amount Range
+                  </Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    ₹{Number(plan.minAmount).toLocaleString()} - ₹
+                    {Number(plan.maxAmount).toLocaleString()}
+                  </Text>
+                </HStack>
+
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="gray.600">
+                    Tenure
+                  </Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    {plan.tenure} months
+                  </Text>
+                </HStack>
+
+                {type === "investment" && (
+                  <>
+                    <HStack justify="space-between">
+                      <Text fontSize="sm" color="gray.600">
+                        Category
+                      </Text>
+                      <Badge colorScheme="blue">
+                        {plan.investmentCategory}
+                      </Badge>
+                    </HStack>
+                    <HStack justify="space-between">
+                      <Text fontSize="sm" color="gray.600">
+                        Sub Category
+                      </Text>
+                      <Badge colorScheme="purple">
+                        {plan.investmentSubCategory}
+                      </Badge>
+                    </HStack>
+                  </>
+                )}
+
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>
+                    Description
+                  </Text>
+                  <Text fontSize="sm">{plan.description}</Text>
+                </Box>
+              </Stack>
+            </Box>
+            <Divider />
+
+            <HStack justify="flex-end" spacing={2}>
+              <Button
+                size="sm"
+                colorScheme="teal"
+                variant="outline"
+                onClick={() => router.push(`/editplan/${plan.id}`)}
+              >
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                colorScheme="red"
+                variant="ghost"
+                onClick={() => handleDeleteClick(plan.id, type)}
+              >
+                Delete
+              </Button>
+            </HStack>
+          </Stack>
+        </CardBody>
+      </Card>
     );
   };
 
-  return (
-    <Container maxW="container.xl" p={5}>
-      <Box
-        p={6}
-        borderRadius="lg"
-        bg="rgba(15, 21, 53, 0.95)"
-        color="white"
-        boxShadow="xl"
-      >
-        <Heading mb={4} color="teal.300" size="lg">
-          Bank Panel
-        </Heading>
-        <Text color="gray.600" mb={6}>
-          Welcome, {user.email}
-        </Text>
-        <Divider mb={6} />
+  if (isLoading) {
+    return (
+      <Flex justify="center" align="center" height="100vh">
+        <Spinner size="xl" color="teal.500" thickness="4px" />
+      </Flex>
+    );
+  }
 
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+  if (error) {
+    return (
+      <Alert status="error" variant="left-accent" borderRadius="md">
+        <AlertIcon />
+        <Box>
+          <AlertTitle>Error occurred</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Box>
+      </Alert>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Alert
+        status="warning"
+        variant="subtle"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        textAlign="center"
+        height="200px"
+        borderRadius="md"
+      >
+        <AlertIcon boxSize="40px" mr={0} />
+        <AlertTitle mt={4} mb={1} fontSize="lg">
+          Authentication Required
+        </AlertTitle>
+        <AlertDescription maxWidth="sm">
+          Please log in to access the bank panel.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <Container maxW="container.xl" py={8}>
+      <VStack spacing={8} align="stretch">
+        <Box>
+          <Heading size="lg" color="gray.700" mb={2}>
+            Bank Panel
+          </Heading>
+          <Text color="gray.500">Welcome back, {user.email}</Text>
+        </Box>
+
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
           {investmentPlans.map((plan) => (
             <PlanCard key={plan.id} plan={plan} type="investment" />
           ))}
@@ -346,150 +463,171 @@ export default function PlanDisplay() {
         </SimpleGrid>
 
         {rejectedPlans.length > 0 && (
-          <Box mt={6}>
-            <Heading size="md" color="red.300">Rejected Plans</Heading>
-            {rejectedPlans.map((rejectedPlan, index) => (
-              <Box key={index} p={4} borderWidth="1px" borderRadius="lg" bg="rgba(255, 0, 0, 0.1)" mb={4}>
-                <Text color="red.500">{rejectedPlan.name} - Reason: {rejectedPlan.reason}</Text>
-              </Box>
-            ))}
+          <Box>
+            <Heading size="md" color="red.500" mb={4}>
+              Rejected Plans
+            </Heading>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+              {rejectedPlans.map((rejectedPlan, index) => (
+                <Alert
+                  key={index}
+                  status="error"
+                  variant="left-accent"
+                  borderRadius="md"
+                >
+                  <AlertIcon />
+                  <Box>
+                    <AlertTitle>{rejectedPlan.name}</AlertTitle>
+                    <AlertDescription>
+                      Reason: {rejectedPlan.reason}
+                    </AlertDescription>
+                  </Box>
+                </Alert>
+              ))}
+            </SimpleGrid>
           </Box>
         )}
 
         {editPlan && (
-          <Box mt={6} p={6} borderRadius="md" bg="rgba(255, 255, 255, 0.05)">
-            <Heading size="md" mb={4} color="teal.300">
-              Edit {isEditingLoan ? "Loan" : "Investment"} Plan
-            </Heading>
-            <form onSubmit={handleSubmitEdit}>
-              <VStack spacing={4} align="stretch">
-                <Input
-                  name="planName"
-                  value={formData.planName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, planName: e.target.value })
-                  }
-                  placeholder={isEditingLoan ? "Loan Name" : "Plan Name"}
-                  isRequired
-                />
-                <NumberInput
-                  min={0}
-                  value={formData.interestRate}
-                  onChange={(valueString) =>
-                    setFormData({ ...formData, interestRate: valueString })
-                  }
-                  isRequired
-                >
-                  <NumberInputField placeholder="Interest Rate (%)" />
-                </NumberInput>
-                <HStack>
+          <Card variant="elevated" mt={6}>
+            <CardHeader>
+              <Heading size="md" color="teal.600">
+                Edit {isEditingLoan ? "Loan" : "Investment"} Plan
+              </Heading>
+            </CardHeader>
+            <CardBody>
+              <form onSubmit={handleSubmitEdit}>
+                <VStack spacing={4}>
+                  <Input
+                    name="planName"
+                    value={formData.planName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, planName: e.target.value })
+                    }
+                    placeholder={isEditingLoan ? "Loan Name" : "Plan Name"}
+                    isRequired
+                  />
                   <NumberInput
                     min={0}
-                    value={formData.minAmount}
+                    value={formData.interestRate}
                     onChange={(valueString) =>
-                      setFormData({ ...formData, minAmount: valueString })
+                      setFormData({ ...formData, interestRate: valueString })
                     }
                     isRequired
                   >
-                    <NumberInputField placeholder="Min Amount" />
+                    <NumberInputField placeholder="Interest Rate (%)" />
                   </NumberInput>
+                  <SimpleGrid columns={2} spacing={4} w="full">
+                    <NumberInput
+                      min={0}
+                      value={formData.minAmount}
+                      onChange={(valueString) =>
+                        setFormData({ ...formData, minAmount: valueString })
+                      }
+                      isRequired
+                    >
+                      <NumberInputField placeholder="Min Amount" />
+                    </NumberInput>
+                    <NumberInput
+                      min={0}
+                      value={formData.maxAmount}
+                      onChange={(valueString) =>
+                        setFormData({ ...formData, maxAmount: valueString })
+                      }
+                      isRequired
+                    >
+                      <NumberInputField placeholder="Max Amount" />
+                    </NumberInput>
+                  </SimpleGrid>
                   <NumberInput
-                    min={0}
-                    value={formData.maxAmount}
+                    min={1}
+                    value={formData.tenure}
                     onChange={(valueString) =>
-                      setFormData({ ...formData, maxAmount: valueString })
+                      setFormData({ ...formData, tenure: valueString })
                     }
                     isRequired
                   >
-                    <NumberInputField placeholder="Max Amount" />
+                    <NumberInputField placeholder="Tenure (months)" />
                   </NumberInput>
-                </HStack>
-                <NumberInput
-                  min={1}
-                  value={formData.tenure}
-                  onChange={(valueString) =>
-                    setFormData({ ...formData, tenure: valueString })
-                  }
-                  isRequired
-                >
-                  <NumberInputField placeholder="Tenure (months)" />
-                </NumberInput>
-                {!isEditingLoan && (
-                  <>
-                    <Select
-                      placeholder="Select Category"
-                      value={formData.investmentCategory}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          investmentCategory: e.target.value,
-                        })
-                      }
-                      isRequired
+                  {/* {!isEditingLoan && (
+                    <>
+                      <Select
+                        placeholder="Select Category"
+                        value={formData.investmentCategory}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            investmentCategory: e.target.value,
+                          })
+                        }
+                        isRequired
+                      >
+                        <option value="Bonds">Bonds</option>
+                        <option value="MutualFunds">Mutual Funds</option>
+                        <option value="FixedDeposits">Fixed Deposits</option>
+                        <option value="GoldInvestments">
+                          Gold Investments
+                        </option>
+                        <option value="ProvidentFunds">Provident Funds</option>
+                      </Select>
+                      <Select
+                        placeholder="Select Sub Category"
+                        value={formData.investmentSubCategory}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            investmentSubCategory: e.target.value,
+                          })
+                        }
+                        isRequired
+                      >
+                        {subCategories[formData.investmentCategory]?.map(
+                          (subCategory) => (
+                            <option key={subCategory} value={subCategory}>
+                              {subCategory}
+                            </option>
+                          )
+                        )}
+                      </Select>
+                    </>
+                  )} */}
+                  {/* <Textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    placeholder="Description"
+                    isRequired
+                  />
+                  <HStack spacing={4} width="full">
+                    <Button
+                      type="submit"
+                      colorScheme="teal"
+                      isLoading={isLoading}
+                      loadingText="Updating..."
+                      flex={1}
                     >
-                      <option value="Bonds">Bonds</option>
-                      <option value="MutualFunds">Mutual Funds</option>
-                      <option value="FixedDeposits">Fixed Deposits</option>
-                      <option value="GoldInvestments">Gold Investments</option>
-                      <option value="ProvidentFunds">Provident Funds</option>
-                    </Select>
-                    <Select
-                      color={"black"}
-                      placeholder="Select Sub Category"
-                      value={formData.investmentSubCategory}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          investmentSubCategory: e.target.value,
-                        })
-                      }
-                      isRequired
+                      Update Plan
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setEditPlan(null);
+                        setFormData(initialFormData);
+                      }}
+                      colorScheme="gray"
+                      flex={1}
                     >
-                      {subCategories[formData.investmentCategory]?.map(
-                        (subCategory) => (
-                          <option key={subCategory} value={subCategory}>
-                            {subCategory}
-                          </option>
-                        )
-                      )}
-                    </Select>
-                  </>
-                )}
-                <Textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Description"
-                  isRequired
-                />
-                <HStack spacing={4}>
-                  <Button
-                    type="submit"
-                    colorScheme="teal"
-                    isLoading={isLoading}
-                    loadingText="Updating..."
-                    width="full"
-                  >
-                    Update Plan
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setEditPlan(null);
-                      setFormData(initialFormData);
-                    }}
-                    colorScheme="gray"
-                    width="full"
-                  >
-                    Cancel
-                  </Button>
-                </HStack>
-              </VStack>
-            </form>
-          </Box>
+                      Cancel
+                    </Button>
+                  </HStack> */}
+                </VStack>
+              </form>
+            </CardBody>
+          </Card>
         )}
-      </Box>
+      </VStack>
+
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>

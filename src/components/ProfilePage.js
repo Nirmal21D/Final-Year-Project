@@ -1,7 +1,14 @@
 "use client";
 import { Box, Button, Input, Text, Flex, useToast, VStack, HStack, Wrap, WrapItem, Tag, TagLabel, TagCloseButton, Avatar, Tabs, TabList, Tab, TabPanels, TabPanel, Table, Thead, Tbody, Tr, Th, Td } from "@chakra-ui/react";
 import React, { useState, useEffect, useRef } from "react";
-import { doc, updateDoc, getDoc, collection, getDocs, arrayUnion } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  getDoc,
+  collection,
+  getDocs,
+  arrayUnion,
+} from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
@@ -50,7 +57,9 @@ const ProfilePage = () => {
             setSalary(userData.salary || "");
             setName(userData.name || "");
             setUserTags(userData.interests || []);
-            setFundsHistory(userData.fundsHistory || ["No transaction history"]);
+            setFundsHistory(
+              userData.fundsHistory || ["No transaction history"]
+            );
             setProfilePhoto(userData.profilePhoto || "");
             setInvestments(userData.investments || []);
             setAge(userData.age || "");
@@ -78,8 +87,8 @@ const ProfilePage = () => {
       try {
         const tagsCollection = collection(db, "tags");
         const tagsSnapshot = await getDocs(tagsCollection);
-        const tagsList = tagsSnapshot.docs.map(doc => doc.data().tag);
-        
+        const tagsList = tagsSnapshot.docs.map((doc) => doc.data().tag);
+
         setSuggestedTags(tagsList);
       } catch (error) {
         console.error("Error fetching suggested tags:", error);
@@ -255,23 +264,21 @@ const ProfilePage = () => {
         <TabPanels>
           <TabPanel>
             {/* User Info Section */}
-            <Box mb={6} textAlign="center">
-              <Avatar 
-                size="2xl" 
-                src={profilePhoto} 
-                mb={4}
-              />
+            <Box mb={6} display={"flex"}>
+              <Avatar size="2xl" src={profilePhoto} mb={4} />
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
                 ref={fileInputRef}
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
               />
               <Button
                 onClick={() => fileInputRef.current.click()}
                 size="sm"
                 colorScheme="blue"
+                mt={12}
+                ml={5}
               >
                 Change Profile Photo
               </Button>
@@ -287,8 +294,10 @@ const ProfilePage = () => {
 
             {/* Interest Tags Section */}
             <Box w="100%">
-              <Text fontSize="xl" fontWeight="bold" mb={4}>Your Investment Interests</Text>
-              
+              <Text fontSize="xl" fontWeight="bold" mb={4}>
+                Your Investment Interests
+              </Text>
+
               <HStack mb={2}>
                 <Input
                   value={tagInput}
@@ -316,7 +325,9 @@ const ProfilePage = () => {
               </Wrap>
 
               {/* Suggested tags */}
-              <Text mb={2} fontWeight="bold">Suggested Interests:</Text>
+              <Text mb={2} fontWeight="bold">
+                Suggested Interests:
+              </Text>
               <Wrap spacing={2}>
                 {suggestedTags.map((tag) => (
                   <WrapItem key={tag}>
@@ -334,24 +345,31 @@ const ProfilePage = () => {
                 ))}
               </Wrap>
             </Box>
-
-            <Button
-              color="#ebeff4"
-              bgGradient="linear(to-l, #141727 , #3a416f)"
-              _hover={{ bg: "rgba(229, 229, 229, 0.8)", color: "#003a5c" }}
-              onClick={saveProfile}
-              width="100%"
-              mb={4}
+            <Box
+              display={"flex"}
+              alignItems={"center"}
+              justifyContent={"center"}
             >
-              Save Profile
-            </Button>
+              <Button
+                mt={10}
+                color="#ebeff4"
+                colorScheme="teal"
+                onClick={saveProfile}
+                width="30%"
+                mb={4}
+              >
+                Save Profile
+              </Button>
+            </Box>
           </TabPanel>
 
           <TabPanel>
             {/* Investments & Receipts Section */}
             <VStack spacing={6} align="stretch">
               <Box>
-                <Text fontSize="xl" fontWeight="bold" mb={4}>Your Investment Plans</Text>
+                <Text fontSize="xl" fontWeight="bold" mb={4}>
+                  Your Investment Plans
+                </Text>
                 <Table variant="simple">
                   <Thead>
                     <Tr>
@@ -370,14 +388,23 @@ const ProfilePage = () => {
                           <Td>
                             {investment.receipts ? (
                               <HStack spacing={2}>
-                                <Link href={investment.receipts[0]} >
-                                  <Button size="sm" colorScheme="blue"
-                                  onClick={() => window.open(investment.receipts)}>View</Button>
+                                <Link href={investment.receipts[0]}>
+                                  <Button
+                                    size="sm"
+                                    colorScheme="blue"
+                                    onClick={() =>
+                                      window.open(investment.receipts)
+                                    }
+                                  >
+                                    View
+                                  </Button>
                                 </Link>
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   colorScheme="green"
-                                  onClick={() => window.open(investment.receipts)}
+                                  onClick={() =>
+                                    window.open(investment.receipts)
+                                  }
                                 >
                                   Download
                                 </Button>
@@ -404,5 +431,6 @@ const ProfilePage = () => {
     </Box>
   );
 };
+
 
 export default ProfilePage;

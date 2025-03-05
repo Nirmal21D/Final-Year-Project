@@ -45,7 +45,7 @@ const InformationOptions = () => {
           Schemes
         </Button>
         <Button colorScheme="green" onClick={() => handleOptionClick("news")}>
-          Bank to News
+          Back to News
         </Button>
       </HStack>
     </Box>

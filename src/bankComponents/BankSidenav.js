@@ -145,7 +145,7 @@ const SideNav = () => {
           </>
         ) : (
           <>
-            <Link href=" /bankprofile">
+            {/* <Link href=" /bankprofile">
               <Button
                 w={"full"}
                 leftIcon={<FiUser />}
@@ -155,7 +155,7 @@ const SideNav = () => {
               >
                 My Profile
               </Button>
-            </Link>
+            </Link> */}
             <Button
               w={"full"}
               leftIcon={<FiLogOut />}

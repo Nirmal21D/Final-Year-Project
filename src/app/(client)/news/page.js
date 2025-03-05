@@ -38,19 +38,16 @@ const NewsPage = () => {
     setLoading(true);
     try {
       const endDate = new Date();
-      const startDate = new Date(endDate - 30 * 24 * 60 * 60 * 1000); // Fetch news from the last 30 days
+      const startDate = new Date(endDate - 7 * 24 * 60 * 60 * 1000); // Fetch news from last 7 days instead of 30
 
-      const newsFromApi = await axios.get("https://newsapi.org/v2/everything", {
+      // Try a simpler query first
+      const newsFromApi = await axios.get("https://newsapi.org/v2/top-headlines", {
         params: {
-          q: "finance AND (India OR Indian)",
-          apiKey: "e5e428d182c34d8087eb8698d7c2c1c7",
-          language: "en",
+          country: "in",
+          category: "business",
+          apiKey: "e42a0915eef7491d8bc62f3e0b265ac8",
           pageSize: 50,
-          sortBy: "publishedAt",
-          from: startDate.toISOString(),
-          to: endDate.toISOString(),
-          domains:
-            "economictimes.indiatimes.com,moneycontrol.com,livemint.com,business-standard.com,financialexpress.com,ndtv.com/business,thehindu.com/business,businesstoday.in,zeebiz.com,businessinsider.in",
+          language: "en"
         },
       });
 
@@ -59,7 +56,7 @@ const NewsPage = () => {
         // Add a week and month property to each article
         const publishedDate = new Date(article.publishedAt);
         const weekOfMonth = getWeekOfMonth(publishedDate);
-        const month = publishedDate.getMonth() + 1; // Months are 0-based
+        const month = publishedDate.getMonth() + 1;
 
         return {
           ...article,
@@ -74,12 +71,13 @@ const NewsPage = () => {
       setLastUpdated(new Date());
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching news:", err);
-      setError("Failed to fetch news.");
+      console.error("Error fetching news:", err.response?.data || err.message || err);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to fetch news.";
+      setError(errorMessage);
       setLoading(false);
       toast({
         title: "Error",
-        description: "Failed to fetch news. Please try again later.",
+        description: errorMessage,
         status: "error",
         duration: 5000,
         isClosable: true,

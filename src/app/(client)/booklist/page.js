@@ -19,9 +19,21 @@ const Booklist = () => {
   const [bookmarkedPlans, setBookmarkedPlans] = React.useState([]);
 
   React.useEffect(() => {
-    const storedBookmarks = localStorage.getItem("bookmarkedPlans");
-    if (storedBookmarks) {
-      setBookmarkedPlans(JSON.parse(storedBookmarks));
+    try {
+      const storedBookmarks = localStorage.getItem("bookmarkedPlans");
+      if (storedBookmarks) {
+        const parsedBookmarks = JSON.parse(storedBookmarks);
+        setBookmarkedPlans(parsedBookmarks);
+      }
+    } catch (error) {
+      console.error("Error loading bookmarks:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load bookmarked plans",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     }
   }, []);
 
@@ -77,12 +89,16 @@ const Booklist = () => {
               <HStack mt={4} justifyContent="space-between">
                 <VStack align="flex-start" spacing={1}>
                   <Text fontWeight="bold" color="green.600">
-                    Interest Rate: {plan.interestRate}%
+                    Interest Rate: {plan.interestRate ?? 0}%
                   </Text>
-                  <Text color="orange.600">CAGR: {plan.cagr.toFixed(2)}%</Text>
-                  <Text color="red.600">Risk Level: {plan.riskLevel}</Text>
+                  <Text color="orange.600">
+                    CAGR: {(plan.cagr ?? 0).toFixed(2)}%
+                  </Text>
+                  <Text color="red.600">
+                    Risk Level: {plan.riskLevel ?? "N/A"}
+                  </Text>
                   <Text color="blue.600">
-                    Min Investment: ₹{plan.minAmount?.toLocaleString()}
+                    Min Investment: ₹{plan.minAmount?.toLocaleString() ?? "0"}
                   </Text>
                 </VStack>
                 <VStack>

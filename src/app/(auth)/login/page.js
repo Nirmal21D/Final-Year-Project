@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 
 import LoginPage from "../../../components/LoginPage";
-import { Box } from "@chakra-ui/react";
+import { Box, Image } from "@chakra-ui/react";
 
 const login = () => {
   const [userLoggedIn, setUserLoggedIn] = useState(false);
@@ -41,16 +41,21 @@ const login = () => {
           zIndex="1000"
         >
           <Box
-            id="search"
+            id="logo"
             width="100%"
-            background="#003a5c"
             height="9vh"
+            background="#003a5c"
             display="flex"
             alignItems="center"
-            justifyContent="space-around"
+            justifyContent="center"
             color="#ffffff"
           >
-            Finance Mastery
+            <Image
+              src="/images/logo.png"
+              width={200}
+              pos={"absolute"}
+              top={-14}
+            />
           </Box>
         </Box>
         <Box id="lower" w="full">

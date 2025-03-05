@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import SignUpPage from "../../../components/SignUpPage";
-import { Box } from "@chakra-ui/react";
+import { Box, Image } from "@chakra-ui/react";
 import SearchBox from "@/components/SearchBar";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth"; // Import getAuth instead
 
 const auth = getAuth(); // Initialize auth
@@ -16,7 +16,7 @@ const SignUp = () => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        router.push('/'); // Redirect to home if user is already logged in
+        router.push("/"); // Redirect to home if user is already logged in
       } else {
         setUser(null);
       }
@@ -49,21 +49,27 @@ const SignUp = () => {
           zIndex="1000"
         >
           <Box
-            id="search"
+            id="logo"
             width="100%"
-            background="#003a5c"
             height="9vh"
+            background="#003a5c"
             display="flex"
             alignItems="center"
-            justifyContent="space-around"
+            justifyContent="center"
             color="#ffffff"
           >
-            Finance Mastery
+            <Image
+              src="/images/logo.png"
+              width={200}
+              pos={"absolute"}
+              top={-14}
+            />
           </Box>
         </Box>
         <Box id="lower" w="full">
           <Box id="signup">
-            <SignUpPage isVerified={isVerified} /> {/* Pass isVerified to SignUpPage */}
+            <SignUpPage isVerified={isVerified} />{" "}
+            {/* Pass isVerified to SignUpPage */}
           </Box>
         </Box>
       </Box>
