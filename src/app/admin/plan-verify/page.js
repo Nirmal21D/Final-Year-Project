@@ -43,14 +43,31 @@ export default function PlanVerifyPage() {
       try {
         const investmentPlansRef = collection(db, "investmentplans");
         const loanPlansRef = collection(db, "loanplans");
-        
-        const investmentQuery = query(investmentPlansRef, where("status", "==", "pending"));
+
+        const investmentQuery = query(
+          investmentPlansRef,
+          where("status", "==", "pending")
+        );
         const loanQuery = query(loanPlansRef, where("status", "==", "pending"));
 
         const investmentSnapshot = await getDocs(investmentQuery);
         const loanSnapshot = await getDocs(loanQuery);
 
-        const pendingInvestmentPlans = investmentSnapshot.docs.map(async (docSnapshot) => {
+        const pendingInvestmentPlans = investmentSnapshot.docs.map(
+          async (docSnapshot) => {
+            const planData = docSnapshot.data();
+            const bankRef = doc(db, "Banks", planData.createdBy);
+            const bankDoc = await getDoc(bankRef);
+            const bankData = bankDoc.data();
+            return {
+              id: docSnapshot.id,
+              ...planData,
+              bankName: bankData?.bankName || "N/A",
+            };
+          }
+        );
+
+        const pendingLoanPlans = loanSnapshot.docs.map(async (docSnapshot) => {
           const planData = docSnapshot.data();
           const bankRef = doc(db, "Banks", planData.createdBy);
           const bankDoc = await getDoc(bankRef);
@@ -62,19 +79,9 @@ export default function PlanVerifyPage() {
           };
         });
 
-        const pendingLoanPlans = loanSnapshot.docs.map(async (docSnapshot) => {
-          const planData = docSnapshot.data();
-          const bankRef = doc(db, "Banks", planData.createdBy);
-          const bankDoc = await getDoc(bankRef);
-          const bankData = bankDoc.data();
-          return {
-            id: docSnapshot.id,
-            ...planData,
-            bankName: bankData?.bankName || 'N/A',
-          };
-        });
-
-        const resolvedInvestmentPlans = await Promise.all(pendingInvestmentPlans);
+        const resolvedInvestmentPlans = await Promise.all(
+          pendingInvestmentPlans
+        );
         const resolvedLoanPlans = await Promise.all(pendingLoanPlans);
 
         setInvestmentPlans(resolvedInvestmentPlans);
@@ -96,7 +103,11 @@ export default function PlanVerifyPage() {
 
   const handleVerifyPlan = async (planId, isApproved, isLoanPlan = false) => {
     try {
-      const planRef = doc(db, isLoanPlan ? "loanplans" : "investmentplans", planId);
+      const planRef = doc(
+        db,
+        isLoanPlan ? "loanplans" : "investmentplans",
+        planId
+      );
       if (isApproved) {
         await updateDoc(planRef, {
           isVerified: true,
@@ -106,7 +117,9 @@ export default function PlanVerifyPage() {
         if (isLoanPlan) {
           setLoanPlans(loanPlans.filter((plan) => plan.id !== planId));
         } else {
-          setInvestmentPlans(investmentPlans.filter((plan) => plan.id !== planId));
+          setInvestmentPlans(
+            investmentPlans.filter((plan) => plan.id !== planId)
+          );
         }
       }
     } catch (error) {
@@ -138,7 +151,11 @@ export default function PlanVerifyPage() {
     }
 
     try {
-      const planRef = doc(db, isLoanPlan ? "loanplans" : "investmentplans", selectedPlanId);
+      const planRef = doc(
+        db,
+        isLoanPlan ? "loanplans" : "investmentplans",
+        selectedPlanId
+      );
       await updateDoc(planRef, {
         isVerified: false,
         status: "rejected",
@@ -151,7 +168,9 @@ export default function PlanVerifyPage() {
       if (isLoanPlan) {
         setLoanPlans(loanPlans.filter((plan) => plan.id !== selectedPlanId));
       } else {
-        setInvestmentPlans(investmentPlans.filter((plan) => plan.id !== selectedPlanId));
+        setInvestmentPlans(
+          investmentPlans.filter((plan) => plan.id !== selectedPlanId)
+        );
       }
     } catch (error) {
       console.error("Error rejecting plan:", error);
@@ -187,15 +206,20 @@ export default function PlanVerifyPage() {
       </Box>
       <Container maxW="80%" py={6} position="relative" left={140}>
         <Flex justify="space-between" align="center" mb={6}>
-          <Heading colorScheme="green" size="lg">Verify Investment and Loan Plans</Heading>
+          <Heading colorScheme="green" size="lg">
+            Verify Investment and Loan Plans
+          </Heading>
           <Flex align="center" gap={4}>
             <Text color="gray.600">Hello, Admin</Text>
             <Avatar src="/admin-avatar.png" size="md" />
           </Flex>
         </Flex>
 
-        <Heading size="md" mb={4}>Investment Plans</Heading>
+        <Heading size="md" mb={4} px={5}>
+          Investment Plans
+        </Heading>
         <Grid
+          px={5}
           templateColumns={{
             base: "1fr",
             md: "repeat(2, 1fr)",
@@ -271,13 +295,29 @@ export default function PlanVerifyPage() {
           ))}
         </Grid>
 
-        <Heading size="md" mb={4} mt={8}>Loan Plans</Heading>
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
+        <Heading size="md" mb={4} mt={8} px={5}>
+          Loan Plans
+        </Heading>
+        <Grid
+          templateColumns={{
+            base: "1fr",
+            md: "repeat(2, 1fr)",
+            lg: "repeat(3, 1fr)",
+          }}
+          gap={6}
+        >
           {loanPlans.map((plan) => (
-            <Card key={plan.id} variant="outline" transition="all 0.2s" _hover={{ shadow: "xl" }}>
+            <Card
+              key={plan.id}
+              variant="outline"
+              transition="all 0.2s"
+              _hover={{ shadow: "xl" }}
+            >
               <CardBody>
                 <Flex justify="space-between" align="start" mb={4}>
-                  <Heading size="md" color="gray.800">{plan.name}</Heading>
+                  <Heading size="md" color="gray.800">
+                    {plan.name}
+                  </Heading>
                   <Badge colorScheme="blue" px={2} py={1} borderRadius="md">
                     {plan.loanCategory}
                   </Badge>
@@ -288,12 +328,29 @@ export default function PlanVerifyPage() {
                 </Text>
 
                 <Stack spacing={2} mb={4}>
-                  <Text color="gray.500"><span className="font-semibold">Bank:</span> {plan.bankName}</Text>
-                  <Text color="gray.500"><span className="font-semibold">Interest Rate:</span> {plan.interestRate}%</Text>
-                  <Text color="gray.500"><span className="font-semibold">Tenure:</span> {plan.tenure} months</Text>
-                  <Text color="gray.500"><span className="font-semibold">Minimum Loan:</span> ${plan.minAmount}</Text>
-                  <Text color="gray.500"><span className="font-semibold">Maximum Loan:</span> ${plan.maxAmount}</Text>
-                  <Text color="gray.500"><span className="font-semibold">Risk Level:</span> {plan.riskLevel}</Text>
+                  <Text color="gray.500">
+                    <span className="font-semibold">Bank:</span> {plan.bankName}
+                  </Text>
+                  <Text color="gray.500">
+                    <span className="font-semibold">Interest Rate:</span>{" "}
+                    {plan.interestRate}%
+                  </Text>
+                  <Text color="gray.500">
+                    <span className="font-semibold">Tenure:</span> {plan.tenure}{" "}
+                    months
+                  </Text>
+                  <Text color="gray.500">
+                    <span className="font-semibold">Minimum Loan:</span> $
+                    {plan.minAmount}
+                  </Text>
+                  <Text color="gray.500">
+                    <span className="font-semibold">Maximum Loan:</span> $
+                    {plan.maxAmount}
+                  </Text>
+                  <Text color="gray.500">
+                    <span className="font-semibold">Risk Level:</span>{" "}
+                    {plan.riskLevel}
+                  </Text>
                 </Stack>
 
                 <Flex justify="space-between" gap={4} mb={4}>

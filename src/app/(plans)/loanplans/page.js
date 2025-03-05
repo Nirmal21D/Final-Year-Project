@@ -687,7 +687,7 @@ const Page = () => {
           <Heading size="md" mb={4}>
             Recommended for You
           </Heading>
-          <Flex wrap="wrap" gap={4} justify="center">
+          <Flex wrap="wrap" gap={4}>
             {recommendedPlans.map((plan) => (
               <RecommendedPlanCard key={plan.id} plan={plan} />
             ))}
