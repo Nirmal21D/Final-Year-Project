@@ -75,10 +75,11 @@ export default function AllPlansPage() {
   };
 
   return (
-    <Box bg="gray.50" minH="100vh">
+    <Box bg="gray.50" minH="100vh" flex>
       <Box w="20%" bg="gray.800" color="white" p={4} position="fixed" h="full">
         <AdminSideNav />
       </Box>
+      <Box>
       <Container maxW="80%" py={6} position="relative" left={140}>
         <Flex justify="space-between" align="center" mb={6}>
           <Heading color="green.400" size="lg">
@@ -143,7 +144,7 @@ export default function AllPlansPage() {
                     <Flex align="center">
                       <Text mr={2}>💵</Text>
                       <Text>
-                        Minimum Investment: {plan.minimumInvestment} INR
+                        Minimum Investment: {plan.minAmount} INR
                       </Text>
                     </Flex>
 
@@ -169,5 +170,6 @@ export default function AllPlansPage() {
         )}
       </Container>
     </Box>
+  </Box>
   );
 }

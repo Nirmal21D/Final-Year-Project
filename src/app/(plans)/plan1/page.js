@@ -475,7 +475,10 @@ const Page = () => {
             <Text fontWeight="bold" color="#2C319F" mb={2}>
               Categories:
             </Text>
-            <CheckboxGroup value={categoryFilter} onChange={setCategoryFilter}>
+            <CheckboxGroup
+              value={categoryFilter}
+              onChange={(values) => setCategoryFilter(values)}
+            >
               <Stack direction={["column", "row"]} spacing={[2, 4]}>
                 <Checkbox value="Bonds">Bonds</Checkbox>
                 <Checkbox value="MutualFunds">Mutual Funds</Checkbox>
@@ -515,7 +518,7 @@ const Page = () => {
             </Text>
             <CheckboxGroup
               value={subCategoryFilter}
-              onChange={setSubCategoryFilter}
+              onChange={(values) => setSubCategoryFilter(values)}
             >
               <Stack direction={["column", "row"]} spacing={[2, 4]} wrap="wrap">
                 {categoryFilter.includes("Bonds") && (
@@ -586,6 +589,7 @@ const Page = () => {
                 _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
                 textDecoration="none"
                 display="block"
+                width="350px" // Fixed and small width
               >
                 <Heading size="sm" color="#2C319F">
                   {plan.planName}

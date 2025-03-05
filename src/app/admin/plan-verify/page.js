@@ -35,6 +35,7 @@ export default function PlanVerifyPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [isLoanPlan, setIsLoanPlan] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -119,8 +120,9 @@ export default function PlanVerifyPage() {
     }
   };
 
-  const handleRejectClick = (planId) => {
+  const handleRejectClick = (planId, isLoanPlan = false) => {
     setSelectedPlanId(planId);
+    setIsLoanPlan(isLoanPlan);
     setShowRejectModal(true);
   };
 
@@ -136,7 +138,7 @@ export default function PlanVerifyPage() {
     }
 
     try {
-      const planRef = doc(db, "investmentplans", selectedPlanId);
+      const planRef = doc(db, isLoanPlan ? "loanplans" : "investmentplans", selectedPlanId);
       await updateDoc(planRef, {
         isVerified: false,
         status: "rejected",
@@ -146,7 +148,11 @@ export default function PlanVerifyPage() {
       setShowRejectModal(false);
       setRejectionReason("");
       setSelectedPlanId(null);
-      setInvestmentPlans(investmentPlans.filter((plan) => plan.id !== selectedPlanId));
+      if (isLoanPlan) {
+        setLoanPlans(loanPlans.filter((plan) => plan.id !== selectedPlanId));
+      } else {
+        setInvestmentPlans(investmentPlans.filter((plan) => plan.id !== selectedPlanId));
+      }
     } catch (error) {
       console.error("Error rejecting plan:", error);
       toast({
@@ -188,6 +194,7 @@ export default function PlanVerifyPage() {
           </Flex>
         </Flex>
 
+        <Heading size="md" mb={4}>Investment Plans</Heading>
         <Grid
           templateColumns={{
             base: "1fr",
@@ -196,7 +203,7 @@ export default function PlanVerifyPage() {
           }}
           gap={6}
         >
-          {plans.map((plan) => (
+          {investmentPlans.map((plan) => (
             <Card
               key={plan.id}
               variant="outline"
@@ -227,15 +234,15 @@ export default function PlanVerifyPage() {
                   </Text>
                   <Text color="gray.500">
                     <span className="font-semibold">Duration:</span>{" "}
-                    {plan.duration} months
+                    {plan.tenure} months
                   </Text>
                   <Text color="gray.500">
                     <span className="font-semibold">Minimum Investment:</span> $
-                    {plan.minimumInvestment}
+                    {plan.minAmount}
                   </Text>
                   <Text color="gray.500">
                     <span className="font-semibold">Maximum Investment:</span> $
-                    {plan.maximumInvestment}
+                    {plan.maxAmount}
                   </Text>
                   <Text color="gray.500">
                     <span className="font-semibold">Risk Level:</span>{" "}
@@ -283,9 +290,9 @@ export default function PlanVerifyPage() {
                 <Stack spacing={2} mb={4}>
                   <Text color="gray.500"><span className="font-semibold">Bank:</span> {plan.bankName}</Text>
                   <Text color="gray.500"><span className="font-semibold">Interest Rate:</span> {plan.interestRate}%</Text>
-                  <Text color="gray.500"><span className="font-semibold">Duration:</span> {plan.duration} months</Text>
-                  <Text color="gray.500"><span className="font-semibold">Minimum Loan:</span> ${plan.minimumLoan}</Text>
-                  <Text color="gray.500"><span className="font-semibold">Maximum Loan:</span> ${plan.maximumLoan}</Text>
+                  <Text color="gray.500"><span className="font-semibold">Tenure:</span> {plan.tenure} months</Text>
+                  <Text color="gray.500"><span className="font-semibold">Minimum Loan:</span> ${plan.minAmount}</Text>
+                  <Text color="gray.500"><span className="font-semibold">Maximum Loan:</span> ${plan.maxAmount}</Text>
                   <Text color="gray.500"><span className="font-semibold">Risk Level:</span> {plan.riskLevel}</Text>
                 </Stack>
 
@@ -298,7 +305,7 @@ export default function PlanVerifyPage() {
                     Approve
                   </Button>
                   <Button
-                    onClick={() => handleRejectClick(plan.id)}
+                    onClick={() => handleRejectClick(plan.id, true)}
                     colorScheme="red"
                     size="md"
                   >
@@ -314,7 +321,7 @@ export default function PlanVerifyPage() {
           <Box position="fixed" inset={0} bg="blackAlpha.300" zIndex={50}>
             <Box bg="white" rounded="lg" p={6} maxW="md" mx="auto" mt="20vh">
               <Heading size="md" mb={4}>
-                Reject Investment Plan
+                Reject {isLoanPlan ? "Loan" : "Investment"} Plan
               </Heading>
               <Text mb={4}>Please provide a reason for rejection</Text>
               <Textarea

@@ -7,61 +7,61 @@ import { FiHome, FiFilePlus, FiFileText } from "react-icons/fi";
 const AdminSideNav = () => {
   return (
     <>
-      <Text fontSize="2xl" fontWeight="bold" mb={6}>
+      <Text fontSize="2xl" fontWeight="bold" mb={6} color="white">
         Finance Mastery
       </Text>
-      <VStack spacing={4} align="stretch">
+      <VStack spacing={4} align="stretch" bg="gray.800" p={4} borderRadius="md">
         <Link href="/admin/dashboard" passHref>
           <Button
-            w="full"
+            w="100%"
             leftIcon={<Icon as={FiHome} />}
             variant="ghost"
             justifyContent="flex-start"
-            colorScheme="whiteAlpha"
+            colorScheme="teal"
           >
             Dashboard
           </Button>
         </Link>
         <Link href="/admin/all-plans" passHref>
           <Button
-            w="full"
+            w="100%"
             leftIcon={<Icon as={FiFilePlus} />}
             variant="ghost"
             justifyContent="flex-start"
-            colorScheme="whiteAlpha"
+            colorScheme="teal"
           >
             All Plans
           </Button>
         </Link>
         <Link href="/admin/all-banks" passHref>
           <Button
-            w="full"
+            w="100%"
             leftIcon={<Icon as={FiFileText} />}
             variant="ghost"
             justifyContent="flex-start"
-            colorScheme="whiteAlpha"
+            colorScheme="teal"
           >
             All Banks
           </Button>
         </Link>
         <Link href="/admin/plan-verify" passHref>
           <Button
-            w="full"
+            w="100%"
             leftIcon={<Icon as={FiFileText} />}
             variant="ghost"
             justifyContent="flex-start"
-            colorScheme="whiteAlpha"
+            colorScheme="teal"
           >
             Plan Verify
           </Button>
         </Link>
         <Link href="/admin/blogs" passHref>
           <Button
-            w="full"
+            w="100%"
             leftIcon={<Icon as={FiFileText} />}
             variant="ghost"
             justifyContent="flex-start"
-            colorScheme="whiteAlpha"
+            colorScheme="teal"
           >
             Blogs
           </Button>

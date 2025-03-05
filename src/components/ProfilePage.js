@@ -1,6 +1,5 @@
-
 "use client";
-import { Box, Button, Input, Text, Flex, useToast, VStack, HStack, Wrap, WrapItem, Tag, TagLabel, TagCloseButton, Avatar, Tabs, TabList, Tab, TabPanels, TabPanel, Table, Thead, Tbody, Tr, Th, Td, Link } from "@chakra-ui/react";
+import { Box, Button, Input, Text, Flex, useToast, VStack, HStack, Wrap, WrapItem, Tag, TagLabel, TagCloseButton, Avatar, Tabs, TabList, Tab, TabPanels, TabPanel, Table, Thead, Tbody, Tr, Th, Td } from "@chakra-ui/react";
 import React, { useState, useEffect, useRef } from "react";
 import { doc, updateDoc, getDoc, collection, getDocs, arrayUnion } from "firebase/firestore";
 import { db, auth } from "../firebase";
@@ -9,10 +8,9 @@ import Link from "next/link";
 
 const ProfilePage = () => {
   const [email, setEmail] = useState("");
-  const [passwd, setPasswd] = useState("");
-  const [phone, setPhone] = useState("");
+  const [mobileNumber, setmobileNumber] = useState("");
   const [salary, setSalary] = useState("");
-  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [fundsHistory, setFundsHistory] = useState(["funds"]);
   const [profilePhoto, setProfilePhoto] = useState(
     "/images/photo-placeholder.jpg"
@@ -25,9 +23,12 @@ const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const [certificates, setCertificates] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
-  const [investments, setInvestments] = useState([]); // Added state for investments
-  const [receipts, setReceipts] = useState([]); // Added state for receipts
-  const [interests, setInterests] = useState([]); // Added state for interests
+  const [investments, setInvestments] = useState([]);
+  const [receipts, setReceipts] = useState([]);
+  const [interests, setInterests] = useState([]);
+  const [age, setAge] = useState("");
+  const [cibilScore, setCibilScore] = useState("");
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -45,16 +46,17 @@ const ProfilePage = () => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setEmail(userData.email || "");
-            setPhone(userData.phone || "");
+            setmobileNumber(userData.mobileNumber || "");
             setSalary(userData.salary || "");
-            setUsername(userData.username || "");
+            setName(userData.name || "");
             setUserTags(userData.interests || []);
             setFundsHistory(userData.fundsHistory || ["No transaction history"]);
             setProfilePhoto(userData.profilePhoto || "");
             setInvestments(userData.investments || []);
-            console.log(userData.investments[0].receipts[0])
-            setReceipts(userData.investments.receipts || []); // Fetch receipts
-           
+            setAge(userData.age || "");
+            setCibilScore(userData.cibilScore || "");
+            console.log(userData.investments[0].receipts[0]);
+            setReceipts(userData.investments.receipts || []);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -84,7 +86,6 @@ const ProfilePage = () => {
       }
     };
 
-    
     fetchSuggestedTags();
   }, []);
 
@@ -94,8 +95,7 @@ const ProfilePage = () => {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         const userData = userDoc.data();
         setInterests(userData.interests || []);
-        console.log(interests)
-        
+        console.log(interests);
       }
     };
     fetchInterests();
@@ -174,9 +174,9 @@ const ProfilePage = () => {
     try {
       await updateDoc(doc(db, "users", user.uid), {
         email,
-        phone,
+        mobileNumber,
         salary,
-        username,
+        name,
         profilePhoto,
       });
       toast({
@@ -249,7 +249,6 @@ const ProfilePage = () => {
       <Tabs variant="enclosed" width="100%">
         <TabList>
           <Tab>User Info</Tab>
-          <Tab>Certificates</Tab>
           <Tab>Investments & Receipts</Tab>
         </TabList>
 
@@ -279,28 +278,12 @@ const ProfilePage = () => {
             </Box>
 
             {renderHorizontalInput("Email", email, setEmail, "email")}
-            {renderHorizontalInput("Password", passwd, setPasswd, "password")}
-            {renderHorizontalInput("Phone", phone, setPhone, "number")}
+            {renderHorizontalInput("Mobile Number", mobileNumber, setmobileNumber, "number")}
             {renderHorizontalInput("Salary", salary, setSalary)}
-            {renderHorizontalInput("Username", username, setUsername)}
+            {renderHorizontalInput("Name", name, setName)}
+            {renderHorizontalInput("Age", age, setAge)}
+            {renderHorizontalInput("CIBIL Score", cibilScore, setCibilScore)}
 
-            <Box mb={4} width="100%">
-              <Text fontSize="lg" mb={2}>
-                History:
-              </Text>
-              <Box
-                bg="transparent"
-                borderRadius="md"
-                p={4}
-                color="gray.800"
-                maxHeight="100px"
-                overflowY="auto"
-              >
-                {fundsHistory.map((fund, index) => (
-                  <Text key={index}>{fund}</Text>
-                ))}
-              </Box>
-            </Box>
 
             {/* Interest Tags Section */}
             <Box w="100%">
@@ -365,20 +348,6 @@ const ProfilePage = () => {
           </TabPanel>
 
           <TabPanel>
-            {/* Certificates Section */}
-            <Text fontSize="lg" mb={4}>Your Certificates:</Text>
-            <VStack spacing={4} align="start">
-              {certificates.length > 0 ? (
-                certificates.map((certificate) => (
-                  <Text key={certificate.id}>{certificate.name}</Text>
-                ))
-              ) : (
-                <Text>No certificates found.</Text>
-              )}
-            </VStack>
-          </TabPanel>
-
-          <TabPanel>
             {/* Investments & Receipts Section */}
             <VStack spacing={6} align="stretch">
               <Box>
@@ -388,9 +357,8 @@ const ProfilePage = () => {
                     <Tr>
                       <Th>Plan Name</Th>
                       <Th>Amount</Th>
-                      <Th>Date</Th>
-                      <Th>Status</Th>
                       <Th>Receipt</Th>
+                      <Th>Date</Th>
                     </Tr>
                   </Thead>
                   <Tbody>
@@ -418,58 +386,12 @@ const ProfilePage = () => {
                               <Text>No receipt</Text>
                             )}
                           </Td>
+                          <Td>{new Date(investment.timestamp.seconds * 1000).toLocaleString()}</Td>
                         </Tr>
                       ))
                     ) : (
                       <Tr>
-                        <Td colSpan={5}>No investment plans found.</Td>
-                      </Tr>
-                    )}
-                  </Tbody>
-                </Table>
-              </Box>
-
-              <Box>
-                <Text fontSize="xl" fontWeight="bold" mb={4}>Your Receipts</Text>
-                <Table variant="simple">
-                  <Thead>
-                    <Tr>
-                      <Th>Receipt ID</Th>
-                      <Th>Description</Th>
-                      <Th>Amount</Th>
-                      <Th>Date</Th>
-                      <Th>Actions</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {receipts.length > 0 ? (
-                      receipts.map((receipt) => (
-                        <Tr key={receipt}>
-                          <Td>{receipt.id}</Td>
-                          <Td>{receipt.description}</Td>
-                          <Td>${receipt.amount}</Td>
-                          <Td>{new Date(receipt.date).toLocaleDateString()}</Td>
-                          <Td>
-                            {receipt.url && (
-                              <HStack spacing={2}>
-                                <Link href={receipt.url} isExternal>
-                                  <Button size="sm" colorScheme="blue">View</Button>
-                                </Link>
-                                <Button 
-                                  size="sm" 
-                                  colorScheme="green"
-                                  onClick={() => window.open(receipt.url, '_blank', 'noopener,noreferrer')}
-                                >
-                                  Download
-                                </Button>
-                              </HStack>
-                            )}
-                          </Td>
-                        </Tr>
-                      ))
-                    ) : (
-                      <Tr>
-                        <Td colSpan={5}>No receipts found.</Td>
+                        <Td colSpan={6}>No investment plans found.</Td>
                       </Tr>
                     )}
                   </Tbody>
