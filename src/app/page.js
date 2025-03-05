@@ -23,6 +23,7 @@ import { db, auth } from "@/firebase";
 import Headers from "@/components/Headers";
 import Chat from "@/components/chat";
 import Welcome from "@/components/Welcome";
+import Footer from "@/components/Footer";
 
 const MainPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -218,6 +219,7 @@ const MainPage = () => {
         aria-label={isChatOpen ? "Close Chat" : "Open Chat"}
         onClick={toggleChat}
       />
+      <Footer />
     </Box>
   );
 };
