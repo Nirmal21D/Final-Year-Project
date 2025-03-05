@@ -39,6 +39,158 @@ import {
 } from 'recharts';
 import { formatCurrency } from "@/utils/formatters"; // Create this utility
 
+// Add these functions before the BankDashboard component
+const processDailyData = (users) => {
+  const dailyData = {};
+  const now = new Date();
+  const last30Days = new Date(now.setDate(now.getDate() - 30));
+
+  users.forEach(doc => {
+    const data = doc.data();
+    const createdAt = data.createdAt?.toDate();
+    if (createdAt && createdAt >= last30Days) {
+      const dateStr = createdAt.toLocaleDateString();
+      dailyData[dateStr] = (dailyData[dateStr] || 0) + 1;
+    }
+  });
+
+  return Object.entries(dailyData)
+    .map(([date, count]) => ({
+      date,
+      registrations: count
+    }))
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+};
+
+const processPlansData = (plans) => {
+  const categories = {};
+  
+  plans.forEach(doc => {
+    const data = doc.data();
+    const category = data.investmentCategory || data.loanCategory || 'Other';
+    categories[category] = (categories[category] || 0) + 1;
+  });
+
+  return Object.entries(categories)
+    .map(([name, value]) => ({ name, value }));
+};
+
+const processBankLocations = (banks) => {
+  const locations = {};
+  
+  banks.forEach(doc => {
+    const data = doc.data();
+    const location = data.city || 'Unknown';
+    locations[location] = (locations[location] || 0) + 1;
+  });
+
+  return Object.entries(locations)
+    .map(([name, value]) => ({ name, value }));
+};
+
+const processInvestmentTrends = (loanApps) => {
+  const trends = [];
+  const now = new Date();
+  
+  for (let i = 5; i >= 0; i--) {
+    const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    trends.push({
+      month: month.toLocaleString('default', { month: 'short', year: 'numeric' }),
+      amount: 0
+    });
+  }
+
+  loanApps.forEach(doc => {
+    const data = doc.data();
+    if (data.status === 'approved' && data.loanAmount) {
+      const date = data.approvedAt?.toDate();
+      if (date) {
+        const monthYear = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+        const trend = trends.find(t => t.month === monthYear);
+        if (trend) {
+          trend.amount += Number(data.loanAmount);
+        }
+      }
+    }
+  });
+
+  return trends;
+};
+
+const processUserActivity = (users, loanApps) => {
+  const activityData = {};
+  const now = new Date();
+  
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toLocaleDateString('default', { weekday: 'short' });
+    activityData[dateStr] = {
+      date: dateStr,
+      newUsers: 0,
+      applications: 0,
+      interactions: 0
+    };
+  }
+
+  users.forEach(doc => {
+    const data = doc.data();
+    const createdAt = data.createdAt?.toDate();
+    if (createdAt) {
+      const dateStr = createdAt.toLocaleDateString('default', { weekday: 'short' });
+      if (activityData[dateStr]) {
+        activityData[dateStr].newUsers++;
+        activityData[dateStr].interactions++;
+      }
+    }
+  });
+
+  loanApps.forEach(doc => {
+    const data = doc.data();
+    const createdAt = data.createdAt?.toDate();
+    if (createdAt) {
+      const dateStr = createdAt.toLocaleDateString('default', { weekday: 'short' });
+      if (activityData[dateStr]) {
+        activityData[dateStr].applications++;
+        activityData[dateStr].interactions++;
+      }
+    }
+  });
+
+  return Object.values(activityData);
+};
+
+const processPlanPerformance = (plans, loanApps) => {
+  const performance = {};
+  
+  plans.forEach(plan => {
+    const data = plan.data();
+    const category = data.investmentCategory || data.loanCategory || 'Other';
+    if (!performance[category]) {
+      performance[category] = {
+        category,
+        applications: 0,
+        approved: 0,
+        totalAmount: 0
+      };
+    }
+  });
+
+  loanApps.forEach(doc => {
+    const data = doc.data();
+    const category = data.category || 'Other';
+    if (performance[category]) {
+      performance[category].applications++;
+      if (data.status === 'approved') {
+        performance[category].approved++;
+        performance[category].totalAmount += Number(data.loanAmount || 0);
+      }
+    }
+  });
+
+  return Object.values(performance);
+};
+
 const BankDashboard = () => {
   const [isVerified, setIsVerified] = useState(true);
   const [user, setUser] = useState(null);
@@ -188,6 +340,8 @@ const BankDashboard = () => {
                 setTimelineData(formattedTimelineData);
                 setLoanDistribution(formattedDistribution);
             
+                const analytics = processAnalytics(banks, [...investmentPlansSnapshot.docs, ...loanPlansSnapshot.docs], customersSnapshot.docs, querySnapshot.docs);
+            
               } catch (error) {
                 handleError(error, "Failed to fetch analytics data");
               } finally {
@@ -254,6 +408,117 @@ const BankDashboard = () => {
       monthlyData,
       loanTypes
     };
+  };
+
+  // Add this function after the processApplicationData function
+  const processBankMetrics = (banks, loanApps) => {
+    const metrics = [];
+    const now = new Date();
+    const monthsToShow = 6;
+  
+    // Initialize last 6 months of data
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+      const date = new Date(now);
+      date.setMonth(date.getMonth() - i);
+      const monthYear = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+      
+      metrics.push({
+        name: monthYear,
+        activeUsers: 0,
+        completedLoans: 0,
+        pendingApplications: 0
+      });
+    }
+  
+    // Process loan applications
+    loanApps.forEach(doc => {
+      const data = doc.data();
+      const createdAt = data.applicationStatus?.submittedAt?.toDate();
+      
+      if (createdAt) {
+        const monthYear = createdAt.toLocaleString('default', { month: 'short', year: 'numeric' });
+        const metricEntry = metrics.find(m => m.name === monthYear);
+        
+        if (metricEntry) {
+          metricEntry.pendingApplications++;
+          
+          if (data.applicationStatus?.status === 'approved') {
+            metricEntry.completedLoans++;
+          }
+          
+          // Count unique users
+          if (data.userId) {
+            metricEntry.activeUsers++;
+          }
+        }
+      }
+    });
+  
+    return metrics;
+  };
+  
+  // Update the processAnalytics function to use processBankMetrics
+  const processAnalytics = (banks, plans, users, loanApps) => {
+    return {
+      dailyRegistrations: processDailyData(users),
+      planCategories: processPlansData(plans),
+      bankLocations: processBankLocations(banks),
+      investmentTrends: processInvestmentTrends(loanApps),
+      userActivity: processUserActivity(users, loanApps),
+      planPerformance: processPlanPerformance(plans, loanApps),
+      bankMetrics: processBankMetrics(banks, loanApps),
+      revenueStats: processRevenueStats(loanApps)
+    };
+  };
+
+  // Add this function after processBankMetrics
+  const processRevenueStats = (loanApps) => {
+    const stats = [];
+    const now = new Date();
+    const monthsToShow = 6;
+  
+    // Initialize last 6 months of data
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+      const date = new Date(now);
+      date.setMonth(date.getMonth() - i);
+      const monthYear = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+      
+      stats.push({
+        month: monthYear,
+        revenue: 0,
+        growth: 0,
+        transactions: 0
+      });
+    }
+  
+    // Process loan applications
+    loanApps.forEach(doc => {
+      const data = doc.data();
+      const createdAt = data.applicationStatus?.submittedAt?.toDate();
+      
+      if (createdAt && data.applicationStatus?.status === 'approved') {
+        const monthYear = createdAt.toLocaleString('default', { month: 'short', year: 'numeric' });
+        const statEntry = stats.find(s => s.month === monthYear);
+        
+        if (statEntry) {
+          const amount = parseFloat(data.loanDetails?.loanAmount || 0);
+          statEntry.revenue += amount;
+          statEntry.transactions++;
+        }
+      }
+    });
+  
+    // Calculate growth rates
+    for (let i = 1; i < stats.length; i++) {
+      const prevRevenue = stats[i - 1].revenue;
+      const currentRevenue = stats[i].revenue;
+      
+      if (prevRevenue > 0) {
+        stats[i].growth = ((currentRevenue - prevRevenue) / prevRevenue) * 100;
+      }
+    }
+  
+    return stats;
   };
 
   if (loading) {

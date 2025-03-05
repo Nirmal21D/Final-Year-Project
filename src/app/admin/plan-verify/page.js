@@ -26,8 +26,93 @@ import {
   useToast,
   Spinner,
   Textarea,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Divider,
 } from "@chakra-ui/react";
+import { FiDollarSign, FiCreditCard, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import AdminSideNav from "@/adminComponents/AdminSideNav";
+
+const PlanCard = ({ plan, type, onApprove, onReject }) => {
+  return (
+    <Card variant="outline" transition="all 0.2s" _hover={{ shadow: "lg" }}>
+      <CardBody>
+        <Flex justify="space-between" align="start" mb={4}>
+          <Heading size="md" color="gray.800">
+            {plan.planName || plan.loanName || "Unnamed Plan"}
+          </Heading>
+          <Badge 
+            colorScheme={type === 'investment' ? "blue" : "purple"}
+            px={2} 
+            py={1} 
+            borderRadius="md"
+          >
+            {type === 'investment' ? plan.investmentCategory : plan.loanCategory}
+          </Badge>
+        </Flex>
+
+        <Text color="gray.600" mb={4} noOfLines={2}>
+          {plan.description}
+        </Text>
+
+        <Stack spacing={2} mb={4}>
+          <Flex align="center" justify="space-between">
+            <Text color="gray.500">Bank:</Text>
+            <Text fontWeight="medium">{plan.bankName}</Text>
+          </Flex>
+          <Flex align="center" justify="space-between">
+            <Text color="gray.500">Interest Rate:</Text>
+            <Text fontWeight="medium">{plan.interestRate}%</Text>
+          </Flex>
+          <Flex align="center" justify="space-between">
+            <Text color="gray.500">Duration:</Text>
+            <Text fontWeight="medium">{plan.tenure} months</Text>
+          </Flex>
+          <Flex align="center" justify="space-between">
+            <Text color="gray.500">Amount Range:</Text>
+            <Text fontWeight="medium">
+              ₹{Number(plan.minAmount).toLocaleString()} - ₹{Number(plan.maxAmount).toLocaleString()}
+            </Text>
+          </Flex>
+        </Stack>
+
+        <Divider mb={4} />
+
+        <Flex justify="space-between" gap={4}>
+          <Button
+            onClick={onApprove}
+            colorScheme="green"
+            size="sm"
+            width="full"
+            leftIcon={<FiCheckCircle />}
+          >
+            Approve
+          </Button>
+          <Button
+            onClick={onReject}
+            colorScheme="red"
+            size="sm"
+            width="full"
+            leftIcon={<FiXCircle />}
+          >
+            Reject
+          </Button>
+        </Flex>
+      </CardBody>
+    </Card>
+  );
+};
+
 export default function PlanVerifyPage() {
   const [investmentPlans, setInvestmentPlans] = useState([]);
   const [loanPlans, setLoanPlans] = useState([]);
@@ -185,168 +270,108 @@ export default function PlanVerifyPage() {
       <Box w="20%" bg="gray.800" color="white" p={4} position="fixed" h="full">
         <AdminSideNav />
       </Box>
-      <Container maxW="80%" py={6} position="relative" left={140}>
+      <Box ml="20%" p={6}>
         <Flex justify="space-between" align="center" mb={6}>
-          <Heading colorScheme="green" size="lg">Verify Investment and Loan Plans</Heading>
+          <Heading color="green.600" size="lg">Plan Verification Dashboard</Heading>
           <Flex align="center" gap={4}>
-            <Text color="gray.600">Hello, Admin</Text>
+            <Badge colorScheme="blue" p={2} borderRadius="md">
+              Pending: {investmentPlans.length + loanPlans.length}
+            </Badge>
             <Avatar src="/admin-avatar.png" size="md" />
           </Flex>
         </Flex>
 
-        <Heading size="md" mb={4}>Investment Plans</Heading>
-        <Grid
-          templateColumns={{
-            base: "1fr",
-            md: "repeat(2, 1fr)",
-            lg: "repeat(3, 1fr)",
-          }}
-          gap={6}
-        >
-          {investmentPlans.map((plan) => (
-            <Card
-              key={plan.id}
-              variant="outline"
-              transition="all 0.2s"
-              _hover={{ shadow: "xl" }}
-            >
-              <CardBody>
-                <Flex justify="space-between" align="start" mb={4}>
-                  <Heading size="md" color="gray.800">
-                    {plan.name}
-                  </Heading>
-                  <Badge colorScheme="blue" px={2} py={1} borderRadius="md">
-                    {plan.investmentCategory}
-                  </Badge>
-                </Flex>
-
-                <Text color="gray.600" mb={4} noOfLines={2}>
-                  {plan.description}
-                </Text>
-
-                <Stack spacing={2} mb={4}>
-                  <Text color="gray.500">
-                    <span className="font-semibold">Bank:</span> {plan.bankName}
-                  </Text>
-                  <Text color="gray.500">
-                    <span className="font-semibold">Interest Rate:</span>{" "}
-                    {plan.interestRate}%
-                  </Text>
-                  <Text color="gray.500">
-                    <span className="font-semibold">Duration:</span>{" "}
-                    {plan.tenure} months
-                  </Text>
-                  <Text color="gray.500">
-                    <span className="font-semibold">Minimum Investment:</span> $
-                    {plan.minAmount}
-                  </Text>
-                  <Text color="gray.500">
-                    <span className="font-semibold">Maximum Investment:</span> $
-                    {plan.maxAmount}
-                  </Text>
-                  <Text color="gray.500">
-                    <span className="font-semibold">Risk Level:</span>{" "}
-                    {plan.riskLevel}
-                  </Text>
-                </Stack>
-
-                <Flex justify="space-between" gap={4} mb={4}>
-                  <Button
-                    onClick={() => handleVerifyPlan(plan.id, true)}
-                    colorScheme="green"
-                    size="md"
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    onClick={() => handleRejectClick(plan.id)}
-                    colorScheme="red"
-                    size="md"
-                  >
-                    Reject
-                  </Button>
-                </Flex>
-              </CardBody>
-            </Card>
-          ))}
-        </Grid>
-
-        <Heading size="md" mb={4} mt={8}>Loan Plans</Heading>
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
-          {loanPlans.map((plan) => (
-            <Card key={plan.id} variant="outline" transition="all 0.2s" _hover={{ shadow: "xl" }}>
-              <CardBody>
-                <Flex justify="space-between" align="start" mb={4}>
-                  <Heading size="md" color="gray.800">{plan.name}</Heading>
-                  <Badge colorScheme="blue" px={2} py={1} borderRadius="md">
-                    {plan.loanCategory}
-                  </Badge>
-                </Flex>
-
-                <Text color="gray.600" mb={4} noOfLines={2}>
-                  {plan.description}
-                </Text>
-
-                <Stack spacing={2} mb={4}>
-                  <Text color="gray.500"><span className="font-semibold">Bank:</span> {plan.bankName}</Text>
-                  <Text color="gray.500"><span className="font-semibold">Interest Rate:</span> {plan.interestRate}%</Text>
-                  <Text color="gray.500"><span className="font-semibold">Tenure:</span> {plan.tenure} months</Text>
-                  <Text color="gray.500"><span className="font-semibold">Minimum Loan:</span> ${plan.minAmount}</Text>
-                  <Text color="gray.500"><span className="font-semibold">Maximum Loan:</span> ${plan.maxAmount}</Text>
-                  <Text color="gray.500"><span className="font-semibold">Risk Level:</span> {plan.riskLevel}</Text>
-                </Stack>
-
-                <Flex justify="space-between" gap={4} mb={4}>
-                  <Button
-                    onClick={() => handleVerifyPlan(plan.id, true, true)}
-                    colorScheme="green"
-                    size="md"
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    onClick={() => handleRejectClick(plan.id, true)}
-                    colorScheme="red"
-                    size="md"
-                  >
-                    Reject
-                  </Button>
-                </Flex>
-              </CardBody>
-            </Card>
-          ))}
-        </Grid>
-
-        {showRejectModal && (
-          <Box position="fixed" inset={0} bg="blackAlpha.300" zIndex={50}>
-            <Box bg="white" rounded="lg" p={6} maxW="md" mx="auto" mt="20vh">
-              <Heading size="md" mb={4}>
-                Reject {isLoanPlan ? "Loan" : "Investment"} Plan
-              </Heading>
-              <Text mb={4}>Please provide a reason for rejection</Text>
-              <Textarea
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Enter rejection reason..."
-                size="md"
-                resize="vertical"
-              />
-              <Flex justify="end" gap={4} mt={4}>
-                <Button onClick={handleCloseModal} colorScheme="gray" size="md">
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleRejectSubmit}
-                  colorScheme="red"
-                  size="md"
-                >
-                  Reject Plan
-                </Button>
+        <Tabs isFitted variant="enclosed-colored" colorScheme="green">
+          <TabList mb="1em">
+            <Tab>
+              <Flex align="center" gap={2}>
+                <FiDollarSign />
+                Investment Plans ({investmentPlans.length})
               </Flex>
-            </Box>
-          </Box>
-        )}
-      </Container>
+            </Tab>
+            <Tab>
+              <Flex align="center" gap={2}>
+                <FiCreditCard />
+                Loan Plans ({loanPlans.length})
+              </Flex>
+            </Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel>
+              {investmentPlans.length === 0 ? (
+                <Box textAlign="center" py={10}>
+                  <Text fontSize="lg" color="gray.500">No pending investment plans to verify</Text>
+                </Box>
+              ) : (
+                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
+                  {/* Investment Plans Cards */}
+                  {investmentPlans.map((plan) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      type="investment"
+                      onApprove={() => handleVerifyPlan(plan.id, true)}
+                      onReject={() => handleRejectClick(plan.id)}
+                    />
+                  ))}
+                </Grid>
+              )}
+            </TabPanel>
+
+            <TabPanel>
+              {loanPlans.length === 0 ? (
+                <Box textAlign="center" py={10}>
+                  <Text fontSize="lg" color="gray.500">No pending loan plans to verify</Text>
+                </Box>
+              ) : (
+                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
+                  {/* Loan Plans Cards */}
+                  {loanPlans.map((plan) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      type="loan"
+                      onApprove={() => handleVerifyPlan(plan.id, true, true)}
+                      onReject={() => handleRejectClick(plan.id, true)}
+                    />
+                  ))}
+                </Grid>
+              )}
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+      </Box>
+
+      {/* Replace the existing modal with this enhanced version */}
+      <Modal isOpen={showRejectModal} onClose={handleCloseModal}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            Reject {isLoanPlan ? "Loan" : "Investment"} Plan
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text mb={4}>Please provide a reason for rejection:</Text>
+            <Textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter detailed reason for rejection..."
+              size="md"
+              resize="vertical"
+              minH="120px"
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={handleCloseModal}>
+              Cancel
+            </Button>
+            <Button colorScheme="red" onClick={handleRejectSubmit}>
+              Reject Plan
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }
