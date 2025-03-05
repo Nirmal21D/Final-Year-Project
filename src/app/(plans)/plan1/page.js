@@ -24,6 +24,35 @@ import {
   Spinner,
   useToast,
   IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  RangeSlider,
+  RangeSliderTrack,
+  RangeSliderFilledTrack,
+  RangeSliderThumb,
+  FormLabel,
+  Badge,
+  Collapse,
+  Divider,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  CircularProgress,
+  CircularProgressLabel,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Grid,
+  Icon,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import {
@@ -36,7 +65,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import Headers from "@/components/Headers";
-import { FiBookmark } from "react-icons/fi";
+import { FiBookmark, FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiAward, FiDollarSign, FiTrendingUp, FiShield, FiClock } from "react-icons/fi";
 
 const Page = () => {
   const [plans, setPlans] = useState([]);
@@ -51,6 +80,13 @@ const Page = () => {
   const [sortBy, setSortBy] = useState("interestRate");
   const [sortOrder, setSortOrder] = useState("desc");
   const [bookmarkedPlans, setBookmarkedPlans] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [riskRange, setRiskRange] = useState([1, 5]);
+  const [interestRateRange, setInterestRateRange] = useState([0, 20]);
+  const [investmentRange, setInvestmentRange] = useState([0, 500000]);
+  const [tenureRange, setTenureRange] = useState([0, 120]);
+  const [filteredPlans, setFilteredPlans] = useState([]);
 
   const router = useRouter();
   const toast = useToast();
@@ -65,7 +101,7 @@ const Page = () => {
   };
 
   // Enhanced risk calculation with weighted factors
-  const calculateRisk = (interestRate, tenure, minimumInvestment) => {
+  const calculateRisk = (interestRate, tenure, minAmount) => {
     const interestWeight = 0.4;
     const tenureWeight = 0.35;
     const investmentWeight = 0.25;
@@ -91,13 +127,13 @@ const Page = () => {
         ? 2
         : 1) * tenureWeight;
     const riskFromInvestment =
-      (minimumInvestment > 500000
+      (minAmount > 500000
         ? 5
-        : minimumInvestment > 100000
+        : minAmount > 100000
         ? 4
-        : minimumInvestment > 50000
+        : minAmount > 50000
         ? 3
-        : minimumInvestment > 10000
+        : minAmount > 10000
         ? 2
         : 1) * investmentWeight;
 
@@ -158,7 +194,7 @@ const Page = () => {
     return weightedIntersection / weightedUnion + partialMatchBonus;
   };
 
-  // Enhanced comparison logic
+  // Enhanced comparison logic with more detailed analysis
   const handleCompare = () => {
     if (comparePlans.length < 2) {
       toast({
@@ -180,7 +216,7 @@ const Page = () => {
           cagr: 0.25,
           risk: 0.2,
           tenure: 0.1,
-          minimumInvestment: 0.1,
+          minAmount: 0.1,
         };
 
         const normalizedROI = plan.interestRate / 20;
@@ -188,29 +224,51 @@ const Page = () => {
         const normalizedRisk = (5 - plan.riskLevel) / 5;
         const normalizedTenure = Math.min(plan.tenure, 120) / 120;
         const normalizedInvestment =
-          1 - Math.min(plan.minimumInvestment || 0, 500000) / 500000;
+          1 - Math.min(plan.minAmount || 0, 500000) / 500000;
 
-        return (
-          normalizedROI * weights.roi +
-          normalizedCAGR * weights.cagr +
-          normalizedRisk * weights.risk +
-          normalizedTenure * weights.tenure +
-          normalizedInvestment * weights.minimumInvestment
-        );
+        // Calculate individual scores for detailed breakdown
+        const scores = {
+          roi: normalizedROI * weights.roi,
+          cagr: normalizedCAGR * weights.cagr,
+          risk: normalizedRisk * weights.risk,
+          tenure: normalizedTenure * weights.tenure,
+          minAmount: normalizedInvestment * weights.minAmount,
+        };
+
+        const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+
+        return {
+          totalScore,
+          scores,
+          weights
+        };
       };
+
+      const scoreData = calculateScore(plan);
 
       return {
         plan,
-        score: calculateScore(plan),
+        totalScore: scoreData.totalScore,
+        scores: scoreData.scores,
+        weights: scoreData.weights
       };
     });
 
-    compareAllPlans.sort((a, b) => b.score - a.score);
+    compareAllPlans.sort((a, b) => b.totalScore - a.totalScore);
+
+    // Add rank to each plan
+    compareAllPlans.forEach((item, index) => {
+      item.rank = index + 1;
+    });
 
     const generateDetailedReasoning = (bestPlan, otherPlans) => {
       if (!bestPlan || !otherPlans) return [];
       const reasoning = [];
 
+      // Overall summary
+      reasoning.push(`${bestPlan.planName} is the recommended option with an overall score of ${(bestPlan.totalScore * 100).toFixed(1)}%.`);
+      
+      // Add specific advantages
       otherPlans.forEach((otherPlan) => {
         if (!otherPlan) return;
         const comparisons = [];
@@ -222,9 +280,7 @@ const Page = () => {
         }
         if (bestPlan.cagr > otherPlan.cagr) {
           comparisons.push(
-            `better CAGR (${bestPlan.cagr.toFixed(
-              2
-            )}% vs ${otherPlan.cagr.toFixed(2)}%)`
+            `better CAGR (${bestPlan.cagr.toFixed(2)}% vs ${otherPlan.cagr.toFixed(2)}%)`
           );
         }
         if (bestPlan.riskLevel < otherPlan.riskLevel) {
@@ -233,23 +289,30 @@ const Page = () => {
           );
         }
         if (
-          bestPlan.minimumInvestment &&
-          otherPlan.minimumInvestment &&
-          bestPlan.minimumInvestment < otherPlan.minimumInvestment
+          bestPlan.minAmount &&
+          otherPlan.minAmount &&
+          bestPlan.minAmount < otherPlan.minAmount
         ) {
           comparisons.push(
-            `lower minimum investment (₹${bestPlan.minimumInvestment.toLocaleString()} vs ₹${otherPlan.minimumInvestment.toLocaleString()})`
+            `lower minimum investment (₹${bestPlan.minAmount.toLocaleString()} vs ₹${otherPlan.minAmount.toLocaleString()})`
           );
         }
 
         if (comparisons.length > 0) {
           reasoning.push(
-            `Compared to ${otherPlan.planName}, it offers ${comparisons.join(
-              ", "
-            )}`
+            `Compared to ${otherPlan.planName}, it offers ${comparisons.join(", ")}`
           );
         }
       });
+      
+      // Add investment advice based on risk
+      if (bestPlan.riskLevel <= 2) {
+        reasoning.push("This is a conservative investment option, suitable for risk-averse investors or short-term goals.");
+      } else if (bestPlan.riskLevel <= 3.5) {
+        reasoning.push("This is a balanced investment option, suitable for moderate risk tolerance or medium-term goals.");
+      } else {
+        reasoning.push("This is an aggressive investment option, suitable for high risk tolerance or long-term goals.");
+      }
 
       return reasoning;
     };
@@ -264,10 +327,19 @@ const Page = () => {
       bestPlan,
       otherPlans,
       reasoning: generateDetailedReasoning(bestPlan, otherPlans),
-      scores: compareAllPlans.map(({ plan, score }) => ({
+      scores: compareAllPlans.map(({ plan, totalScore, scores }) => ({
         planName: plan?.planName,
-        score: (score * 100).toFixed(2),
+        planId: plan?.id,
+        totalScore: (totalScore * 100).toFixed(2),
+        detailedScores: {
+          roi: (scores.roi * 100).toFixed(2),
+          cagr: (scores.cagr * 100).toFixed(2),
+          risk: (scores.risk * 100).toFixed(2),
+          tenure: (scores.tenure * 100).toFixed(2),
+          minAmount: (scores.minAmount * 100).toFixed(2),
+        }
       })),
+      allPlans: compareAllPlans.map(item => item.plan),
     });
   };
 
@@ -319,7 +391,7 @@ const Page = () => {
           const riskLevel = calculateRisk(
             data.interestRate,
             data.tenure,
-            data.minimumInvestment
+            data.minAmount
           );
 
           return {
@@ -456,6 +528,112 @@ const Page = () => {
     });
   };
 
+  // Add this useEffect to apply all filters and search
+  useEffect(() => {
+    const applyFiltersAndSearch = () => {
+      if (!plans.length) return;
+      
+      let result = [...plans];
+      
+      // Apply search term filter
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        result = result.filter(
+          plan => 
+            plan.planName?.toLowerCase().includes(searchLower) ||
+            plan.description?.toLowerCase().includes(searchLower) ||
+            plan.investmentCategory?.toLowerCase().includes(searchLower) ||
+            plan.investmentSubCategory?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Apply category filter
+      if (categoryFilter.length) {
+        result = result.filter(plan => 
+          categoryFilter.includes(plan.investmentCategory)
+        );
+      }
+      
+      // Apply subcategory filter
+      if (subCategoryFilter.length) {
+        result = result.filter(plan => 
+          subCategoryFilter.includes(plan.investmentSubCategory)
+        );
+      }
+      
+      // Apply risk range filter
+      result = result.filter(
+        plan => plan.riskLevel >= riskRange[0] && plan.riskLevel <= riskRange[1]
+      );
+      
+      // Apply interest rate range filter
+      result = result.filter(
+        plan => plan.interestRate >= interestRateRange[0] && plan.interestRate <= interestRateRange[1]
+      );
+      
+      // Apply minimum investment range filter
+      result = result.filter(
+        plan => (!plan.minAmount || 
+          (plan.minAmount >= investmentRange[0] && 
+           plan.minAmount <= investmentRange[1]))
+      );
+      
+      // Apply tenure range filter (in months)
+      result = result.filter(
+        plan => plan.tenure >= tenureRange[0] && plan.tenure <= tenureRange[1]
+      );
+      
+      // Apply sorting
+      result.sort((a, b) => {
+        const multiplier = sortOrder === "desc" ? -1 : 1;
+        return (a[sortBy] - b[sortBy]) * multiplier;
+      });
+      
+      setFilteredPlans(result);
+      
+      // Update recommendations if user has interests
+      if (userTags.length > 0) {
+        const plansWithScores = result.map((plan) => ({
+          ...plan,
+          similarityScore: calculateSimilarity(userTags, plan.tags || []),
+        }));
+
+        let recommended = plansWithScores
+          .sort((a, b) => b.similarityScore - a.similarityScore)
+          .filter((plan) => plan.similarityScore > 0.1)
+          .slice(0, 5);
+
+        // Fallback if no recommendations match the criteria
+        if (recommended.length === 0) {
+          recommended = result
+            .sort((a, b) => b.interestRate - a.interestRate)
+            .slice(0, 5)
+            .map((plan) => ({
+              ...plan,
+              similarityScore: 0,
+              isDefaultRecommendation: true,
+            }));
+        }
+
+        setRecommendedPlans(recommended);
+      }
+    };
+    
+    applyFiltersAndSearch();
+  }, [
+    plans, 
+    searchTerm, 
+    categoryFilter, 
+    subCategoryFilter, 
+    riskRange, 
+    interestRateRange, 
+    investmentRange, 
+    tenureRange, 
+    sortBy, 
+    sortOrder, 
+    userTags
+  ]);
+
   if (loading) {
     return (
       <Flex height="100vh" align="center" justify="center">
@@ -497,383 +675,859 @@ const Page = () => {
         </Flex>
       </Box>
 
-      <Stack spacing={4} width="100%" maxW="1200px" mt="20vh">
-        <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-          <Box flex="1">
-            <Text fontWeight="bold" color="#2C319F" mb={2}>
-              Categories:
-            </Text>
-            <CheckboxGroup
-              value={categoryFilter}
-              onChange={(values) => setCategoryFilter(values)}
-            >
-              <Stack direction={["column", "row"]} spacing={[2, 4]}>
-                <Checkbox value="Bonds">Bonds</Checkbox>
-                <Checkbox value="MutualFunds">Mutual Funds</Checkbox>
-                <Checkbox value="FixedDeposits">Fixed Deposits</Checkbox>
-                <Checkbox value="GoldInvestments">Gold Investments</Checkbox>
-                <Checkbox value="ProvidentFunds">Provident Funds</Checkbox>
-              </Stack>
-            </CheckboxGroup>
-          </Box>
-
-          <Box>
-            <Stack direction="row" spacing={4}>
-              <Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="interestRate">Interest Rate</option>
-                <option value="cagr">CAGR</option>
-                <option value="riskLevel">Risk Level</option>
-                <option value="minimumInvestment">Minimum Investment</option>
-              </Select>
-              <Select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-              >
-                <option value="desc">High to Low</option>
-                <option value="asc">Low to High</option>
-              </Select>
-            </Stack>
-          </Box>
-        </Flex>
-
-        {/* SubCategories Section */}
-        {categoryFilter.length > 0 && (
-          <Box>
-            <Text fontWeight="bold" color="#2C319F" mb={2}>
-              Subcategories:
-            </Text>
-            <CheckboxGroup
-              value={subCategoryFilter}
-              onChange={(values) => setSubCategoryFilter(values)}
-            >
-              <Stack direction={["column", "row"]} spacing={[2, 4]} wrap="wrap">
-                {/* ... Previous subcategories code remains the same ... */}
-              </Stack>
-            </CheckboxGroup>
-          </Box>
-        )}
-      </Stack>
-
-      {/* Improved Recommended Plans Section */}
-      {recommendedPlans.length > 0 && (
-        <Box width="100%" maxW="1200px" mb={8} mt={8}>
-          <Flex justify="space-between" align="center" mb={4}>
-            <Heading size="lg">Recommended for You</Heading>
-            {recommendedPlans[0]?.isDefaultRecommendation && (
-              <Text fontSize="sm" color="gray.600">
-                Based on top-rated plans
-              </Text>
-            )}
-          </Flex>
-          <Flex wrap="wrap" gap={4} justify="flex-start">
-            {recommendedPlans.map((plan) => (
-              <Box
-                key={plan.id}
-                position="relative"
-                width={["100%", "calc(50% - 8px)", "calc(33.333% - 11px)"]}
-                height={"50vh"}
-                p={4}
-                borderWidth={1}
-                borderRadius="lg"
-                bg="white"
-                boxShadow="lg"
-                transition="all 0.2s"
-                _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
-              >
-                <IconButton
-                  icon={<FiBookmark size={24} />}
-                  position="absolute"
-                  top={2}
-                  right={2}
-                  size="sm"
-                  colorScheme={
-                    bookmarkedPlans.some((p) => p.id === plan.id)
-                      ? "blue"
-                      : "gray"
-                  }
-                  onClick={() => handleBookmark(plan)}
-                  aria-label={
-                    bookmarkedPlans.some((p) => p.id === plan.id)
-                      ? "Remove from Booklist"
-                      : "Add to Booklist"
-                  }
-                />
-
-                <Box as="a" href={`/plan1/${plan.id}`} display="block" mt={8}>
-                  <Heading size="sm" color="#2C319F" noOfLines={2}>
-                    {plan.planName}
-                  </Heading>
-                  <Text mt={2} noOfLines={2} color="gray.700">
-                    {plan.description}
-                  </Text>
-                  <Stack spacing={2} mt={3}>
-                    <Text fontWeight="bold" color="green.600">
-                      Interest Rate: {plan.interestRate}%
-                    </Text>
-                    <Text color="orange.600">
-                      CAGR: {plan.cagr.toFixed(2)}%
-                    </Text>
-                    <Text color="purple.600">Risk Level: {plan.riskLevel}</Text>
-                    {!plan.isDefaultRecommendation && (
-                      <Text color="blue.600">
-                        Match Score: {(plan.similarityScore * 100).toFixed(1)}%
-                      </Text>
-                    )}
-                  </Stack>
-                  <Wrap mt={2}>
-                    {plan.tags?.slice(0, 3).map((tag) => (
-                      <Tag key={tag} size="sm" colorScheme="blue">
-                        {tag}
-                      </Tag>
-                    ))}
-                  </Wrap>
-                </Box>
-                <Button
-                  mt={4}
-                  size="sm"
-                  width="100%"
-                  colorScheme={comparePlans.includes(plan) ? "red" : "blue"}
-                  onClick={() => handleSelectForCompare(plan)}
-                >
-                  {comparePlans.includes(plan)
-                    ? "Remove from Comparison"
-                    : "Add to Compare"}
-                </Button>
-              </Box>
-            ))}
-          </Flex>
-        </Box>
-      )}
-
-      {/* Main Plans Grid */}
-      <Heading size="lg">Explore All Plans</Heading>
-      <Flex
-        wrap="wrap"
-        justify="flex-start"
+      {/* Main Content Area with Sidebar Layout */}
+      <Flex 
+        width="100%" 
+        maxW="1400px" 
+        mt="20vh" 
+        px={4} 
         gap={6}
-        width="100%"
-        maxW="1200px"
-        my={10}
+        flexDirection={{ base: "column", md: "row" }}
       >
-        {plans.map((plan) => (
+        {/* Left Sidebar - Filters */}
+        <Box 
+          width={{ base: "100%", md: "300px" }} 
+          flexShrink={0}
+          position={{ base: "static", md: "sticky" }}
+          top="20vh"
+          alignSelf="flex-start"
+        >
           <Box
-            key={plan.id}
-            position="relative"
-            width={["100%", "calc(50% - 12px)", "calc(33.333% - 16px)"]}
+            bg="white"
+            p={5}
+            borderRadius="md"
+            shadow="md"
+            mb={4}
           >
-            <Box
-              as="a"
-              href={`/plan1/${plan.id}`}
-              p={4}
-              borderWidth={1}
-              borderRadius="lg"
-              bg="white"
-              boxShadow="lg"
-              transition="all 0.2s"
-              _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
-              display="block"
-              height={"42vh"}
-            >
-              <IconButton
-                icon={<FiBookmark size={24} />}
-                position="absolute"
-                top={2}
-                right={2}
-                size="sm"
-                colorScheme={
-                  bookmarkedPlans.some((p) => p.id === plan.id)
-                    ? "blue"
-                    : "gray"
-                }
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleBookmark(plan);
-                }}
-                aria-label={
-                  bookmarkedPlans.some((p) => p.id === plan.id)
-                    ? "Remove from Booklist"
-                    : "Add to Booklist"
-                }
+            <Heading size="md" mb={4}>Filter Plans</Heading>
+            
+            {/* Search Bar */}
+            <InputGroup mb={4}>
+              <InputLeftElement pointerEvents="none">
+                <FiSearch color="#718096" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search plans..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                borderColor="gray.300"
               />
-
-              <Stack spacing={3} mt={8}>
-                <Heading size="sm" color="#2C319F">
-                  {plan.planName}
-                </Heading>
-                <Text noOfLines={2} color="gray.700">
-                  {plan.description}
-                </Text>
-                <Text fontWeight="bold" color="green.600">
-                  Interest Rate: {plan.interestRate}%
-                </Text>
-                <Text color="orange.600">CAGR: {plan.cagr.toFixed(2)}%</Text>
-                <Text color="red.600">Risk Level: {plan.riskLevel}</Text>
-                <Text color="blue.600">
-                  Min Investment: ₹{plan.minimumInvestment?.toLocaleString()}
-                </Text>
+            </InputGroup>
+            
+            {/* Sort Options */}
+            <Box mb={4}>
+              <Text fontWeight="bold" mb={2}>Sort By:</Text>
+              <Stack spacing={2}>
+                <Select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  size="sm"
+                >
+                  <option value="interestRate">Interest Rate</option>
+                  <option value="cagr">CAGR</option>
+                  <option value="riskLevel">Risk Level</option>
+                  <option value="minAmount">Minimum Investment</option>
+                </Select>
+                <Select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  size="sm"
+                >
+                  <option value="desc">High to Low</option>
+                  <option value="asc">Low to High</option>
+                </Select>
               </Stack>
             </Box>
-            <Button
-              mt={2}
+            
+            {/* Categories Filter */}
+            <Box mb={4}>
+              <Text fontWeight="bold" mb={2}>Categories</Text>
+              <CheckboxGroup
+                value={categoryFilter}
+                onChange={(values) => setCategoryFilter(values)}
+              >
+                <Stack direction="column" spacing={1}>
+                  <Checkbox value="Bonds">Bonds</Checkbox>
+                  <Checkbox value="MutualFunds">Mutual Funds</Checkbox>
+                  <Checkbox value="FixedDeposits">Fixed Deposits</Checkbox>
+                  <Checkbox value="GoldInvestments">Gold Investments</Checkbox>
+                  <Checkbox value="ProvidentFunds">Provident Funds</Checkbox>
+                </Stack>
+              </CheckboxGroup>
+            </Box>
+            
+            {/* SubCategories Section */}
+            {categoryFilter.length > 0 && (
+              <Box mb={4}>
+                <Text fontWeight="bold" mb={2}>Subcategories</Text>
+                <CheckboxGroup
+                  value={subCategoryFilter}
+                  onChange={(values) => setSubCategoryFilter(values)}
+                >
+                  <Stack direction="column" spacing={1}>
+                    {/* Your subcategory options */}
+                  </Stack>
+                </CheckboxGroup>
+              </Box>
+            )}
+            
+            {/* Risk Level Range */}
+            <Box mb={4}>
+              <FormLabel>Risk Level Range</FormLabel>
+              <Flex align="center">
+                <Text mr={2} fontWeight="bold">{riskRange[0]}</Text>
+                <RangeSlider
+                  aria-label={['min risk', 'max risk']}
+                  min={1}
+                  max={5}
+                  step={0.5}
+                  value={riskRange}
+                  onChange={(val) => setRiskRange(val)}
+                  colorScheme="blue"
+                  flex="1"
+                >
+                  <RangeSliderTrack>
+                    <RangeSliderFilledTrack />
+                  </RangeSliderTrack>
+                  <RangeSliderThumb index={0} />
+                  <RangeSliderThumb index={1} />
+                </RangeSlider>
+                <Text ml={2} fontWeight="bold">{riskRange[1]}</Text>
+              </Flex>
+            </Box>
+            
+            {/* Interest Rate Range */}
+            <Box mb={4}>
+              <FormLabel>Interest Rate (%)</FormLabel>
+              <Flex align="center">
+                <Text mr={2} fontWeight="bold">{interestRateRange[0]}</Text>
+                <RangeSlider
+                  aria-label={['min interest', 'max interest']}
+                  min={0}
+                  max={20}
+                  step={0.5}
+                  value={interestRateRange}
+                  onChange={(val) => setInterestRateRange(val)}
+                  colorScheme="green"
+                  flex="1"
+                >
+                  <RangeSliderTrack>
+                    <RangeSliderFilledTrack />
+                  </RangeSliderTrack>
+                  <RangeSliderThumb index={0} />
+                  <RangeSliderThumb index={1} />
+                </RangeSlider>
+                <Text ml={2} fontWeight="bold">{interestRateRange[1]}</Text>
+              </Flex>
+            </Box>
+            
+            {/* Minimum Investment Range */}
+            <Box mb={4}>
+              <FormLabel>Minimum Investment (₹)</FormLabel>
+              <Flex align="center">
+                <Text mr={2} fontWeight="bold" fontSize="xs">₹{investmentRange[0].toLocaleString()}</Text>
+                <RangeSlider
+                  aria-label={['min investment', 'max investment']}
+                  min={0}
+                  max={500000}
+                  step={5000}
+                  value={investmentRange}
+                  onChange={(val) => setInvestmentRange(val)}
+                  colorScheme="purple"
+                  flex="1"
+                >
+                  <RangeSliderTrack>
+                    <RangeSliderFilledTrack />
+                  </RangeSliderTrack>
+                  <RangeSliderThumb index={0} />
+                  <RangeSliderThumb index={1} />
+                </RangeSlider>
+                <Text ml={2} fontWeight="bold" fontSize="xs">₹{investmentRange[1].toLocaleString()}</Text>
+              </Flex>
+            </Box>
+            
+            {/* Tenure Range */}
+            <Box mb={4}>
+              <FormLabel>Tenure (Months)</FormLabel>
+              <Flex align="center">
+                <Text mr={2} fontWeight="bold">{tenureRange[0]}</Text>
+                <RangeSlider
+                  aria-label={['min tenure', 'max tenure']}
+                  min={0}
+                  max={120}
+                  step={1}
+                  value={tenureRange}
+                  onChange={(val) => setTenureRange(val)}
+                  colorScheme="orange"
+                  flex="1"
+                >
+                  <RangeSliderTrack>
+                    <RangeSliderFilledTrack />
+                  </RangeSliderTrack>
+                  <RangeSliderThumb index={0} />
+                  <RangeSliderThumb index={1} />
+                </RangeSlider>
+                <Text ml={2} fontWeight="bold">{tenureRange[1]}</Text>
+              </Flex>
+            </Box>
+            
+            <Button 
+              colorScheme="gray" 
               width="100%"
-              colorScheme={comparePlans.includes(plan) ? "red" : "blue"}
-              onClick={() => handleSelectForCompare(plan)}
+              onClick={() => {
+                setRiskRange([1, 5]);
+                setInterestRateRange([0, 20]);
+                setInvestmentRange([0, 500000]);
+                setTenureRange([0, 120]);
+                setSearchTerm("");
+                setCategoryFilter([]);
+                setSubCategoryFilter([]);
+              }}
+              mb={2}
             >
-              {comparePlans.includes(plan)
-                ? "Remove from Comparison"
-                : "Add to Compare"}
+              Reset All Filters
             </Button>
-          </Box>
-        ))}
-      </Flex>
-
-      {/* Comparison Section */}
-      {comparePlans.length >= 2 && (
-        <Button
-          colorScheme="green"
-          mt={6}
-          size="lg"
-          onClick={handleCompare}
-          mb={8}
-        >
-          Compare Selected Plans ({comparePlans.length})
-        </Button>
-      )}
-
-      {/* Comparison Results */}
-      {comparisonResults.bestPlan && (
-        <Box
-          mt={8}
-          p={6}
-          bg="white"
-          borderRadius="lg"
-          shadow="lg"
-          width="100%"
-          maxW="1200px"
-          mb={8}
-        >
-          <Heading size="md" color="blue.600" mb={4}>
-            Plan Comparison Results
-          </Heading>
-
-          <Table variant="simple" mt={4}>
-            <Thead>
-              <Tr>
-                <Th>Plan Detail</Th>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Th key={plan.id}>{plan.planName}</Th>
-                ))}
-                <Th bg="green.50">{comparisonResults.bestPlan.planName}</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              <Tr>
-                <Td>Interest Rate</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.interestRate}%</Td>
-                ))}
-                <Td bg="green.50">
-                  {comparisonResults.bestPlan.interestRate}%
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>CAGR</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.cagr.toFixed(2)}%</Td>
-                ))}
-                <Td bg="green.50">
-                  {comparisonResults.bestPlan.cagr.toFixed(2)}%
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Risk Level</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>
-                    <Tag
-                      colorScheme={
-                        plan.riskLevel <= 2
-                          ? "green"
-                          : plan.riskLevel <= 3.5
-                          ? "yellow"
-                          : "red"
-                      }
-                    >
-                      {plan.riskLevel}
-                    </Tag>
-                  </Td>
-                ))}
-                <Td bg="green.50">
-                  <Tag
-                    colorScheme={
-                      comparisonResults.bestPlan.riskLevel <= 2
-                        ? "green"
-                        : comparisonResults.bestPlan.riskLevel <= 3.5
-                        ? "yellow"
-                        : "red"
-                    }
-                  >
-                    {comparisonResults.bestPlan.riskLevel}
-                  </Tag>
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Minimum Investment</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>
-                    ₹{plan.minimumInvestment?.toLocaleString() || "N/A"}
-                  </Td>
-                ))}
-                <Td bg="green.50">
-                  ₹
-                  {comparisonResults.bestPlan.minimumInvestment?.toLocaleString() ||
-                    "N/A"}
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Category</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.investmentCategory}</Td>
-                ))}
-                <Td bg="green.50">
-                  {comparisonResults.bestPlan.investmentCategory}
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Subcategory</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.investmentSubCategory}</Td>
-                ))}
-                <Td bg="green.50">
-                  {comparisonResults.bestPlan.investmentSubCategory}
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Comparison Score</Td>
-                {comparisonResults.scores.slice(1).map((score) => (
-                  <Td key={score.planName}>{score.score}%</Td>
-                ))}
-                <Td bg="green.50">{comparisonResults.scores[0].score}%</Td>
-              </Tr>
-            </Tbody>
-          </Table>
-
-          <Box mt={6} p={4} borderRadius="md" bg="blue.50">
-            <Heading size="sm" color="blue.700" mb={3}>
-              Detailed Analysis
-            </Heading>
-            <Stack spacing={2}>
-              {comparisonResults.reasoning.map((reason, index) => (
-                <Text key={index} fontSize="sm">
-                  • {reason}
-                </Text>
-              ))}
-            </Stack>
+            
+            <Text color="gray.600" fontSize="sm" textAlign="center">
+              Showing {filteredPlans.length} of {plans.length} plans
+            </Text>
           </Box>
         </Box>
-      )}
+
+        {/* Right Content Area */}
+        <Box flex="1">
+          {/* Recommended Plans Section */}
+          {recommendedPlans.length > 0 && (
+            <Box width="100%" mb={8}>
+              <Flex justify="space-between" align="center" mb={4}>
+                <Heading size="lg">Recommended for You</Heading>
+                {recommendedPlans[0]?.isDefaultRecommendation && (
+                  <Text fontSize="sm" color="gray.600">
+                    Based on top-rated plans
+                  </Text>
+                )}
+              </Flex>
+              <Flex wrap="wrap" gap={4} justify="flex-start">
+                {recommendedPlans.map((plan) => (
+                  <Box
+                    key={plan.id}
+                    p={5}
+                    borderWidth={1}
+                    borderRadius="lg"
+                    width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
+                    bg="white"
+                    boxShadow="lg"
+                    transition="all 0.2s"
+                    _hover={{ boxShadow: "xl", transform: "translateY(-4px)" }}
+                    position="relative"
+                    overflow="hidden"
+                    onClick={() => router.push(`/plan1/${plan.id}`)}
+                    cursor="pointer"
+                  >
+                    {/* Recommendation Badge */}
+                    <Box 
+                      position="absolute" 
+                      top={0} 
+                      right={0} 
+                      bg={plan.interestRate >= 12 ? "green.500" : "blue.500"}
+                      color="white" 
+                      px={3} 
+                      py={1} 
+                      borderBottomLeftRadius="md"
+                      fontSize="xs"
+                      fontWeight="bold"
+                    >
+                      {plan.interestRate >= 12 ? "HIGH YIELD" : "RECOMMENDED"}
+                    </Box>
+                    
+                    <IconButton
+                      icon={<FiBookmark />}
+                      size="sm"
+                      position="absolute"
+                      top={2}
+                      left={2}
+                      colorScheme={
+                        bookmarkedPlans.some((p) => p.id === plan.id)
+                          ? "blue"
+                          : "gray"
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBookmark(plan);
+                      }}
+                      aria-label="Bookmark plan"
+                    />
+                    
+                    <Heading size="md" color="#2C319F" mt={4}>
+                      {plan.planName}
+                    </Heading>
+                    
+                    <Box mt={2} bg="blue.50" p={2} borderRadius="md">
+                      <Text fontSize="sm" noOfLines={2} color="gray.700">
+                        {plan.description}
+                      </Text>
+                    </Box>
+                    
+                    <Grid templateColumns="1fr 1fr" gap={3} mt={4}>
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">INTEREST RATE</Text>
+                        <Flex align="center">
+                          <Text fontWeight="bold" fontSize="xl" color={plan.interestRate >= 12 ? "green.600" : plan.interestRate >= 9 ? "orange.500" : "blue.500"}>
+                            {plan.interestRate}%
+                          </Text>
+                          {plan.interestRate >= 12 && <Icon as={FiTrendingUp} color="green.500" ml={1} />}
+                        </Flex>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">TENURE</Text>
+                        <Flex align="center">
+                          <Text fontWeight="bold" color="blue.600">
+                            {plan.tenure <= 12 ? plan.tenure + " mo" : 
+                             Math.floor(plan.tenure/12) + (plan.tenure % 12 > 0 ? `.${Math.floor((plan.tenure % 12)/12*10)}` : "") + " yr"}
+                          </Text>
+                        </Flex>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">MIN INVESTMENT</Text>
+                        <Text fontWeight="bold">
+                          ₹{(plan.minAmount || 10000).toLocaleString()}
+                        </Text>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">CAGR</Text>
+                        <Text fontWeight="bold" color="purple.600">
+                          {plan.cagr?.toFixed(2)}%
+                        </Text>
+                      </Box>
+                    </Grid>
+                    
+                    <Box mt={3} pt={3} borderTopWidth={1} borderColor="gray.100">
+                      <Flex justify="space-between" align="center">
+                        <Flex align="center">
+                          <Text fontSize="xs" mr={1}>Risk Level:</Text>
+                          <Tag
+                            size="sm"
+                            colorScheme={
+                              plan.riskLevel <= 2 ? "green" : 
+                              plan.riskLevel <= 3.5 ? "yellow" : "red"
+                            }
+                          >
+                            {plan.riskLevel}
+                          </Tag>
+                        </Flex>
+                        {!plan.isDefaultRecommendation && (
+                          <Text fontWeight="semibold" color="green.600" fontSize="xs">
+                            Match: {(plan.similarityScore * 100).toFixed(0)}%
+                          </Text>
+                        )}
+                      </Flex>
+                    </Box>
+                    
+                    <Flex mt={4} gap={2}>
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        variant="solid"
+                        flexGrow={1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/plan1/${plan.id}`);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      
+                      <Button
+                        size="sm"
+                        colorScheme={comparePlans.includes(plan) ? "red" : "gray"}
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectForCompare(plan);
+                        }}
+                        flexGrow={0}
+                      >
+                        {comparePlans.includes(plan) ? "Remove" : "Compare"}
+                      </Button>
+                    </Flex>
+                  </Box>
+                ))}
+              </Flex>
+            </Box>
+          )}
+
+          {/* Main Plans Grid */}
+          <Box>
+            <Heading size="lg" mb={4}>
+              Explore All Plans {filteredPlans.length < plans.length && 
+                <Badge ml={2} colorScheme="blue">{filteredPlans.length} of {plans.length}</Badge>}
+            </Heading>
+            <Flex
+              wrap="wrap"
+              justify="flex-start"
+              gap={4}
+              width="100%"
+            >
+              {filteredPlans.length > 0 ? (
+                filteredPlans.map((plan) => (
+                  <Box
+                    key={plan.id}
+                    position="relative"
+                    p={5}
+                    borderWidth={1}
+                    borderRadius="lg"
+                    width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
+                    bg="white"
+                    boxShadow="md"
+                    transition="all 0.3s"
+                    _hover={{ boxShadow: "xl", transform: "translateY(-4px)" }}
+                    cursor="pointer"
+                    onClick={() => router.push(`/plan1/${plan.id}`)}
+                    mb={4}
+                  >
+                    {plan.interestRate >= 12 && (
+                      <Box 
+                        position="absolute" 
+                        top={0} 
+                        right={0} 
+                        bg="green.500" 
+                        color="white" 
+                        px={3} 
+                        py={1} 
+                        borderBottomLeftRadius="md"
+                        fontSize="xs"
+                        fontWeight="bold"
+                      >
+                        HIGH YIELD
+                      </Box>
+                    )}
+                    
+                    <IconButton
+                      icon={<FiBookmark />}
+                      size="sm"
+                      position="absolute"
+                      top={2}
+                      left={2}
+                      colorScheme={
+                        bookmarkedPlans.some((p) => p.id === plan.id)
+                          ? "blue"
+                          : "gray"
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBookmark(plan);
+                      }}
+                      aria-label="Bookmark plan"
+                      zIndex={1}
+                    />
+                    
+                    <Heading size="md" color="#2C319F" mt={4}>
+                      {plan.planName}
+                    </Heading>
+                    
+                    <Text fontSize="sm" mt={2} noOfLines={2} color="gray.600">
+                      {plan.description}
+                    </Text>
+                    
+                    <Grid templateColumns="1fr 1fr" gap={3} mt={4}>
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">INTEREST RATE</Text>
+                        <Flex align="center">
+                          <Text 
+                            fontWeight="bold" 
+                            fontSize="lg"
+                            color={plan.interestRate >= 12 ? "green.600" : plan.interestRate >= 9 ? "orange.500" : "blue.600"}
+                          >
+                            {plan.interestRate}%
+                          </Text>
+                        </Flex>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">TENURE</Text>
+                        <Text fontWeight="bold" color="blue.600">
+                          {plan.tenure <= 12 ? 
+                            `${plan.tenure} months` : 
+                            `${Math.floor(plan.tenure/12)} years${plan.tenure % 12 > 0 ? ` ${plan.tenure % 12} mo` : ''}`}
+                        </Text>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">MIN INVESTMENT</Text>
+                        <Text fontWeight="bold">
+                          ₹{(plan.minAmount || 10000).toLocaleString()}
+                        </Text>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">CAGR</Text>
+                        <Text fontWeight="bold" color="purple.600">
+                          {plan.cagr?.toFixed(2)}%
+                        </Text>
+                      </Box>
+                    </Grid>
+                    
+                    <Flex mt={4} justify="space-between" pt={3} borderTopWidth={1} borderColor="gray.100">
+                      <Flex align="center">
+                        <Text fontSize="xs" mr={1}>Risk Level:</Text>
+                        <Tag
+                          size="sm"
+                          colorScheme={
+                            plan.riskLevel <= 2 ? "green" : 
+                            plan.riskLevel <= 3.5 ? "yellow" : "red"
+                          }
+                        >
+                          {plan.riskLevel}
+                        </Tag>
+                      </Flex>
+                      <Wrap>
+                        {plan.tags?.slice(0, 2).map((tag) => (
+                          <Tag key={tag} size="sm" colorScheme="blue" fontSize="xs">
+                            {tag}
+                          </Tag>
+                        ))}
+                      </Wrap>
+                    </Flex>
+                    
+                    <Flex mt={4} gap={2}>
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        variant="solid"
+                        flexGrow={1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/plan1/${plan.id}`);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      
+                      <Button
+                        size="sm"
+                        colorScheme={comparePlans.includes(plan) ? "red" : "gray"}
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectForCompare(plan);
+                        }}
+                      >
+                        {comparePlans.includes(plan) ? "Remove" : "Compare"}
+                      </Button>
+                    </Flex>
+                  </Box>
+                ))
+              ) : (
+                <Box width="100%" textAlign="center" py={10}>
+                  <Text fontSize="xl" color="gray.500">No investment plans match your filters</Text>
+                  <Button mt={4} onClick={() => {
+                    setRiskRange([1, 5]);
+                    setInterestRateRange([0, 20]);
+                    setInvestmentRange([0, 500000]);
+                    setTenureRange([0, 120]);
+                    setSearchTerm("");
+                    setCategoryFilter([]);
+                    setSubCategoryFilter([]);
+                  }}>
+                    Reset All Filters
+                  </Button>
+                </Box>
+              )}
+            </Flex>
+          </Box>
+
+          {/* Comparison Button */}
+          {comparePlans.length >= 2 && (
+            <Box textAlign="center" my={8}>
+              <Button
+                colorScheme="green"
+                size="lg"
+                onClick={handleCompare}
+              >
+                Compare Selected Plans ({comparePlans.length})
+              </Button>
+            </Box>
+          )}
+
+          {/* Comparison Results */}
+          {comparisonResults.bestPlan && (
+            <Box
+              p={6}
+              bg="white"
+              borderRadius="lg"
+              shadow="lg"
+              width="100%"
+              mb={8}
+            >
+              <Heading size="md" color="blue.600" mb={4}>
+                Plan Comparison Results
+              </Heading>
+              
+              {/* Top recommendation highlight */}
+              <Box 
+                p={4} 
+                bg="green.50" 
+                borderRadius="md" 
+                mb={6}
+                borderLeft="4px solid" 
+                borderColor="green.500"
+              >
+                <Flex align="center" gap={3}>
+                  <FiAward size="24px" color="#38A169" />
+                  <Heading size="md">
+                    Top Recommendation: {comparisonResults.bestPlan.planName}
+                  </Heading>
+                </Flex>
+                <Text mt={2} color="green.700">
+                  Overall Score: {comparisonResults.scores[0].totalScore}%
+                </Text>
+              </Box>
+          
+              {/* Score overview */}
+              <Box mb={6}>
+                <Heading size="sm" mb={4}>Performance Comparison</Heading>
+                <Flex justify="space-between" wrap="wrap" gap={4}>
+                  {comparisonResults.scores.map((score, index) => (
+                    <Box 
+                      key={score.planId} 
+                      p={4} 
+                      borderWidth={1}
+                      borderRadius="md"
+                      width={["100%", "48%", "30%"]}
+                      bg={index === 0 ? "green.50" : "white"}
+                      borderColor={index === 0 ? "green.200" : "gray.200"}
+                    >
+                      <Heading size="sm">{score.planName}</Heading>
+                      <CircularProgress 
+                        value={parseFloat(score.totalScore)} 
+                        color={index === 0 ? "green.500" : "blue.500"} 
+                        size="100px"
+                        thickness="8px"
+                        mt={3}
+                      >
+                        <CircularProgressLabel>{score.totalScore}%</CircularProgressLabel>
+                      </CircularProgress>
+                      
+                      <Text mt={3} fontSize="sm" fontWeight="bold">
+                        Rank: #{index + 1}
+                      </Text>
+                    </Box>
+                  ))}
+                </Flex>
+              </Box>
+          
+              {/* Detailed comparison tabs */}
+              <Tabs colorScheme="blue" variant="enclosed">
+                <TabList>
+                  <Tab><FiTrendingUp style={{marginRight: '8px'}} /> Performance</Tab>
+                  <Tab><FiShield style={{marginRight: '8px'}} /> Risk & Return</Tab>
+                  <Tab><FiDollarSign style={{marginRight: '8px'}} /> Investment</Tab>
+                  <Tab><FiClock style={{marginRight: '8px'}} /> Time Frame</Tab>
+                </TabList>
+                
+                <TabPanels>
+                  {/* Performance Tab */}
+                  <TabPanel>
+                    <Table variant="simple" size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Plan Name</Th>
+                          <Th isNumeric>Interest Rate</Th>
+                          <Th isNumeric>CAGR</Th>
+                          <Th isNumeric>Performance Score</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {comparisonResults.allPlans.map((plan, index) => (
+                          <Tr key={plan.id} bg={index === 0 ? "green.50" : undefined}>
+                            <Td fontWeight={index === 0 ? "bold" : "normal"}>
+                              {plan.planName} {index === 0 && <Badge colorScheme="green">Best</Badge>}
+                            </Td>
+                            <Td isNumeric fontWeight="bold" color="green.600">{plan.interestRate}%</Td>
+                            <Td isNumeric>{plan.cagr?.toFixed(2)}%</Td>
+                            <Td isNumeric>
+                              {comparisonResults.scores[index].detailedScores.roi}%
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </TabPanel>
+                  
+                  {/* Risk & Return Tab */}
+                  <TabPanel>
+                    <Table variant="simple" size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Plan Name</Th>
+                          <Th>Risk Level</Th>
+                          <Th isNumeric>Risk-Return Ratio</Th>
+                          <Th isNumeric>Risk Score</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {comparisonResults.allPlans.map((plan, index) => (
+                          <Tr key={plan.id} bg={index === 0 ? "green.50" : undefined}>
+                            <Td fontWeight={index === 0 ? "bold" : "normal"}>
+                              {plan.planName} {index === 0 && <Badge colorScheme="green">Best</Badge>}
+                            </Td>
+                            <Td>
+                              <Tag
+                                size="sm"
+                                colorScheme={
+                                  plan.riskLevel <= 2
+                                    ? "green"
+                                    : plan.riskLevel <= 3.5
+                                    ? "yellow"
+                                    : "red"
+                                }
+                              >
+                                {plan.riskLevel}
+                              </Tag>
+                            </Td>
+                            <Td isNumeric>{(plan.interestRate / plan.riskLevel).toFixed(2)}</Td>
+                            <Td isNumeric>
+                              {comparisonResults.scores[index].detailedScores.risk}%
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </TabPanel>
+                  
+                  {/* Investment Tab */}
+                  <TabPanel>
+                    <Table variant="simple" size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Plan Name</Th>
+                          <Th isNumeric>Minimum Investment</Th>
+                          <Th isNumeric>Est. Returns on ₹10,000</Th>
+                          <Th isNumeric>Investment Score</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {comparisonResults.allPlans.map((plan, index) => {
+                          // Calculate estimated returns on ₹10,000
+                          const investment = 10000;
+                          const monthlyRate = plan.interestRate / 12 / 100;
+                          const estReturns = investment * ((1 + monthlyRate) ** plan.tenure - 1);
+                          
+                          return (
+                            <Tr key={plan.id} bg={index === 0 ? "green.50" : undefined}>
+                              <Td fontWeight={index === 0 ? "bold" : "normal"}>
+                                {plan.planName} {index === 0 && <Badge colorScheme="green">Best</Badge>}
+                              </Td>
+                              <Td isNumeric>
+                                {plan.minAmount ? `₹${plan.minAmount.toLocaleString()}` : "N/A"}
+                              </Td>
+                              <Td isNumeric color="green.600" fontWeight="semibold">
+                                ₹{estReturns.toFixed(0).toLocaleString()}
+                              </Td>
+                              <Td isNumeric>
+                                {comparisonResults.scores[index].detailedScores.minAmount}%
+                              </Td>
+                            </Tr>
+                          );
+                        })}
+                      </Tbody>
+                    </Table>
+                  </TabPanel>
+                  
+                  {/* Time Frame Tab */}
+                  <TabPanel>
+                    <Table variant="simple" size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Plan Name</Th>
+                          <Th isNumeric>Tenure (Months)</Th>
+                          <Th>Investment Horizon</Th>
+                          <Th isNumeric>Time Score</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {comparisonResults.allPlans.map((plan, index) => (
+                          <Tr key={plan.id} bg={index === 0 ? "green.50" : undefined}>
+                            <Td fontWeight={index === 0 ? "bold" : "normal"}>
+                              {plan.planName} {index === 0 && <Badge colorScheme="green">Best</Badge>}
+                            </Td>
+                            <Td isNumeric>{plan.tenure}</Td>
+                            <Td>
+                              {plan.tenure <= 12 ? "Short Term" : 
+                               plan.tenure <= 36 ? "Medium Term" : "Long Term"}
+                            </Td>
+                            <Td isNumeric>
+                              {comparisonResults.scores[index].detailedScores.tenure}%
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </TabPanel>
+                </TabPanels>
+              </Tabs>
+          
+              {/* Detailed Analysis Accordion */}
+              <Accordion allowToggle mt={6}>
+                <AccordionItem>
+                  <h2>
+                    <AccordionButton bg="blue.50" _hover={{ bg: "blue.100" }}>
+                      <Box flex="1" textAlign="left" fontWeight="bold">
+                        Detailed Analysis
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton>
+                  </h2>
+                  <AccordionPanel pb={4} bg="blue.50">
+                    <Stack spacing={2}>
+                      {comparisonResults.reasoning.map((reason, index) => (
+                        <Text key={index} fontSize="sm">
+                          • {reason}
+                        </Text>
+                      ))}
+                    </Stack>
+                    
+                    <Box mt={6} p={4} bg="white" borderRadius="md">
+                      <Heading size="xs" mb={3}>Investment Advice</Heading>
+                      <Text fontSize="sm">
+                        {comparisonResults.bestPlan.riskLevel <= 2 ? (
+                          "This conservative option is best for preserving capital and generating stable returns. Ideal for short-term goals or risk-averse investors."
+                        ) : comparisonResults.bestPlan.riskLevel <= 3.5 ? (
+                          "This balanced option offers moderate growth potential with managed risk. Suitable for mid-term financial goals or investors with moderate risk tolerance."
+                        ) : (
+                          "This aggressive growth option aims for maximum returns with higher volatility. Better suited for long-term goals and investors who can tolerate significant market fluctuations."
+                        )}
+                      </Text>
+                    </Box>
+                  </AccordionPanel>
+                </AccordionItem>
+              </Accordion>
+              
+              {/* Action buttons */}
+              <Flex mt={6} justify="space-between" wrap="wrap" gap={4}>
+                <Button 
+                  colorScheme="green" 
+                  leftIcon={<FiAward />}
+                  as="a" 
+                  href={`/plan1/${comparisonResults.bestPlan.id}`}
+                >
+                  View Recommended Plan
+                </Button>
+                
+                <Button 
+                  colorScheme="gray" 
+                  onClick={() => setComparePlans([])}
+                >
+                  Clear Comparison
+                </Button>
+              </Flex>
+            </Box>
+          )}
+        </Box>
+      </Flex>
     </Box>
   );
 };

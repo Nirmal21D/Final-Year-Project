@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   IconButton,
@@ -15,15 +15,38 @@ import {
   Skeleton,
   Container,
   Stack,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
+  Button,
+  useDisclosure,
+  FormErrorMessage,
+  HStack,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+  Wrap,
+  WrapItem,
+  Avatar,
+  Center,
+  AvatarBadge,
 } from "@chakra-ui/react";
-import { ChatIcon } from "@chakra-ui/icons";
-import { collection, getDocs } from "firebase/firestore";
-import { db, auth } from "@/firebase";
+import { ChatIcon, AddIcon } from "@chakra-ui/icons";
+import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+import { db, auth, storage } from "@/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import Headers from "@/components/Headers";
 import Chat from "@/components/chat";
 import Welcome from "@/components/Welcome";
-import Footer from "@/components/Footer";
+import Footer from "@/components/footer";
 
 const MainPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -31,8 +54,27 @@ const MainPage = () => {
   const [userInterests, setUserInterests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState({});
+  const [missingFields, setMissingFields] = useState([]);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [suggestedInterests, setSuggestedInterests] = useState([
+    "Stocks", "Bonds", "Real Estate", "Mutual Funds", 
+    "Cryptocurrency", "Gold", "Fixed Deposits", "Retirement", "Tax Saving"
+  ]);
+  const [interestInput, setInterestInput] = useState("");
+  const [formValues, setFormValues] = useState({
+    name: "",
+    mobileNumber: "",
+    age: "",
+    salary: "",
+    cibilScore: "",
+    interests: [],
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [profilePhoto, setProfilePhoto] = useState("/images/photo-placeholder.jpg");
+  const fileInputRef = useRef(null);
 
-  // ... keep your existing useEffect hooks for fetching plans and user data ...
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -53,20 +95,213 @@ const MainPage = () => {
     fetchPlans();
   }, []);
 
+  // Update the user auth useEffect to include profile photo
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      setUser(user); // Set user state based on authentication status
-      if (user) {
-        const userDoc = await getDocs(collection(db, "users")); // Assuming user interests are stored in a "users" collection
-        const userData = userDoc.docs.find((doc) => doc.id === user.uid);
-        if (userData) {
-          setUserInterests(userData.data().interests || []); // Set user interests from user document
+    const unsubscribe = auth.onAuthStateChanged(async (userAuth) => {
+      setUser(userAuth);
+      if (userAuth) {
+        try {
+          const userDocRef = doc(db, "users", userAuth.uid);
+          const userDocSnapshot = await getDoc(userDocRef);
+          
+          if (userDocSnapshot.exists()) {
+            const userData = userDocSnapshot.data();
+            setUserProfile(userData);
+            setUserInterests(userData.interests || []);
+            // Set profile photo if it exists
+            if (userData.profilePhoto) {
+              setProfilePhoto(userData.profilePhoto);
+            }
+            
+            const requiredFields = [
+              { key: 'name', label: 'Name' },
+              { key: 'mobileNumber', label: 'Mobile Number' },
+              { key: 'age', label: 'Age' },
+              { key: 'salary', label: 'Salary' },
+              { key: 'cibilScore', label: 'CIBIL Score' },
+              { key: 'interests', label: 'Investment Interests' }
+            ];
+            
+            const missing = requiredFields.filter(field => {
+              if (field.key === 'interests') {
+                return !userData[field.key] || userData[field.key].length === 0;
+              }
+              return !userData[field.key];
+            });
+            
+            setMissingFields(missing);
+            
+            if (missing.length > 0) {
+              setFormValues({
+                name: userData.name || "",
+                mobileNumber: userData.mobileNumber || "",
+                age: userData.age || "",
+                salary: userData.salary || "",
+                cibilScore: userData.cibilScore || "",
+                interests: userData.interests || [],
+              });
+              onOpen();
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
         }
       }
     });
 
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [onOpen]);
+
+  // Add this function to handle fetching suggested interests from Firestore
+  useEffect(() => {
+    const fetchSuggestedInterests = async () => {
+      try {
+        const tagsCollection = collection(db, "tags");
+        const tagsSnapshot = await getDocs(tagsCollection);
+        
+        if (!tagsSnapshot.empty) {
+          const tagsList = tagsSnapshot.docs.map(doc => doc.data().tag);
+          setSuggestedInterests(tagsList);
+        }
+      } catch (error) {
+        console.error("Error fetching suggested interests:", error);
+      }
+    };
+    
+    fetchSuggestedInterests();
   }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues({
+      ...formValues,
+      [name]: value,
+    });
+    
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: undefined,
+      });
+    }
+  };
+
+  // Add this function to handle file uploads
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      try {
+        // Upload to Firebase Storage
+        const storageRef = ref(storage, `profilePhotos/${user.uid}`);
+        await uploadBytes(storageRef, file);
+        
+        // Get the download URL
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        // Update state
+        setProfilePhoto(downloadURL);
+        
+        // Clear any existing error
+        if (formErrors.profilePhoto) {
+          setFormErrors({
+            ...formErrors,
+            profilePhoto: undefined
+          });
+        }
+      } catch (error) {
+        console.error("Error uploading profile photo:", error);
+        setFormErrors({
+          ...formErrors,
+          profilePhoto: "Failed to upload image. Please try again."
+        });
+      }
+    }
+  };
+
+  // Update the validation function
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formValues.name.trim()) errors.name = "Name is required";
+    if (!formValues.mobileNumber.trim()) errors.mobileNumber = "Mobile number is required";
+    else if (!/^\d{10}$/.test(formValues.mobileNumber)) errors.mobileNumber = "Enter a valid 10-digit mobile number";
+    
+    if (!formValues.age) errors.age = "Age is required";
+    else if (isNaN(formValues.age) || parseInt(formValues.age) < 18) errors.age = "Age must be at least 18";
+    
+    if (!formValues.salary) errors.salary = "Salary is required";
+    else if (isNaN(formValues.salary)) errors.salary = "Salary must be a number";
+    
+    if (!formValues.cibilScore) errors.cibilScore = "CIBIL Score is required";
+    else if (isNaN(formValues.cibilScore) || parseInt(formValues.cibilScore) < 300 || parseInt(formValues.cibilScore) > 900) 
+      errors.cibilScore = "CIBIL Score must be between 300-900";
+    
+    if (!formValues.interests || formValues.interests.length === 0)
+      errors.interests = "Please select at least one investment interest";
+    
+    return errors;
+  };
+
+  // Update the submit handler to include profilePhoto
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      await setDoc(userDocRef, {
+        ...userProfile,
+        name: formValues.name,
+        mobileNumber: formValues.mobileNumber,
+        age: parseInt(formValues.age),
+        salary: parseFloat(formValues.salary),
+        cibilScore: parseInt(formValues.cibilScore),
+        interests: formValues.interests,
+        profilePhoto: profilePhoto, // Add this line to include profilePhoto
+      }, { merge: true });
+      
+      // Update local state with new values
+      setUserInterests(formValues.interests);
+      setMissingFields([]);
+      onClose();
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Add these functions to handle interest management
+  const handleAddInterest = (interest) => {
+    if (!formValues.interests.includes(interest) && formValues.interests.length < 5 && interest.trim()) {
+      setFormValues({
+        ...formValues,
+        interests: [...formValues.interests, interest]
+      });
+      
+      if (formErrors.interests) {
+        setFormErrors({
+          ...formErrors,
+          interests: undefined
+        });
+      }
+    }
+    setInterestInput("");
+  };
+
+  const handleRemoveInterest = (interestToRemove) => {
+    setFormValues({
+      ...formValues,
+      interests: formValues.interests.filter(interest => interest !== interestToRemove)
+    });
+  };
 
   const toggleChat = () => setIsChatOpen(!isChatOpen);
 
@@ -219,6 +454,170 @@ const MainPage = () => {
         aria-label={isChatOpen ? "Close Chat" : "Open Chat"}
         onClick={toggleChat}
       />
+      
+      {/* Profile Completion Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Complete Your Profile</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text mb={4}>Please provide the following information to get personalized investment recommendations:</Text>
+            
+            <form onSubmit={handleSubmit}>
+              <VStack spacing={4}>
+                {/* Profile Photo Upload */}
+                <FormControl>
+                  <FormLabel textAlign="center">Profile Photo</FormLabel>
+                  <Center>
+                    <Avatar 
+                      size="xl" 
+                      src={profilePhoto}
+                      cursor="pointer"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <AvatarBadge boxSize="1em" bg="green.500" border="none">
+                        <AddIcon color="white" boxSize="0.6em" />
+                      </AvatarBadge>
+                    </Avatar>
+                    <input
+                      type="file"
+                      hidden
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                  </Center>
+                  {formErrors.profilePhoto && (
+                    <Text color="red.500" fontSize="sm" textAlign="center" mt={2}>
+                      {formErrors.profilePhoto}
+                    </Text>
+                  )}
+                </FormControl>
+
+                {/* Existing form controls */}
+                <FormControl isInvalid={formErrors.name} isRequired>
+                  <FormLabel>Name</FormLabel>
+                  <Input 
+                    name="name" 
+                    value={formValues.name} 
+                    onChange={handleInputChange}
+                  />
+                  <FormErrorMessage>{formErrors.name}</FormErrorMessage>
+                </FormControl>
+                
+                <FormControl isInvalid={formErrors.mobileNumber} isRequired>
+                  <FormLabel>Mobile Number</FormLabel>
+                  <Input 
+                    name="mobileNumber" 
+                    value={formValues.mobileNumber} 
+                    onChange={handleInputChange}
+                  />
+                  <FormErrorMessage>{formErrors.mobileNumber}</FormErrorMessage>
+                </FormControl>
+                
+                <FormControl isInvalid={formErrors.age} isRequired>
+                  <FormLabel>Age</FormLabel>
+                  <Input 
+                    name="age" 
+                    value={formValues.age} 
+                    onChange={handleInputChange}
+                  />
+                  <FormErrorMessage>{formErrors.age}</FormErrorMessage>
+                </FormControl>
+                
+                <FormControl isInvalid={formErrors.salary} isRequired>
+                  <FormLabel>Monthly Salary</FormLabel>
+                  <Input 
+                    name="salary" 
+                    value={formValues.salary} 
+                    onChange={handleInputChange}
+                  />
+                  <FormErrorMessage>{formErrors.salary}</FormErrorMessage>
+                </FormControl>
+                
+                <FormControl isInvalid={formErrors.cibilScore} isRequired>
+                  <FormLabel>CIBIL Score</FormLabel>
+                  <Input 
+                    name="cibilScore" 
+                    value={formValues.cibilScore} 
+                    onChange={handleInputChange}
+                  />
+                  <FormErrorMessage>{formErrors.cibilScore}</FormErrorMessage>
+                </FormControl>
+
+                {/* Interest selection */}
+                <FormControl isInvalid={formErrors.interests} isRequired>
+                  <FormLabel>Investment Interests</FormLabel>
+                  
+                  <HStack mb={2}>
+                    <Input
+                      value={interestInput}
+                      onChange={(e) => setInterestInput(e.target.value)}
+                      placeholder="Add investment interest"
+                    />
+                    <Button
+                      onClick={() => handleAddInterest(interestInput)}
+                      isDisabled={formValues.interests.length >= 5 || !interestInput.trim()}
+                    >
+                      Add
+                    </Button>
+                  </HStack>
+                  
+                  {/* Display selected interests */}
+                  <Wrap spacing={2} mb={4}>
+                    {formValues.interests.map((interest) => (
+                      <WrapItem key={interest}>
+                        <Tag size="md" colorScheme="blue" borderRadius="full">
+                          <TagLabel>{interest}</TagLabel>
+                          <TagCloseButton onClick={() => handleRemoveInterest(interest)} />
+                        </Tag>
+                      </WrapItem>
+                    ))}
+                  </Wrap>
+                  
+                  {/* Suggested interests */}
+                  <Text mb={2} fontWeight="bold">
+                    Suggested Interests:
+                  </Text>
+                  <Wrap spacing={2}>
+                    {suggestedInterests
+                      .filter(interest => !formValues.interests.includes(interest))
+                      .map((interest) => (
+                        <WrapItem key={interest}>
+                          <Tag
+                            size="md"
+                            colorScheme="gray"
+                            borderRadius="full"
+                            cursor="pointer"
+                            onClick={() => handleAddInterest(interest)}
+                            _hover={{ bg: "blue.100" }}
+                          >
+                            <TagLabel>{interest}</TagLabel>
+                          </Tag>
+                        </WrapItem>
+                      ))}
+                  </Wrap>
+                  
+                  <FormErrorMessage>{formErrors.interests}</FormErrorMessage>
+                </FormControl>
+              </VStack>
+            </form>
+          </ModalBody>
+          
+          <ModalFooter>
+            <Button
+              colorScheme="blue"
+              mr={3}
+              onClick={handleSubmit}
+              isLoading={isSubmitting}
+            >
+              Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       <Footer />
     </Box>
   );

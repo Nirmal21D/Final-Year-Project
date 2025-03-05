@@ -60,12 +60,27 @@ const ProfilePage = () => {
             setFundsHistory(
               userData.fundsHistory || ["No transaction history"]
             );
-            setProfilePhoto(userData.profilePhoto || "");
-            setInvestments(userData.investments || []);
+            setProfilePhoto(userData.profilePhoto || "/images/photo-placeholder.jpg");
+            
+            // Safely handle investments and receipts
+            const userInvestments = userData.investments || [];
+            setInvestments(userInvestments);
             setAge(userData.age || "");
             setCibilScore(userData.cibilScore || "");
-            console.log(userData.investments[0].receipts[0]);
-            setReceipts(userData.investments.receipts || []);
+            
+            // Safely log receipt if it exists, using optional chaining
+            if (userInvestments.length > 0 && userInvestments[0]?.receipts?.length > 0) {
+              console.log(userInvestments[0].receipts[0]);
+            }
+            
+            // Safely set receipts
+            const allReceipts = [];
+            userInvestments.forEach(investment => {
+              if (investment.receipts && investment.receipts.length > 0) {
+                allReceipts.push(...investment.receipts);
+              }
+            });
+            setReceipts(allReceipts);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);

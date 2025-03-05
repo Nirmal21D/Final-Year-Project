@@ -24,6 +24,38 @@ import {
   Spinner,
   useToast,
   IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  RangeSlider,
+  RangeSliderTrack,
+  RangeSliderFilledTrack,
+  RangeSliderThumb,
+  FormLabel,
+  Badge,
+  Collapse,
+  Divider,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  CircularProgress,
+  CircularProgressLabel,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Container,
+  NumberInput,
+  NumberInputField,
+  Grid,
+  Icon,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import {
@@ -35,83 +67,228 @@ import {
   doc,
 } from "firebase/firestore";
 import { auth, db } from "@/firebase";
-import { FiBookmark } from "react-icons/fi";
+import { FiBookmark, FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiAward, FiDollarSign, FiTrendingUp, FiPercent, FiClock, FiShield } from "react-icons/fi";
 import Headers from "@/components/Headers";
+
+
+
+const LoanEligibility = () => {
+  return (
+    <Box 
+      p={6} 
+      bg="white" 
+      borderRadius="lg" 
+      shadow="lg" 
+      mb={8}
+    >
+      <Heading size="md" mb={4} color="blue.700">Loan Eligibility Guidelines</Heading>
+      
+      <Accordion allowToggle>
+        <AccordionItem>
+          <h2>
+            <AccordionButton>
+              <Box flex="1" textAlign="left" fontWeight="medium">
+                General Eligibility Criteria
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+          </h2>
+          <AccordionPanel pb={4}>
+            <Stack spacing={2}>
+              <Text>• Age: 21-65 years</Text>
+              <Text>• Citizenship: Indian resident</Text>
+              <Text>• Credit Score: 700+ for best rates</Text>
+              <Text>• Income Stability: Minimum 1 year in current job/business</Text>
+              <Text>• Debt-to-Income Ratio: Below 50%</Text>
+            </Stack>
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem>
+          <h2>
+            <AccordionButton>
+              <Box flex="1" textAlign="left" fontWeight="medium">
+                Home Loan Requirements
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+          </h2>
+          <AccordionPanel pb={4}>
+            <Stack spacing={2}>
+              <Text>• Minimum Annual Income: ₹3,00,000</Text>
+              <Text>• Maximum Loan-to-Value Ratio: 80-90%</Text>
+              <Text>• Property Documentation: Clear title deeds required</Text>
+              <Text>• Employment Stability: 2+ years preferred</Text>
+              <Text>• Maximum Age at Loan Maturity: 70 years</Text>
+            </Stack>
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem>
+          <h2>
+            <AccordionButton>
+              <Box flex="1" textAlign="left" fontWeight="medium">
+                Personal Loan Requirements
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+          </h2>
+          <AccordionPanel pb={4}>
+            <Stack spacing={2}>
+              <Text>• Minimum Annual Income: ₹2,50,000</Text>
+              <Text>• Credit Score: 750+ recommended</Text>
+              <Text>• Employment: Salaried or self-employed</Text>
+              <Text>• Income-to-EMI Ratio: Maximum 50%</Text>
+              <Text>• Existing Relationship: Preferred but not mandatory</Text>
+            </Stack>
+          </AccordionPanel>
+        </AccordionItem>
+
+        <AccordionItem>
+          <h2>
+            <AccordionButton>
+              <Box flex="1" textAlign="left" fontWeight="medium">
+                Business Loan Requirements
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+          </h2>
+          <AccordionPanel pb={4}>
+            <Stack spacing={2}>
+              <Text>• Business Age: Minimum 2 years of operation</Text>
+              <Text>• Annual Turnover: Minimum ₹10,00,000</Text>
+              <Text>• Financial Documentation: ITR for last 2 years</Text>
+              <Text>• Business Registration: Must be properly registered</Text>
+              <Text>• Profitability: Business should show consistent profits</Text>
+            </Stack>
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
+    </Box>
+  );
+};
+
 const Page = () => {
-  const [plans, setPlans] = useState([]);
+  const [loans, setLoans] = useState([]);
   const [user, setUser] = useState(null);
-  const [comparePlans, setComparePlans] = useState([]);
+  const [compareLoans, setCompareLoans] = useState([]);
   const [comparisonResults, setComparisonResults] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState([]);
   const [subCategoryFilter, setSubCategoryFilter] = useState([]);
-  const [recommendedPlans, setRecommendedPlans] = useState([]);
-  const [userTags, setUserTags] = useState([]);
+  const [recommendedLoans, setRecommendedLoans] = useState([]);
+  const [userPreferences, setUserPreferences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("interestRate");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [bookmarkedPlans, setBookmarkedPlans] = useState([]);
+  const [sortOrder, setSortOrder] = useState("asc"); // Default ascending for interest rate (lower is better)
+  const [bookmarkedLoans, setBookmarkedLoans] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [creditScoreRange, setCreditScoreRange] = useState([550, 850]);
+  const [interestRateRange, setInterestRateRange] = useState([5, 20]);
+  const [loanAmountRange, setLoanAmountRange] = useState([100000, 5000000]);
+  const [tenureRange, setTenureRange] = useState([12, 360]); // Loan tenures in months
+  const [filteredLoans, setFilteredLoans] = useState([]);
+  const [processingFeeRange, setProcessingFeeRange] = useState([0, 5]); // Processing fee percentage
 
   const router = useRouter();
   const toast = useToast();
 
-  // Enhanced CAGR calculation with compound interest
-  const calculateCAGR = (interestRate, tenureMonths) => {
-    const years = tenureMonths / 12;
+  // Updated EMI calculation function
+  const calculateEMI = (principal, interestRate, tenureMonths) => {
+    // Use the loan's minAmount as principal or fall back to a default value
+    const loanPrincipal = principal || 100000;
+    
+    // Safety check for parameters
+    if (!interestRate || !tenureMonths || interestRate <= 0 || tenureMonths <= 0) {
+      return 0;
+    }
+    
+    // Calculate monthly rate
     const monthlyRate = interestRate / 12 / 100;
-    const periods = tenureMonths;
-    const finalValue = (1 + monthlyRate) ** periods;
-    return (finalValue ** (1 / years) - 1) * 100;
+    
+    // EMI calculation formula
+    const emi = loanPrincipal * monthlyRate * Math.pow(1 + monthlyRate, tenureMonths) / 
+                (Math.pow(1 + monthlyRate, tenureMonths) - 1);
+    
+    // Safety check for valid result
+    return isNaN(emi) || !isFinite(emi) ? 0 : emi;
   };
 
-  // Enhanced risk calculation with weighted factors
-  const calculateRisk = (interestRate, tenure, minimumInvestment) => {
-    const interestWeight = 0.4;
-    const tenureWeight = 0.35;
-    const investmentWeight = 0.25;
+  // Calculate total interest payable
+  const calculateTotalInterest = (principal, emi, tenureMonths) => {
+    return (emi * tenureMonths) - principal;
+  };
 
-    const riskFromInterest =
-      (interestRate > 15
-        ? 5
-        : interestRate > 12
-        ? 4
-        : interestRate > 9
-        ? 3
-        : interestRate > 6
-        ? 2
-        : 1) * interestWeight;
-    const riskFromTenure =
-      (tenure > 120
-        ? 5
-        : tenure > 60
-        ? 4
-        : tenure > 36
-        ? 3
-        : tenure > 12
-        ? 2
-        : 1) * tenureWeight;
-    const riskFromInvestment =
-      (minimumInvestment > 500000
-        ? 5
-        : minimumInvestment > 100000
-        ? 4
-        : minimumInvestment > 50000
-        ? 3
-        : minimumInvestment > 10000
-        ? 2
-        : 1) * investmentWeight;
-
+  // Calculate loan affordability score (higher is better for borrower)
+  const calculateAffordability = (interestRate, processingFee, prepaymentPenalty, flexibilityScore) => {
+    const interestWeight = 0.5;
+    const processingWeight = 0.2;
+    const prepaymentWeight = 0.2;
+    const flexibilityWeight = 0.1;
+    
+    // Lower interest rate means higher affordability (invert the scale)
+    const interestScore = ((20 - interestRate) / 15) * 5; // Scale to 0-5
+    
+    // Lower processing fee means higher affordability
+    const processingScore = ((5 - processingFee) / 5) * 5; // Scale to 0-5
+    
+    // Lower prepayment penalty means higher affordability
+    const prepaymentScore = ((5 - prepaymentPenalty) / 5) * 5; // Scale to 0-5
+    
+    // Weighted average
     return (
-      Math.round((riskFromInterest + riskFromTenure + riskFromInvestment) * 2) /
-      2
+      interestScore * interestWeight +
+      processingScore * processingWeight +
+      prepaymentScore * prepaymentWeight +
+      flexibilityScore * flexibilityWeight
     );
   };
 
-  // Enhanced comparison logic with more factors
+  // Calculate loan match score based on user preferences
+  const calculateLoanMatchScore = (userPrefs, loanTags) => {
+    if (!userPrefs?.length || !loanTags?.length) return 0;
+
+    // Weighting for different preference types
+    const weightedPrefs = {
+      loanType: 2,
+      loanAmount: 1.5,
+      interestType: 1.5,
+      tenure: 1,
+      default: 1,
+    };
+
+    // Normalize to lowercase for matching
+    const normalizedUserPrefs = userPrefs.map(pref => pref.toLowerCase());
+    const normalizedLoanTags = loanTags.map(tag => tag.toLowerCase());
+
+    let weightedIntersection = 0;
+    let weightedUnion = 0;
+
+    const allTags = [...new Set([...normalizedUserPrefs, ...normalizedLoanTags])];
+
+    allTags.forEach(tag => {
+      const tagType = tag.split(":")[0];
+      const weight = weightedPrefs[tagType] || weightedPrefs.default;
+
+      if (normalizedUserPrefs.includes(tag) && normalizedLoanTags.includes(tag)) {
+        weightedIntersection += weight;
+      }
+      
+      if (normalizedUserPrefs.includes(tag) || normalizedLoanTags.includes(tag)) {
+        weightedUnion += weight;
+      }
+    });
+
+    // Match score as weighted Jaccard similarity
+    return weightedIntersection / weightedUnion;
+  };
+
+  // Compare loans to find best options
   const handleCompare = () => {
-    if (comparePlans.length < 2) {
+    if (compareLoans.length < 2) {
       toast({
         title: "Comparison Error",
-        description: "Please select at least 2 plans to compare",
+        description: "Please select at least 2 loans to compare",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -119,151 +296,156 @@ const Page = () => {
       return;
     }
 
-    const compareAllPlans = comparePlans.map((plan) => {
-      const calculateScore = (plan) => {
-        if (!plan) return 0;
+    // Calculate scores for each loan (lower is better for loans)
+    const compareAllLoans = compareLoans.map(loan => {
+      const calculateScore = (loan) => {
+        if (!loan) return 0;
 
+        // For loans, lower values are better for many metrics
         const weights = {
-          roi: 0.35,
-          cagr: 0.25,
-          risk: 0.2,
-          tenure: 0.1,
-          minimumInvestment: 0.1,
+          interestRate: 0.4,
+          processingFee: 0.2,
+          prepaymentPenalty: 0.15,
+          flexibility: 0.15,
+          creditRequirement: 0.1,
         };
 
-        const normalizedROI = plan.interestRate / 20; // Assuming max ROI of 20%
-        const normalizedCAGR = plan.cagr / 20; // Assuming max CAGR of 20%
-        const normalizedRisk = (5 - plan.riskLevel) / 5; // Inverse risk (lower is better)
-        const normalizedTenure = Math.min(plan.tenure, 120) / 120; // Normalize to max 10 years
-        const normalizedInvestment =
-          1 - Math.min(plan.minimumInvestment || 0, 500000) / 500000; // Inverse (lower is better)
+        // Normalize scores (0-1, where 1 is best)
+        const normalizedInterestRate = (20 - loan.interestRate) / 15;
+        const normalizedProcessing = (5 - (loan.processingFeeAmount|| 1)) / 5;
+        const normalizedPrepayment = (5 - (loan.prepaymentPenalty || 1)) / 5;
+        const normalizedFlexibility = (loan.flexibilityScore || 3) / 5;
+        const normalizedCredit = (loan.minCreditScore ? (loan.minCreditScore - 550) / 300 : 0.5);
 
-        return (
-          normalizedROI * weights.roi +
-          normalizedCAGR * weights.cagr +
-          normalizedRisk * weights.risk +
-          normalizedTenure * weights.tenure +
-          normalizedInvestment * weights.minimumInvestment
-        );
+        // Individual scores
+        const scores = {
+          interestRate: normalizedInterestRate * weights.interestRate,
+          processingFee: normalizedProcessing * weights.processingFee,
+          prepaymentPenalty: normalizedPrepayment * weights.prepaymentPenalty,
+          flexibility: normalizedFlexibility * weights.flexibility,
+          creditRequirement: normalizedCredit * weights.creditRequirement
+        };
+
+        const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+
+        return {
+          totalScore,
+          scores,
+          weights
+        };
       };
 
+      const scoreData = calculateScore(loan);
+
       return {
-        plan,
-        score: calculateScore(plan),
+        loan,
+        totalScore: scoreData.totalScore,
+        scores: scoreData.scores,
+        weights: scoreData.weights
       };
     });
 
-    compareAllPlans.sort((a, b) => b.score - a.score);
+    // Sort by total score (higher is better)
+    compareAllLoans.sort((a, b) => b.totalScore - a.totalScore);
 
-    const generateDetailedReasoning = (bestPlan, otherPlans) => {
-      if (!bestPlan || !otherPlans) return [];
+    // Add rank
+    compareAllLoans.forEach((item, index) => {
+      item.rank = index + 1;
+    });
 
+    // Generate explanation of comparison
+    const generateDetailedReasoning = (bestLoan, otherLoans) => {
+      if (!bestLoan || !otherLoans) return [];
       const reasoning = [];
 
-      otherPlans.forEach((otherPlan) => {
-        if (!otherPlan) return;
-
+      // Overall summary
+      reasoning.push(`${bestLoan.planName} is the recommended loan option with an overall score of ${(bestLoan.totalScore * 100).toFixed(1)}%.`);
+      
+      // Compare with other loans
+      otherLoans.forEach((otherLoan) => {
+        if (!otherLoan) return;
         const comparisons = [];
 
-        if (bestPlan.interestRate > otherPlan.interestRate) {
+        if (bestLoan.interestRate < otherLoan.interestRate) {
           comparisons.push(
-            `higher interest rate (${bestPlan.interestRate}% vs ${otherPlan.interestRate}%)`
+            `lower interest rate (${bestLoan.interestRate}% vs ${otherLoan.interestRate}%)`
           );
         }
-        if (bestPlan.cagr > otherPlan.cagr) {
+        if (bestLoan.processingFeeAmount< otherLoan.processingFee) {
           comparisons.push(
-            `better CAGR (${bestPlan.cagr.toFixed(
-              2
-            )}% vs ${otherPlan.cagr.toFixed(2)}%)`
+            `lower processing fee (${bestLoan.processingFee}% vs ${otherLoan.processingFee}%)`
           );
         }
-        if (bestPlan.riskLevel < otherPlan.riskLevel) {
+        if (bestLoan.prepaymentPenalty < otherLoan.prepaymentPenalty) {
           comparisons.push(
-            `lower risk (${bestPlan.riskLevel} vs ${otherPlan.riskLevel})`
-          );
-        }
-        if (
-          bestPlan.minimumInvestment &&
-          otherPlan.minimumInvestment &&
-          bestPlan.minimumInvestment < otherPlan.minimumInvestment
-        ) {
-          comparisons.push(
-            `lower minimum investment (₹${bestPlan.minimumInvestment.toLocaleString()} vs ₹${otherPlan.minimumInvestment.toLocaleString()})`
+            `lower prepayment penalty (${bestLoan.prepaymentPenalty}% vs ${otherLoan.prepaymentPenalty}%)`
           );
         }
 
         if (comparisons.length > 0) {
           reasoning.push(
-            `Compared to ${otherPlan.planName}, it offers ${comparisons.join(
-              ", "
-            )}`
+            `Compared to ${otherLoan.planName}, it offers ${comparisons.join(", ")}`
           );
         }
       });
+      
+      // Payment details
+      const sampleAmount = bestLoan.minAmount || 100000;
+      const emi = calculateEMI(sampleAmount, bestLoan.interestRate, bestLoan.tenure);
+      const totalInterest = calculateTotalInterest(sampleAmount, emi, bestLoan.tenure);
+      
+      reasoning.push(`For a sample loan of ₹${(sampleAmount/100000).toFixed(1)} lakhs over ${bestLoan.tenure} months, the EMI would be approximately ₹${Math.round(emi).toLocaleString()} with total interest of ₹${Math.round(totalInterest).toLocaleString()}.`);
+      
+      // Add loan-specific advice
+      if (bestLoan.loanCategory === "HomeLoans") {
+        reasoning.push("This home loan offers competitive rates. Consider negotiating for lower processing fees if you have a good credit score.");
+      } else if (bestLoan.loanCategory === "PersonalLoans") {
+        reasoning.push("This personal loan has reasonable terms. Remember that personal loans typically carry higher interest rates due to being unsecured.");
+      }
 
       return reasoning;
     };
 
-    const bestPlan = compareAllPlans[0]?.plan;
-    const otherPlans = compareAllPlans
+    const bestLoan = compareAllLoans[0]?.loan;
+    const otherLoans = compareAllLoans
       .slice(1)
-      .map((item) => item?.plan)
+      .map((item) => item?.loan)
       .filter(Boolean);
 
     setComparisonResults({
-      bestPlan,
-      otherPlans,
-      reasoning: generateDetailedReasoning(bestPlan, otherPlans),
-      scores: compareAllPlans.map(({ plan, score }) => ({
-        planName: plan?.planName,
-        score: (score * 100).toFixed(2),
+      bestLoan,
+      otherLoans,
+      reasoning: generateDetailedReasoning(bestLoan, otherLoans),
+      scores: compareAllLoans.map(({ loan, totalScore, scores }) => ({
+        planName: loan?.planName,
+        planId: loan?.id,
+        totalScore: (totalScore * 100).toFixed(2),
+        detailedScores: {
+          interestRate: (scores.interestRate * 100).toFixed(2),
+          processingFee: (scores.processingFeeAmount* 100).toFixed(2),
+          prepaymentPenalty: (scores.prepaymentPenalty * 100).toFixed(2),
+          flexibility: (scores.flexibility * 100).toFixed(2),
+          creditRequirement: (scores.creditRequirement * 100).toFixed(2),
+        }
       })),
+      allLoans: compareAllLoans.map(item => item.loan),
     });
   };
 
-  const handleSelectForCompare = (plan) => {
-    if (comparePlans.includes(plan)) {
-      setComparePlans((prev) => prev.filter((p) => p !== plan));
-    } else if (comparePlans.length >= 4) {
+  const handleSelectForCompare = (loan) => {
+    if (compareLoans.includes(loan)) {
+      setCompareLoans((prev) => prev.filter((l) => l !== loan));
+    } else if (compareLoans.length >= 4) {
       toast({
         title: "Selection Limit",
-        description: "You can compare up to 4 plans at a time",
+        description: "You can compare up to 4 loans at a time",
         status: "info",
         duration: 3000,
         isClosable: true,
       });
     } else {
-      setComparePlans((prev) => [...prev, plan]);
+      setCompareLoans((prev) => [...prev, loan]);
     }
-  };
-
-  // Enhanced similarity calculation with weighted tags
-  const calculateSimilarity = (userTags, planTags) => {
-    if (!userTags?.length || !planTags?.length) return 0;
-
-    const weightedTags = {
-      riskLevel: 2,
-      investmentCategory: 2,
-      investmentGoal: 1.5,
-      default: 1,
-    };
-
-    let weightedIntersection = 0;
-    let weightedUnion = 0;
-
-    const allTags = [...new Set([...userTags, ...planTags])];
-
-    allTags.forEach((tag) => {
-      const weight = weightedTags[tag.split(":")[0]] || weightedTags.default;
-      if (userTags.includes(tag) && planTags.includes(tag)) {
-        weightedIntersection += weight;
-      }
-      if (userTags.includes(tag) || planTags.includes(tag)) {
-        weightedUnion += weight;
-      }
-    });
-
-    return weightedIntersection / weightedUnion;
   };
 
   useEffect(() => {
@@ -280,56 +462,70 @@ const Page = () => {
     return () => unsubscribe();
   }, [router]);
 
+  // Fetch loan plans
   useEffect(() => {
     const fetchLoanPlans = async () => {
       try {
         setLoading(true);
-        const plansQuery = query(
+        const loansQuery = query(
           collection(db, "loanplans"),
           where("status", "==", "approved")
         );
 
-        const querySnapshot = await getDocs(plansQuery);
+        const querySnapshot = await getDocs(loansQuery);
 
-        let fetchedPlans = querySnapshot.docs.map((doc) => {
+        let fetchedLoans = querySnapshot.docs.map((doc) => {
           const data = doc.data();
-          const cagr = calculateCAGR(data.interestRate || 0, data.tenure || 0);
-          const riskLevel = calculateRisk(
-            data.interestRate || 0,
-            data.tenure || 0,
-            data.minimumInvestment || 0
+          
+          // Calculate affordability score
+          const affordabilityScore = calculateAffordability(
+            data.interestRate || 10,
+            data.processingFeeAmount|| 1,
+            data.prepaymentPenalty || 2,
+            data.flexibilityScore || 3
           );
 
+          // Use the loan's minimum amount for EMI calculation instead of fixed 1,000,000
+          const sampleEMI = calculateEMI(
+            data.minAmount || 100000, 
+            data.interestRate || 10, 
+            data.tenure || 60
+          );
+          
           return {
             id: doc.id,
             ...data,
-            cagr,
-            riskLevel,
+            affordabilityScore,
+            sampleEMI
           };
         });
 
-        // Apply filters
-        if (categoryFilter.length) {
-          fetchedPlans = fetchedPlans.filter((plan) =>
-            categoryFilter.includes(plan.loanCategory)
-          );
+        const loansWithScores = fetchedLoans.map((loan) => ({
+          ...loan,
+          matchScore: calculateLoanMatchScore(userPreferences, loan.tags || []),
+        }));
+
+        let recommended = loansWithScores
+          .sort((a, b) => b.matchScore - a.matchScore)
+          .filter((loan) => loan.matchScore > 0.1)
+          .slice(0, 5);
+
+        // Fallback: If no recommendations match preferences, show lowest interest rate loans
+        if (recommended.length === 0) {
+          recommended = fetchedLoans
+            .sort((a, b) => a.interestRate - b.interestRate) // For loans, lower interest is better
+            .slice(0, 5)
+            .map((loan) => ({
+              ...loan,
+              matchScore: 0,
+              isDefaultRecommendation: true,
+            }));
         }
 
-        if (subCategoryFilter.length) {
-          fetchedPlans = fetchedPlans.filter((plan) =>
-            subCategoryFilter.includes(plan.loanSubCategory)
-          );
-        }
-
-        // Apply sorting
-        fetchedPlans.sort((a, b) => {
-          const multiplier = sortOrder === "desc" ? -1 : 1;
-          return (a[sortBy] - b[sortBy]) * multiplier;
-        });
-
-        setPlans(fetchedPlans);
+        setRecommendedLoans(recommended);
+        setLoans(fetchedLoans);
       } catch (error) {
-        console.error("Error fetching plans:", error);
+        console.error("Error fetching loans:", error);
         toast({
           title: "Error",
           description: "Failed to fetch loan plans",
@@ -345,76 +541,55 @@ const Page = () => {
     if (user) {
       fetchLoanPlans();
     }
-  }, [user, categoryFilter, subCategoryFilter, sortBy, sortOrder]);
+  }, [user, userPreferences]);
 
+  // Fetch user preferences
   useEffect(() => {
-    const fetchUserInterestsAndRecommend = async () => {
+    const fetchUserPreferences = async () => {
       if (user) {
         try {
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            const interests = userData.interests || [];
-            setUserTags(interests);
-
-            const plansQuery = query(
-              collection(db, "loanplans"),
-              where("status", "==", "approved")
-            );
-            const querySnapshot = await getDocs(plansQuery);
-            const allPlans = querySnapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
-
-            const plansWithScores = allPlans.map((plan) => ({
-              ...plan,
-              similarityScore: calculateSimilarity(interests, plan.tags || []),
-            }));
-
-            const recommended = plansWithScores
-              .sort((a, b) => b.similarityScore - a.similarityScore)
-              .filter((plan) => plan.similarityScore > 0.2) // Only show relevant recommendations
-              .slice(0, 5);
-
-            setRecommendedPlans(recommended);
+            // Set default preferences if none exist
+            const preferences = userData.interests || [
+              "loanType:homeLoan",
+              "interestType:fixed",
+              "tenure:long-term",
+            ];
+            setUserPreferences(preferences);
           }
         } catch (error) {
-          console.error("Error fetching recommendations:", error);
-          toast({
-            title: "Error",
-            description: "Failed to fetch personalized recommendations",
-            status: "error",
-            duration: 5000,
-            isClosable: true,
-          });
+          console.error("Error fetching user preferences:", error);
         }
       }
     };
 
-    fetchUserInterestsAndRecommend();
+    fetchUserPreferences();
   }, [user]);
 
+  // Load bookmarked loans
   useEffect(() => {
-    const savedBookmarks = localStorage.getItem("bookmarkedPlans");
+    const savedBookmarks = localStorage.getItem("bookmarkedLoanPlans");
     if (savedBookmarks) {
-      setBookmarkedPlans(JSON.parse(savedBookmarks));
+      setBookmarkedLoans(JSON.parse(savedBookmarks));
     }
   }, []);
 
-  const handleBookmark = (plan) => {
-    setBookmarkedPlans((prev) => {
-      const updatedBookmarks = prev.some((p) => p.id === plan.id)
-        ? prev.filter((p) => p.id !== plan.id)
-        : [...prev, plan];
+  // Handle bookmarking
+  const handleBookmark = (loan) => {
+    setBookmarkedLoans((prev) => {
+      const updatedBookmarks = prev.some((l) => l.id === loan.id)
+        ? prev.filter((l) => l.id !== loan.id)
+        : [...prev, loan];
 
-      localStorage.setItem("bookmarkedPlans", JSON.stringify(updatedBookmarks));
+      localStorage.setItem("bookmarkedLoanPlans", JSON.stringify(updatedBookmarks));
 
       toast({
-        title: prev.some((p) => p.id === plan.id)
-          ? "Plan removed from booklist"
-          : "Plan added to booklist",
-        status: prev.some((p) => p.id === plan.id) ? "info" : "success",
+        title: prev.some((l) => l.id === loan.id)
+          ? "Loan removed from bookmarks"
+          : "Loan added to bookmarks",
+        status: prev.some((l) => l.id === loan.id) ? "info" : "success",
         duration: 2000,
         isClosable: true,
       });
@@ -422,9 +597,137 @@ const Page = () => {
       return updatedBookmarks;
     });
   };
-  const isBookmarked = (planId) => {
-    return bookmarkedPlans.some((plan) => plan.id === planId);
+
+  const isBookmarked = (loanId) => {
+    return bookmarkedLoans.some((loan) => loan.id === loanId);
   };
+
+  // Fix the filter application logic
+  useEffect(() => {
+    const applyFiltersAndSearch = () => {
+      if (!loans.length) {
+        console.log("No loans to filter");
+        return;
+      }
+      
+      console.log(`Starting filtering with ${loans.length} loans`);
+      let result = [...loans];
+      let filtersApplied = false;
+      
+      // Apply search term filter
+      if (searchTerm.trim()) {
+        filtersApplied = true;
+        const searchLower = searchTerm.toLowerCase();
+        const beforeCount = result.length;
+        result = result.filter(
+          loan => 
+            loan.planName?.toLowerCase().includes(searchLower) ||
+            loan.description?.toLowerCase().includes(searchLower) ||
+            loan.loanCategory?.toLowerCase().includes(searchLower) ||
+            loan.loanSubCategory?.toLowerCase().includes(searchLower)
+        );
+        console.log(`Search filter applied: ${beforeCount} → ${result.length} loans`);
+      }
+      
+      // Apply category filter
+      if (categoryFilter.length) {
+        filtersApplied = true;
+        const beforeCount = result.length;
+        result = result.filter(loan => 
+          categoryFilter.includes(loan.loanCategory)
+        );
+        console.log(`Category filter applied: ${beforeCount} → ${result.length} loans`);
+      }
+      
+      // Apply subcategory filter
+      if (subCategoryFilter.length) {
+        filtersApplied = true;
+        const beforeCount = result.length;
+        result = result.filter(loan => 
+          subCategoryFilter.includes(loan.loanSubCategory)
+        );
+        console.log(`Subcategory filter applied: ${beforeCount} → ${result.length} loans`);
+      }
+      
+      // Apply credit score range filter - ensure default values don't filter anything
+      if (creditScoreRange[0] > 550 || creditScoreRange[1] < 850) {
+        filtersApplied = true;
+        const beforeCount = result.length;
+        result = result.filter(
+          loan => (!loan.minCreditScore || 
+            (loan.minCreditScore >= creditScoreRange[0] && 
+             loan.minCreditScore <= creditScoreRange[1]))
+        );
+        console.log(`Credit score filter applied: ${beforeCount} → ${result.length} loans`);
+      }
+      
+      // Apply interest rate range filter
+      if (interestRateRange[0] > 5 || interestRateRange[1] < 20) {
+        filtersApplied = true;
+        const beforeCount = result.length;
+        result = result.filter(
+          loan => loan.interestRate >= interestRateRange[0] && loan.interestRate <= interestRateRange[1]
+        );
+        console.log(`Interest rate filter applied: ${beforeCount} → ${result.length} loans`);
+      }
+      
+      // Apply loan amount range filter
+      if (loanAmountRange[0] > 100000 || loanAmountRange[1] < 5000000) {
+        filtersApplied = true;
+        const beforeCount = result.length;
+        result = result.filter(
+          loan => (loan.maxAmount >= loanAmountRange[0] || !loan.maxAmount) && 
+                 (loan.minAmount <= loanAmountRange[1] || !loan.minAmount)
+        );
+        console.log(`Loan amount filter applied: ${beforeCount} → ${result.length} loans`);
+      }
+      
+      // Apply tenure range filter
+      if (tenureRange[0] > 12 || tenureRange[1] < 360) {
+        filtersApplied = true;
+        const beforeCount = result.length;
+        result = result.filter(
+          loan => loan.tenure >= tenureRange[0] && loan.tenure <= tenureRange[1]
+        );
+        console.log(`Tenure filter applied: ${beforeCount} → ${result.length} loans`);
+      }
+      
+      // Always apply sorting
+      result.sort((a, b) => {
+        const multiplier = sortOrder === "asc" ? 1 : -1;
+        
+        // For interest rate, lower is better for loans
+        if (sortBy === "interestRate") {
+          return (a[sortBy] - b[sortBy]) * (sortOrder === "asc" ? 1 : -1);
+        }
+        
+        // For affordability score, higher is better
+        if (sortBy === "affordabilityScore") {
+          return (b[sortBy] - a[sortBy]) * (sortOrder === "desc" ? 1 : -1);
+        }
+        
+        return (a[sortBy] - b[sortBy]) * multiplier;
+      });
+      
+      console.log(`Final filtered result: ${result.length} loans${filtersApplied ? " (filters applied)" : ""}`);
+      setFilteredLoans(result);
+    };
+    
+    applyFiltersAndSearch();
+  }, [
+    loans, 
+    searchTerm, 
+    categoryFilter, 
+    subCategoryFilter, 
+    creditScoreRange, 
+    interestRateRange, 
+    loanAmountRange, 
+    tenureRange, 
+    processingFeeRange,
+    sortBy, 
+    sortOrder
+  ]);
+
   if (loading) {
     return (
       <Flex height="100vh" align="center" justify="center">
@@ -441,400 +744,910 @@ const Page = () => {
       </Alert>
     );
   }
-  const RecommendedPlanCard = ({ plan }) => (
-    <Box
-      key={plan.id}
-      p={4}
-      borderWidth={1}
-      borderRadius="lg"
-      width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
-      bg="linear-gradient(135deg, #e2e2e2 0%, #ffffff 100%)"
-      boxShadow="lg"
-      transition="all 0.2s"
-      _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
-      position="relative"
-    >
-      <IconButton
-        icon={<FiBookmark />}
-        size="sm"
-        position="absolute"
-        top={2}
-        right={2}
-        colorScheme={isBookmarked(plan.id) ? "blue" : "gray"}
-        onClick={(e) => {
-          e.preventDefault();
-          handleBookmark(plan);
-        }}
-        aria-label="Bookmark plan"
-      />
-      <Heading size="sm" color="#2C319F">
-        {plan.planName}
-      </Heading>
-      <Text mt={2} noOfLines={2} color="gray.700">
-        {plan.description}
-      </Text>
-      <Text mt={2} fontWeight="bold" color="green.600">
-        Interest Rate: {plan.interestRate || 0}%
-      </Text>
-      <Text color="orange.600">CAGR: {(plan.cagr || 0).toFixed(2)}%</Text>
-      <Text color="red.600">Risk Level: {plan.riskLevel || "N/A"}</Text>
-      <Text color="blue.600">
-        Min Investment: ₹{(plan.minimumInvestment || 0).toLocaleString()}
-      </Text>
-      <Wrap mt={2}>
-        {plan.tags?.map((tag) => (
-          <Tag key={tag} size="sm" colorScheme="blue">
-            {tag}
-          </Tag>
-        ))}
-      </Wrap>
-      <Text mt={2} fontWeight="bold" color="green.600">
-        Match Score: {((plan.similarityScore || 0) * 100).toFixed(1)}%
-      </Text>
-      <Button
-        mt={3}
-        size="sm"
-        colorScheme={comparePlans.includes(plan) ? "red" : "blue"}
-        onClick={() => handleSelectForCompare(plan)}
-        width="100%"
-      >
-        {comparePlans.includes(plan)
-          ? "Remove from Comparison"
-          : "Add to Compare"}
-      </Button>
-    </Box>
-  );
-
-  const PlanCard = ({ plan }) => (
-    <Box width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}>
-      <Box
-        p={4}
-        borderWidth={1}
-        borderRadius="lg"
-        bg="linear-gradient(135deg, #e2e2e2 0%, #ffffff 100%)"
-        boxShadow="lg"
-        transition="all 0.2s"
-        _hover={{ boxShadow: "xl", transform: "scale(1.02)" }}
-        position="relative"
-      >
-        <IconButton
-          icon={<FiBookmark />}
-          size="sm"
-          position="absolute"
-          top={2}
-          right={2}
-          colorScheme={isBookmarked(plan.id) ? "blue" : "gray"}
-          onClick={(e) => {
-            e.preventDefault();
-            handleBookmark(plan);
-          }}
-          aria-label="Bookmark plan"
-        />
-        <Heading size="sm" color="#2C319F">
-          {plan.planName}
-        </Heading>
-        <Text mt={2} noOfLines={2} color="gray.700">
-          {plan.description}
-        </Text>
-        <Text mt={2} fontWeight="bold" color="green.600">
-          Interest Rate: {plan.interestRate || 0}%
-        </Text>
-        <Text color="orange.600">CAGR: {(plan.cagr || 0).toFixed(2)}%</Text>
-        <Text color="red.600">Risk Level: {plan.riskLevel || "N/A"}</Text>
-        <Text color="blue.600">
-          Min Investment: ₹{(plan.minimumInvestment || 0).toLocaleString()}
-        </Text>
-      </Box>
-      <Button
-        colorScheme={comparePlans.includes(plan) ? "red" : "blue"}
-        mt={2}
-        width="100%"
-        onClick={() => handleSelectForCompare(plan)}
-      >
-        {comparePlans.includes(plan)
-          ? "Remove from Comparison"
-          : "Add to Compare"}
-      </Button>
-    </Box>
-  );
 
   return (
     <Box
-      id="main"
       display="flex"
       flexDirection="column"
       alignItems="center"
       bg="gray.50"
       minHeight="100vh"
     >
-      <Box pos={"fixed"} top="0" width={"full"} zIndex={1000}>
+      <Box position="fixed" top="0" left="0" right="0" zIndex="1000">
         <Headers />
       </Box>
-      <Stack spacing={4} width="100%" maxW="1200px" mt={28}>
-        <Flex
-          justify="space-between"
-          align="center"
-          wrap="wrap"
-          gap={4}
-          py={10}
-        >
-          <Box flex="1">
-            <Text fontWeight="bold" color="#2C319F" mb={2}>
-              Categories:
-            </Text>
-            <CheckboxGroup value={categoryFilter} onChange={setCategoryFilter}>
-              <Stack direction={["column", "row"]} spacing={[2, 4]}>
-                <Checkbox value="PersonalLoans">Personal Loans</Checkbox>
-                <Checkbox value="HomeLoans">Home Loans</Checkbox>
-                <Checkbox value="CarLoans">Car Loans</Checkbox>
-                <Checkbox value="EducationLoans">Education Loans</Checkbox>
-                <Checkbox value="BusinessLoans">Business Loans</Checkbox>
-              </Stack>
-            </CheckboxGroup>
-          </Box>
 
-          <Box>
-            <Stack direction="row" spacing={4}>
-              <Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+      {/* Main Content Area with Sidebar Layout */}
+      <Flex 
+        width="100%" 
+        maxW="1400px" 
+        mt="20vh" 
+        px={4} 
+        gap={6}
+        flexDirection={{ base: "column", md: "row" }}
+      >
+        {/* Left Sidebar - Filters */}
+        <Box 
+          width={{ base: "100%", md: "300px" }} 
+          flexShrink={0}
+          position={{ base: "static", md: "sticky" }}
+          top="20vh"
+          alignSelf="flex-start"
+        >
+          <Box
+            bg="white"
+            p={5}
+            borderRadius="md"
+            shadow="md"
+            mb={4}
+          >
+            <Heading size="md" mb={4}>Filter Loan Plans</Heading>
+            
+            {/* Search Bar */}
+            <InputGroup mb={4}>
+              <InputLeftElement pointerEvents="none">
+                <FiSearch color="#718096" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search loan plans..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                borderColor="gray.300"
+              />
+            </InputGroup>
+            
+            {/* Sort Options */}
+            <Box mb={4}>
+              <Text fontWeight="bold" mb={2}>Sort By:</Text>
+              <Stack spacing={2}>
+                <Select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  size="sm"
+                >
+                  <option value="interestRate">Interest Rate</option>
+                  <option value="processingFee">Processing Fee</option>
+                  <option value="affordabilityScore">Affordability Score</option>
+                  <option value="tenure">Tenure</option>
+                  <option value="minLoanAmount">Minimum Loan Amount</option>
+                </Select>
+                <Select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  size="sm"
+                >
+                  <option value="asc">Low to High</option>
+                  <option value="desc">High to Low</option>
+                </Select>
+              </Stack>
+            </Box>
+            
+            {/* Loan Categories Filter */}
+            <Box mb={4}>
+              <Text fontWeight="bold" mb={2}>Loan Categories</Text>
+              <CheckboxGroup
+                value={categoryFilter}
+                onChange={(values) => setCategoryFilter(values)}
               >
-                <option value="interestRate">Interest Rate</option>
-                <option value="cagr">CAGR</option>
-                <option value="riskLevel">Risk Level</option>
-                <option value="minimumInvestment">Minimum Investment</option>
-              </Select>
-              <Select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-              >
-                <option value="desc">High to Low</option>
-                <option value="asc">Low to High</option>
-              </Select>
-              <Stack direction="row" spacing={4} align="center" mt="2">
-                <IconButton
-                  icon={<FiBookmark size={24} color="white" />}
-                  onClick={() => router.push("/booklist")}
+                <Stack direction="column" spacing={1}>
+                  <Checkbox value="HomeLoans">Home Loans</Checkbox>
+                  <Checkbox value="PersonalLoans">Personal Loans</Checkbox>
+                  <Checkbox value="CarLoans">Car Loans</Checkbox>
+                  <Checkbox value="EducationLoans">Education Loans</Checkbox>
+                  <Checkbox value="BusinessLoans">Business Loans</Checkbox>
+                </Stack>
+              </CheckboxGroup>
+            </Box>
+            
+            {/* SubCategories Section */}
+            {categoryFilter.length > 0 && (
+              <Box mb={4}>
+                <Text fontWeight="bold" mb={2}>Subcategories</Text>
+                <CheckboxGroup
+                  value={subCategoryFilter}
+                  onChange={(values) => setSubCategoryFilter(values)}
+                >
+                  <Stack direction="column" spacing={1}>
+                    {categoryFilter.includes("HomeLoans") && (
+                      <>
+                        <Checkbox value="FixedRateHome">Fixed Rate Home Loans</Checkbox>
+                        <Checkbox value="VariableRateHome">Variable Rate Home Loans</Checkbox>
+                        <Checkbox value="BalanceTransferHome">Balance Transfer</Checkbox>
+                      </>
+                    )}
+                    {categoryFilter.includes("PersonalLoans") && (
+                      <>
+                        <Checkbox value="UnsecuredPersonal">Unsecured Personal Loans</Checkbox>
+                        <Checkbox value="SecuredPersonal">Secured Personal Loans</Checkbox>
+                        <Checkbox value="DebtConsolidation">Debt Consolidation</Checkbox>
+                      </>
+                    )}
+                    {categoryFilter.includes("CarLoans") && (
+                      <>
+                        <Checkbox value="NewCar">New Car Loans</Checkbox>
+                        <Checkbox value="UsedCar">Used Car Loans</Checkbox>
+                        <Checkbox value="RefinanceCar">Car Refinancing</Checkbox>
+                      </>
+                    )}
+                    {categoryFilter.includes("EducationLoans") && (
+                      <>
+                        <Checkbox value="Undergraduate">Undergraduate Loans</Checkbox>
+                        <Checkbox value="Graduate">Graduate Loans</Checkbox>
+                        <Checkbox value="Study-Abroad">Study Abroad Loans</Checkbox>
+                      </>
+                    )}
+                    {categoryFilter.includes("BusinessLoans") && (
+                      <>
+                        <Checkbox value="SmallBusiness">Small Business Loans</Checkbox>
+                        <Checkbox value="Startup">Startup Loans</Checkbox>
+                        <Checkbox value="WorkingCapital">Working Capital Loans</Checkbox>
+                      </>
+                    )}
+                  </Stack>
+                </CheckboxGroup>
+              </Box>
+            )}
+            
+            {/* Credit Score Range */}
+            <Box mb={4}>
+              <FormLabel>Credit Score</FormLabel>
+              <Flex align="center">
+                <Text mr={2} fontWeight="bold">{creditScoreRange[0]}</Text>
+                <RangeSlider
+                  aria-label={['min credit', 'max credit']}
+                  min={550}
+                  max={850}
+                  step={10}
+                  value={creditScoreRange}
+                  onChange={(val) => setCreditScoreRange(val)}
                   colorScheme="blue"
-                  aria-label="Go to Booklist"
-                />
-              </Stack>
-            </Stack>
-          </Box>
-        </Flex>
-
-        {categoryFilter.length > 0 && (
-          <Box>
-            <Text fontWeight="bold" color="#2C319F" mb={2}>
-              Subcategories:
-            </Text>
-            <CheckboxGroup
-              value={subCategoryFilter}
-              onChange={setSubCategoryFilter}
+                  flex="1"
+                >
+                  <RangeSliderTrack>
+                    <RangeSliderFilledTrack />
+                  </RangeSliderTrack>
+                  <RangeSliderThumb index={0} />
+                  <RangeSliderThumb index={1} />
+                </RangeSlider>
+                <Text ml={2} fontWeight="bold">{creditScoreRange[1]}</Text>
+              </Flex>
+            </Box>
+            
+            {/* Interest Rate Range */}
+            <Box mb={4}>
+              <FormLabel>Interest Rate (%)</FormLabel>
+              <Flex align="center">
+                <Text mr={2} fontWeight="bold">{interestRateRange[0]}</Text>
+                <RangeSlider
+                  aria-label={['min interest', 'max interest']}
+                  min={5}
+                  max={20}
+                  step={0.5}
+                  value={interestRateRange}
+                  onChange={(val) => setInterestRateRange(val)}
+                  colorScheme="green"
+                  flex="1"
+                >
+                  <RangeSliderTrack>
+                    <RangeSliderFilledTrack />
+                  </RangeSliderTrack>
+                  <RangeSliderThumb index={0} />
+                  <RangeSliderThumb index={1} />
+                </RangeSlider>
+                <Text ml={2} fontWeight="bold">{interestRateRange[1]}</Text>
+              </Flex>
+            </Box>
+            
+            {/* Loan Amount Range */}
+            <Box mb={4}>
+              <FormLabel>Loan Amount (₹)</FormLabel>
+              <Flex align="center">
+                <Text mr={2} fontWeight="bold" fontSize="xs">₹{loanAmountRange[0].toLocaleString()}</Text>
+                <RangeSlider
+                  aria-label={['min loan', 'max loan']}
+                  min={0}
+                  max={5000000}
+                  step={50000}
+                  value={loanAmountRange}
+                  onChange={(val) => setLoanAmountRange(val)}
+                  colorScheme="purple"
+                  flex="1"
+                >
+                  <RangeSliderTrack>
+                    <RangeSliderFilledTrack />
+                  </RangeSliderTrack>
+                  <RangeSliderThumb index={0} />
+                  <RangeSliderThumb index={1} />
+                </RangeSlider>
+                <Text ml={2} fontWeight="bold" fontSize="xs">₹{loanAmountRange[1].toLocaleString()}</Text>
+              </Flex>
+            </Box>
+            
+            {/* Tenure Range */}
+            <Box mb={4}>
+              <FormLabel>Tenure (months)</FormLabel>
+              <Flex align="center">
+                <Text mr={2} fontWeight="bold">{tenureRange[0]}</Text>
+                <RangeSlider
+                  aria-label={['min tenure', 'max tenure']}
+                  min={0}
+                  max={360}
+                  step={12}
+                  value={tenureRange}
+                  onChange={(val) => setTenureRange(val)}
+                  colorScheme="orange"
+                  flex="1"
+                >
+                  <RangeSliderTrack>
+                    <RangeSliderFilledTrack />
+                  </RangeSliderTrack>
+                  <RangeSliderThumb index={0} />
+                  <RangeSliderThumb index={1} />
+                </RangeSlider>
+                <Text ml={2} fontWeight="bold">{tenureRange[1]}</Text>
+              </Flex>
+            </Box>
+            
+            {/* Advanced Filters Toggle */}
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={showAdvancedFilters ? <FiChevronUp /> : <FiChevronDown />}
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              mb={4}
             >
-              <Stack direction={["column", "row"]} spacing={[2, 4]} wrap="wrap">
-                {categoryFilter.includes("PersonalLoans") && (
-                  <>
-                    <Checkbox value="Unsecured Personal Loans">
-                      Unsecured Personal Loans
-                    </Checkbox>
-                    <Checkbox value="Secured Personal Loans">
-                      Secured Personal Loans
-                    </Checkbox>
-                  </>
-                )}
-                {categoryFilter.includes("HomeLoans") && (
-                  <>
-                    <Checkbox value="Fixed Rate Home Loans">
-                      Fixed Rate Home Loans
-                    </Checkbox>
-                    <Checkbox value="Variable Rate Home Loans">
-                      Variable Rate Home Loans
-                    </Checkbox>
-                  </>
-                )}
-                {categoryFilter.includes("CarLoans") && (
-                  <>
-                    <Checkbox value="New Car Loans">New Car Loans</Checkbox>
-                    <Checkbox value="Used Car Loans">Used Car Loans</Checkbox>
-                  </>
-                )}
-                {categoryFilter.includes("EducationLoans") && (
-                  <>
-                    <Checkbox value="Undergraduate Loans">
-                      Undergraduate Loans
-                    </Checkbox>
-                    <Checkbox value="Graduate Loans">Graduate Loans</Checkbox>
-                  </>
-                )}
-                {categoryFilter.includes("BusinessLoans") && (
-                  <>
-                    <Checkbox value="Small Business Loans">
-                      Small Business Loans
-                    </Checkbox>
-                    <Checkbox value="Startup Loans">Startup Loans</Checkbox>
-                  </>
-                )}
-              </Stack>
-            </CheckboxGroup>
+              {showAdvancedFilters ? "Hide Advanced Filters" : "Show Advanced Filters"}
+            </Button>
+            
+            {/* Advanced Filters */}
+            <Collapse in={showAdvancedFilters} animateOpacity>
+              <Box p={4} bg="gray.100" borderRadius="md">
+                {/* Add any additional advanced filters here */}
+                <Text fontWeight="bold" mb={2}>Advanced Filters</Text>
+                <Divider mb={4} />
+                {/* Example: Filter by Plan Name */}
+                <FormLabel>Plan Name</FormLabel>
+                <Input
+                  placeholder="Enter plan name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  mb={4}
+                />
+              </Box>
+            </Collapse>
+
+            <Button
+              size="sm"
+              colorScheme="red"
+              variant="outline"
+              leftIcon={<FiFilter />}
+              onClick={() => {
+                setCategoryFilter([]);
+                setSubCategoryFilter([]);
+                setSearchTerm("");
+                setCreditScoreRange([550, 850]);
+                setInterestRateRange([5, 20]);
+                setLoanAmountRange([100000, 5000000]);
+                setTenureRange([12, 360]);
+                setProcessingFeeRange([0, 5]);
+                setSortBy("interestRate");
+                setSortOrder("asc");
+                setShowAdvancedFilters(false);
+                // Reset to all loans
+                setFilteredLoans(loans);
+                
+                toast({
+                  title: "Filters Reset",
+                  description: "All filters have been cleared",
+                  status: "info",
+                  duration: 2000,
+                  isClosable: true,
+                });
+              }}
+              mb={4}
+              ml={2}
+            >
+              Reset All Filters
+            </Button>
           </Box>
-        )}
-      </Stack>
-
-      {/* Recommended Plans Section */}
-      {recommendedPlans.length > 0 && (
-        <Box width="100%" maxW="1200px" mb={8}>
-          <Heading size="md" mb={4}>
-            Recommended for You
-          </Heading>
-          <Flex wrap="wrap" gap={4} justify="center">
-            {recommendedPlans.map((plan) => (
-              <RecommendedPlanCard key={plan.id} plan={plan} />
-            ))}
-          </Flex>
         </Box>
-      )}
-      <Heading size="md" mb={4}>
-        Explore All Plans
-      </Heading>
-      <Flex wrap="wrap" justify="center" gap={4} width="100%" maxW="1200px">
-        {plans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} />
-        ))}
-      </Flex>
-      {comparePlans.length >= 2 && (
-        <Button colorScheme="green" mt={6} size="lg" onClick={handleCompare}>
-          Compare Selected Plans ({comparePlans.length})
-        </Button>
-      )}
-      <Box mb={20}></Box>
-      {comparisonResults.bestPlan && (
-        <Box
-          mt={8}
-          p={6}
-          bg="white"
-          borderRadius="lg"
-          shadow="lg"
-          width="100%"
-          maxW="1200px"
-        >
-          <Heading size="md" color="blue.600" mb={4}>
-            Plan Comparison Results
-          </Heading>
 
-          <Table variant="simple" mt={4}>
-            <Thead>
-              <Tr>
-                <Th>Plan Detail</Th>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Th key={plan.id}>{plan.planName}</Th>
-                ))}
-                <Th bg="green.50">{comparisonResults.bestPlan.planName}</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              <Tr>
-                <Td>Interest Rate</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.interestRate}%</Td>
-                ))}
-                <Td bg="green.50">
-                  {comparisonResults.bestPlan.interestRate}%
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>CAGR</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{(plan.cagr ?? 0).toFixed(2)}%</Td>
-                ))}
-                <Td bg="green.50">
-                  {(comparisonResults.bestPlan.cagr ?? 0).toFixed(2)}%
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Risk Level</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>
-                    <Tag
-                      colorScheme={
-                        plan.riskLevel <= 2
-                          ? "green"
-                          : plan.riskLevel <= 3.5
-                          ? "yellow"
-                          : "red"
-                      }
-                    >
-                      {plan.riskLevel}
-                    </Tag>
-                  </Td>
-                ))}
-                <Td bg="green.50">
-                  <Tag
-                    colorScheme={
-                      comparisonResults.bestPlan.riskLevel <= 2
-                        ? "green"
-                        : comparisonResults.bestPlan.riskLevel <= 3.5
-                        ? "yellow"
-                        : "red"
-                    }
+        {/* Right Content Area - Loan Plans */}
+        <Box flex="1">
+          {/* Recommended Plans Section */}
+          {recommendedLoans.length > 0 && (
+            <Box mb={8}>
+              <Heading size="md" mb={4} display="flex" alignItems="center">
+                <Icon as={FiAward} color="gold" mr={2} />
+                Recommended for You
+                <Badge ml={3} colorScheme="green" fontSize="xs">PERSONALIZED</Badge>
+              </Heading>
+              <Flex wrap="wrap" gap={4} justify="center">
+                {recommendedLoans.map((loan) => (
+                  <Box
+                    key={loan.id}
+                    p={5}
+                    borderWidth={1}
+                    borderRadius="lg"
+                    width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
+                    bg="white"
+                    boxShadow="lg"
+                    transition="all 0.2s"
+                    _hover={{ boxShadow: "xl", transform: "translateY(-4px)" }}
+                    position="relative"
+                    overflow="hidden"
+                    onClick={() => router.push(`/loanplans/${loan.id}`)}
+                    cursor="pointer"
                   >
-                    {comparisonResults.bestPlan.riskLevel}
-                  </Tag>
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Minimum Investment</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>
-                    ₹{plan.minimumInvestment?.toLocaleString() || "N/A"}
-                  </Td>
+                    {/* Recommendation Badge */}
+                    <Box 
+                      position="absolute" 
+                      top={0} 
+                      right={0} 
+                      bg={loan.interestRate <= 8 ? "green.500" : "blue.500"}
+                      color="white" 
+                      px={3} 
+                      py={1} 
+                      borderBottomLeftRadius="md"
+                      fontSize="xs"
+                      fontWeight="bold"
+                    >
+                      {loan.interestRate <= 8 ? "BEST RATE" : "RECOMMENDED"}
+                    </Box>
+                    
+                    <IconButton
+                      icon={<FiBookmark />}
+                      size="sm"
+                      position="absolute"
+                      top={2}
+                      left={2}
+                      colorScheme={isBookmarked(loan.id) ? "blue" : "gray"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBookmark(loan);
+                      }}
+                      aria-label="Bookmark loan"
+                    />
+                    
+                    <Heading size="md" color="#2C319F" mt={4}>
+                      {loan.planName}
+                    </Heading>
+                    
+                    <Box mt={2} bg="blue.50" p={2} borderRadius="md">
+                      <Text fontSize="sm" noOfLines={2} color="gray.700">
+                        {loan.description}
+                      </Text>
+                    </Box>
+                    
+                    <Grid templateColumns="1fr 1fr" gap={3} mt={4}>
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">INTEREST RATE</Text>
+                        <Flex align="center">
+                          <Text fontWeight="bold" fontSize="xl" color={loan.interestRate <= 9 ? "green.600" : loan.interestRate <= 12 ? "orange.500" : "red.500"}>
+                            {loan.interestRate}%
+                          </Text>
+                          {loan.interestRate <= 8 && <Icon as={FiTrendingUp} color="green.500" ml={1} />}
+                        </Flex>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">LOAN TERM</Text>
+                        <Flex align="center">
+                          <Text fontWeight="bold" color="blue.600">
+                            {loan.tenure <= 12 ? loan.tenure + " mo" : 
+                             Math.floor(loan.tenure/12) + (loan.tenure % 12 > 0 ? `.${Math.floor((loan.tenure % 12)/12*10)}` : "") + " yr"}
+                          </Text>
+                        </Flex>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">LOAN AMOUNT</Text>
+                        <Text fontWeight="bold">
+                          ₹{(loan.minAmount || 50000).toLocaleString()}+
+                        </Text>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">MONTHLY EMI</Text>
+                        <Text fontWeight="bold" color="blue.600">
+                          ₹{Math.round(loan.sampleEMI).toLocaleString()}/mo
+                        </Text>
+                      </Box>
+                    </Grid>
+                    
+                    <Box mt={3} pt={3} borderTopWidth={1} borderColor="gray.100">
+                      <Flex justify="space-between" align="center">
+                        <Flex align="center">
+                          <Icon as={FiShield} color="green.500" mr={1} />
+                          <Text fontWeight="semibold" color="green.600">
+                            Match: {((loan.matchScore || 0) * 100).toFixed(0)}%
+                          </Text>
+                        </Flex>
+                        <Tag size="sm" colorScheme={
+                          loan.loanCategory === "HomeLoans" ? "blue" : 
+                          loan.loanCategory === "PersonalLoans" ? "green" : 
+                          loan.loanCategory === "BusinessLoans" ? "purple" : 
+                          "gray"
+                        }>
+                          {loan.loanCategory?.replace("Loans", "")}
+                        </Tag>
+                      </Flex>
+                    </Box>
+                    
+                    <Flex mt={4} gap={2}>
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        variant="solid" // Changed to solid for better visibility
+                        flexGrow={1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/loanplans/${loan.id}`);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      
+                      <Button
+                        size="sm"
+                        colorScheme={compareLoans.includes(loan) ? "red" : "gray"}
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectForCompare(loan);
+                        }}
+                        flexGrow={0}
+                      >
+                        {compareLoans.includes(loan)
+                          ? "Remove"
+                          : "Compare"}
+                      </Button>
+                    </Flex>
+                  </Box>
                 ))}
-                <Td bg="green.50">
-                  ₹
-                  {comparisonResults.bestPlan.minimumInvestment?.toLocaleString() ||
-                    "N/A"}
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Category</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.loanCategory}</Td>
-                ))}
-                <Td bg="green.50">{comparisonResults.bestPlan.loanCategory}</Td>
-              </Tr>
-              <Tr>
-                <Td>Subcategory</Td>
-                {comparisonResults.otherPlans.map((plan) => (
-                  <Td key={plan.id}>{plan.loanSubCategory}</Td>
-                ))}
-                <Td bg="green.50">
-                  {comparisonResults.bestPlan.loanSubCategory}
-                </Td>
-              </Tr>
-              <Tr>
-                <Td>Comparison Score</Td>
-                {comparisonResults.scores.slice(1).map((score) => (
-                  <Td key={score.planName}>{score.score}%</Td>
-                ))}
-                <Td bg="green.50">{comparisonResults.scores[0].score}%</Td>
-              </Tr>
-            </Tbody>
-          </Table>
+              </Flex>
+            </Box>
+          )}
 
-          <Box mt={6} p={4} borderRadius="md" bg="blue.50">
-            <Heading size="sm" color="blue.700" mb={3}>
-              Detailed Analysis
+          {/* Explore All Plans Section - Enhanced */}
+          <Box>
+            <Heading size="md" mb={4} display="flex" alignItems="center">
+              <Icon as={FiSearch} mr={2} />
+              Explore All Loan Plans
+              <Text ml={2} color="gray.500" fontSize="sm" fontWeight="normal">
+                ({filteredLoans.length} results)
+              </Text>
             </Heading>
-            <Stack spacing={2}>
-              {comparisonResults.reasoning.map((reason, index) => (
-                <Text key={index} fontSize="sm">
-                  • {reason}
-                </Text>
-              ))}
-            </Stack>
+
+            {filteredLoans.length === 0 ? (
+              <Alert status="info" borderRadius="md">
+                <AlertIcon />
+                No loans match your current filters. Try adjusting your filter criteria.
+              </Alert>
+            ) : (
+              <Flex wrap="wrap" justify="center" gap={4}>
+                {filteredLoans.map((loan) => (
+                  <Box
+                    key={loan.id}
+                    p={5}
+                    borderWidth={1}
+                    borderRadius="lg"
+                    width={["100%", "calc(50% - 1rem)", "calc(33.33% - 1rem)"]}
+                    bg="white"
+                    boxShadow="md"
+                    transition="all 0.3s"
+                    _hover={{ boxShadow: "xl", transform: "translateY(-4px)" }}
+                    position="relative"
+                    cursor="pointer"
+                    onClick={() => router.push(`/loanplans/${loan.id}`)}
+                  >
+                    {loan.interestRate <= 8 && (
+                      <Box 
+                        position="absolute" 
+                        top={0} 
+                        right={0} 
+                        bg="green.500" 
+                        color="white" 
+                        px={3} 
+                        py={1} 
+                        borderBottomLeftRadius="md"
+                        fontSize="xs"
+                        fontWeight="bold"
+                      >
+                        LOW RATE
+                      </Box>
+                    )}
+                    
+                    <IconButton
+                      icon={<FiBookmark />}
+                      size="sm"
+                      position="absolute"
+                      top={2}
+                      left={2}
+                      colorScheme={isBookmarked(loan.id) ? "blue" : "gray"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBookmark(loan);
+                      }}
+                      aria-label="Bookmark loan"
+                      zIndex={1}
+                    />
+                    
+                    <Heading size="md" color="#2C319F" mt={4}>
+                      {loan.planName}
+                    </Heading>
+                    
+                    <Text fontSize="sm" mt={2} noOfLines={2} color="gray.600">
+                      {loan.description}
+                    </Text>
+                    
+                    <Grid templateColumns="1fr 1fr" gap={3} mt={4}>
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">INTEREST RATE</Text>
+                        <Flex align="center">
+                          <Text 
+                            fontWeight="bold" 
+                            fontSize="lg"
+                            color={loan.interestRate <= 9 ? "green.600" : loan.interestRate <= 12 ? "orange.500" : "red.500"}
+                          >
+                            {loan.interestRate}%
+                          </Text>
+                        </Flex>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">TENURE</Text>
+                        <Text fontWeight="bold" color="blue.600">
+                          {loan.tenure <= 12 ? 
+                            `${loan.tenure} months` : 
+                            `${Math.floor(loan.tenure/12)} years${loan.tenure % 12 > 0 ? ` ${loan.tenure % 12} mo` : ''}`}
+                        </Text>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">MAX LOAN AMOUNT</Text>
+                        <Text fontWeight="bold">
+                          ₹{(loan.maxAmount || 1000000).toLocaleString()}
+                        </Text>
+                      </Box>
+                      
+                      <Box>
+                        <Text fontSize="xs" color="gray.500">MONTHLY EMI</Text>
+                        <Text fontWeight="bold" color="blue.600">
+                          ₹{Math.round(loan.sampleEMI).toLocaleString()}/mo
+                        </Text>
+                      </Box>
+                    </Grid>
+                    
+                    <Flex mt={4} justify="space-between" pt={3} borderTopWidth={1} borderColor="gray.100">
+                      <Flex align="center">
+                        <Text fontSize="xs" mr={1}>Affordability:</Text>
+                        <CircularProgress value={loan.affordabilityScore * 20} size="20px" color="green.400" thickness="10px">
+                          <CircularProgressLabel fontSize="8px">{Math.round(loan.affordabilityScore)}</CircularProgressLabel>
+                        </CircularProgress>
+                      </Flex>
+                      <Wrap>
+                        {loan.tags?.slice(0, 2).map((tag) => (
+                          <Tag key={tag} size="sm" colorScheme="blue" fontSize="xs">
+                            {tag}
+                          </Tag>
+                        ))}
+                      </Wrap>
+                    </Flex>
+                    
+                    <Flex mt={4} gap={2}>
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        variant="solid"
+                        flexGrow={1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/loanplans/${loan.id}`);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      
+                      <Button
+                        size="sm"
+                        colorScheme={compareLoans.includes(loan) ? "red" : "gray"}
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectForCompare(loan);
+                        }}
+                      >
+                        {compareLoans.includes(loan)
+                          ? "Remove"
+                          : "Compare"}
+                      </Button>
+                    </Flex>
+                  </Box>
+                ))}
+              </Flex>
+            )}
+          </Box>
+
+          {/* Compare Button */}
+          {compareLoans.length >= 2 && (
+            <Button colorScheme="green" mt={6} size="lg" onClick={handleCompare}>
+              Compare Selected Loans ({compareLoans.length})
+            </Button>
+          )}
+
+          {/* Comparison Results */}
+          {comparisonResults.bestLoan && (
+            <Box
+              mt={8}
+              p={6}
+              bg="white"
+              borderRadius="lg"
+              shadow="lg"
+              width="100%"
+              maxW="1200px"
+            >
+              <Heading size="md" color="blue.600" mb={4}>
+                Loan Comparison Results
+              </Heading>
+
+              {/* Updated comparison table without processing fee references */}
+              <Table variant="simple" mt={4}>
+                <Thead>
+                  <Tr>
+                    <Th>Loan Detail</Th>
+                    {comparisonResults.otherLoans.map((loan) => (
+                      <Th key={loan.id}>{loan.planName}</Th>
+                    ))}
+                    <Th bg="green.50">{comparisonResults.bestLoan.planName}</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  <Tr>
+                    <Td>Interest Rate</Td>
+                    {comparisonResults.otherLoans.map((loan) => (
+                      <Td key={loan.id}>{loan.interestRate}%</Td>
+                    ))}
+                    <Td bg="green.50">
+                      {comparisonResults.bestLoan.interestRate}%
+                    </Td>
+                  </Tr>
+                  <Tr>
+                    <Td>Monthly EMI</Td>
+                    {comparisonResults.otherLoans.map((loan) => {
+                      // Use each loan's minimum amount for EMI calculation
+                      const emi = calculateEMI(loan.minAmount || 100000, loan.interestRate, loan.tenure);
+                      return (
+                        <Td key={loan.id}>₹{Math.round(emi).toLocaleString()}</Td>
+                      );
+                    })}
+                    <Td bg="green.50">
+                      ₹{Math.round(calculateEMI(comparisonResults.bestLoan.minAmount || 100000, comparisonResults.bestLoan.interestRate, comparisonResults.bestLoan.tenure)).toLocaleString()}
+                    </Td>
+                  </Tr>
+                  <Tr>
+                    <Td>Prepayment Penalty</Td>
+                    {comparisonResults.otherLoans.map((loan) => (
+                      <Td key={loan.id}>
+                        <Tag
+                          colorScheme={
+                            loan.prepaymentPenalty <= 2
+                              ? "green"
+                              : loan.prepaymentPenalty <= 4
+                              ? "yellow"
+                              : "red"
+                          }
+                        >
+                          {loan.prepaymentPenalty || "0"}%
+                        </Tag>
+                      </Td>
+                    ))}
+                    <Td bg="green.50">
+                      <Tag
+                        colorScheme={
+                          comparisonResults.bestLoan.prepaymentPenalty <= 2
+                            ? "green"
+                            : comparisonResults.bestLoan.prepaymentPenalty <= 4
+                            ? "yellow"
+                            : "red"
+                        }
+                      >
+                        {comparisonResults.bestLoan.prepaymentPenalty || "0"}%
+                      </Tag>
+                    </Td>
+                  </Tr>
+                  <Tr>
+                    <Td>Loan Amount Range</Td>
+                    {comparisonResults.otherLoans.map((loan) => (
+                      <Td key={loan.id}>
+                        ₹{loan.minAmount?.toLocaleString() || "50,000"} - ₹{loan.maxAmount?.toLocaleString() || "25,00,000"}
+                      </Td>
+                    ))}
+                    <Td bg="green.50">
+                      ₹{comparisonResults.bestLoan.minAmount?.toLocaleString() || "50,000"} - 
+                      ₹{comparisonResults.bestLoan.maxAmount?.toLocaleString() || "25,00,000"}
+                    </Td>
+                  </Tr>
+                  <Tr>
+                    <Td>Tenure</Td>
+                    {comparisonResults.otherLoans.map((loan) => (
+                      <Td key={loan.id}>
+                        {loan.tenure} months
+                        {loan.tenure >= 12 ? ` (${Math.floor(loan.tenure/12)} years)` : ""}
+                      </Td>
+                    ))}
+                    <Td bg="green.50">
+                      {comparisonResults.bestLoan.tenure} months
+                      {comparisonResults.bestLoan.tenure >= 12 ? ` (${Math.floor(comparisonResults.bestLoan.tenure/12)} years)` : ""}
+                    </Td>
+                  </Tr>
+                  <Tr>
+                    <Td>Category</Td>
+                    {comparisonResults.otherLoans.map((loan) => (
+                      <Td key={loan.id}>{loan.loanCategory?.replace("Loans", " Loan")}</Td>
+                    ))}
+                    <Td bg="green.50">{comparisonResults.bestLoan.loanCategory?.replace("Loans", " Loan")}</Td>
+                  </Tr>
+                  <Tr>
+                    <Td>Comparison Score</Td>
+                    {comparisonResults.scores.slice(1).map((score) => (
+                      <Td key={score.planName}>{score.totalScore}%</Td>
+                    ))}
+                    <Td bg="green.50">{comparisonResults.scores[0].totalScore}%</Td>
+                  </Tr>
+                </Tbody>
+              </Table>
+
+              <Box mt={6} p={4} borderRadius="md" bg="blue.50">
+                <Heading size="sm" color="blue.700" mb={3}>
+                  Detailed Analysis
+                </Heading>
+                <Stack spacing={2}>
+                  {comparisonResults.reasoning.map((reason, index) => (
+                    <Text key={index} fontSize="sm">
+                      • {reason}
+                    </Text>
+                  ))}
+                </Stack>
+              </Box>
+            </Box>
+          )}
+
+        
+
+          {/* Loan Eligibility Section */}
+          <Box mt={8} width="100%" maxW="1200px">
+            <LoanEligibility />
+          </Box>
+
+          {/* Additional Loan Resources Section */}
+          <Box mt={8} p={6} bg="white" borderRadius="lg" shadow="lg" width="100%" maxW="1200px" mb={10}>
+            <Heading size="md" mb={5} color="blue.700">Understanding Loan Options</Heading>
+            
+            <Tabs isFitted variant="enclosed" colorScheme="blue">
+              <TabList>
+                <Tab>Types of Loans</Tab>
+                <Tab>Interest Rates</Tab>
+                <Tab>Documentation</Tab>
+                <Tab>Financial Planning</Tab>
+              </TabList>
+              
+              <TabPanels>
+                <TabPanel>
+                  <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={6}>
+                    <Box p={4} bg="blue.50" borderRadius="md">
+                      <Heading size="sm" mb={2}>Secured Loans</Heading>
+                      <Text fontSize="sm">
+                        Secured by collateral like property or vehicles. Generally offers lower interest rates due to reduced lender risk.
+                      </Text>
+                    </Box>
+                    
+                    <Box p={4} bg="blue.50" borderRadius="md">
+                      <Heading size="sm" mb={2}>Unsecured Loans</Heading>
+                      <Text fontSize="sm">
+                        No collateral required, but typically have higher interest rates. Approval based primarily on creditworthiness.
+                      </Text>
+                    </Box>
+                    
+                    <Box p={4} bg="blue.50" borderRadius="md">
+                      <Heading size="sm" mb={2}>Fixed vs. Variable Rate</Heading>
+                      <Text fontSize="sm">
+                        Fixed rates remain constant throughout the loan term, while variable rates may fluctuate with market conditions.
+                      </Text>
+                    </Box>
+                  </Grid>
+                </TabPanel>
+                
+                <TabPanel>
+                  <Box>
+                    <Heading size="sm" mb={3}>Understanding Interest Rates</Heading>
+                    <Text mb={4}>
+                      Interest rates on loans are determined by several factors including:
+                    </Text>
+                    <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                      <Box p={3} bg="gray.50" borderRadius="md">
+                        <Text fontWeight="medium">Credit Score Impact</Text>
+                        <Text fontSize="sm">Higher scores qualify for lower rates, potentially saving thousands over the loan term.</Text>
+                      </Box>
+                      <Box p={3} bg="gray.50" borderRadius="md">
+                        <Text fontWeight="medium">Loan-to-Value Ratio</Text>
+                        <Text fontSize="sm">Lower LTV ratios (higher down payments) typically result in better interest rates.</Text>
+                      </Box>
+                      <Box p={3} bg="gray.50" borderRadius="md">
+                        <Text fontWeight="medium">Loan Term Effects</Text>
+                        <Text fontSize="sm">Shorter terms often have lower rates but higher monthly payments.</Text>
+                      </Box>
+                      <Box p={3} bg="gray.50" borderRadius="md">
+                        <Text fontWeight="medium">Market Conditions</Text>
+                        <Text fontSize="sm">Economic factors and central bank policies affect base rates for all loans.</Text>
+                      </Box>
+                    </Grid>
+                  </Box>
+                </TabPanel>
+                
+                <TabPanel>
+                  <Stack spacing={4}>
+                    <Text>Common documents required for loan applications:</Text>
+                    <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                      <Box p={3} bg="gray.50" borderRadius="md">
+                        <Text fontWeight="medium">Identity & Address Proof</Text>
+                        <Text fontSize="sm">• Aadhaar Card</Text>
+                        <Text fontSize="sm">• PAN Card</Text>
+                        <Text fontSize="sm">• Passport / Voter ID</Text>
+                        <Text fontSize="sm">• Utility Bills</Text>
+                      </Box>
+                      <Box p={3} bg="gray.50" borderRadius="md">
+                        <Text fontWeight="medium">Income Documentation</Text>
+                        <Text fontSize="sm">• Salary Slips (3-6 months)</Text>
+                        <Text fontSize="sm">• Form 16</Text>
+                        <Text fontSize="sm">• Income Tax Returns (1-3 years)</Text>
+                        <Text fontSize="sm">• Bank Statements (6-12 months)</Text>
+                      </Box>
+                    </Grid>
+                  </Stack>
+                </TabPanel>
+                
+                <TabPanel>
+                  <Box>
+                    <Text mb={4}>Smart financial planning ensures your loan works with your budget:</Text>
+                    <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={4}>
+                      <Box p={4} borderRadius="md" bg="blue.50">
+                        <Heading size="sm" mb={2}>50/30/20 Rule</Heading>
+                        <Text fontSize="sm">
+                          Spend 50% on needs (including loan EMIs), 30% on wants, and 20% on savings and investments.
+                        </Text>
+                      </Box>
+                      <Box p={4} borderRadius="md" bg="blue.50">
+                        <Heading size="sm" mb={2}>EMI Guidelines</Heading>
+                        <Text fontSize="sm">
+                          Total EMIs should ideally not exceed 40% of your monthly take-home income.
+                        </Text>
+                      </Box>
+                      <Box p={4} borderRadius="md" bg="blue.50">
+                        <Heading size="sm" mb={2}>Emergency Fund</Heading>
+                        <Text fontSize="sm">
+                          Maintain 3-6 months of expenses (including EMIs) as emergency reserves.
+                        </Text>
+                      </Box>
+                    </Grid>
+                  </Box>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
+          </Box>
+
+          {/* Footer information */}
+          <Box width="100%" bg="gray.100" p={6} mt={8}>
+            <Container maxW="container.xl">
+              <Text textAlign="center" fontSize="sm" color="gray.600">
+                All loan offers are subject to credit approval, eligibility criteria, and terms and conditions. 
+                Interest rates may vary based on market conditions and individual credit profiles. 
+                Please review all loan documentation carefully before accepting any loan offer.
+              </Text>
+            </Container>
           </Box>
         </Box>
-      )}
+      </Flex>
     </Box>
   );
 };

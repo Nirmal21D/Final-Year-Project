@@ -1,42 +1,70 @@
 "use client";
-import BankHeaders from "@/bankComponents/BankHeaders";
-import BankSidenav from "@/bankComponents/BankSidenav";
-import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import {
   Box,
-  Button,
   Flex,
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  Button,
+  useToast,
   FormControl,
   FormLabel,
   Input,
+  NumberInput,
+  NumberInputField,
+  NumberDecrementStepper,
+  NumberIncrementStepper,
+  NumberInputStepper,
   Textarea,
-  useToast,
+  Select,
   Tag,
   TagLabel,
   TagCloseButton,
   Wrap,
   WrapItem,
-  VStack,
-  HStack,
-  Divider,
-  Heading,
-  Select,
-  NumberInput,
-  NumberInputField,
   Radio,
   RadioGroup,
   Stack,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  FormHelperText,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  Switch,
+  Divider,
+  Alert,
+  AlertIcon,
+  Grid,
+  GridItem,
+  Badge,
+  Tooltip,
+  Icon,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  Progress,
+  Spinner,
+  
 } from "@chakra-ui/react";
-import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { auth, db } from "@/firebase";
+import { useRouter, useParams } from "next/navigation";
+import { collection, updateDoc, doc, getDocs, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid";
+import { FiInfo, FiPercent, FiDollarSign, FiClock, FiShield, FiAlertTriangle } from "react-icons/fi";
+import BankHeaders from "@/bankComponents/BankHeaders";
+import BankSidenav from "@/bankComponents/BankSidenav";
 
-const EditPlan = () => {
-  const { planId } = useParams();
+const EditPlanForm = () => {
+  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     planType: "",
     planName: "",
@@ -63,26 +91,138 @@ const EditPlan = () => {
     otherConditions: "",
     investmentCategory: "",
     investmentSubCategory: "",
+    createdBy: "",
+    loanCategory: "",
+    riskLevel: 3, // Default risk level (1-5)
+    cagr: "", // Calculated Annual Growth Rate
+    flexibilityScore: 3, // Flexibility in terms (1-5)
+    loanSubCategory: "", // More specific loan categorization
+    tags: [], // Moving tags into formData
+    taxBenefits: "No", // Tax benefits for investments
+    taxBenefitDetails: "", // Details about tax benefits
+    minimumTenure: "", // Minimum lock-in period
+    earlyWithdrawalPenalty: "", // Penalty for early withdrawal
+    guarantorRequired: "No", // Whether a guarantor is required
+    collateralRequired: "No", // Whether collateral is required
+    collateralPercentage: "", // Percentage of loan that must be secured
+    documentationRequired: "", // List of required documents
+    investmentFrequency: "onetime", // Frequency of investment (for SIPs etc.)
+    paymentFrequency: "monthly", // Frequency of repayments
+    isInsuranceRequired: "No", // Whether insurance is mandatory
+    planStatus: "pending", // Status of the plan
+    loanToValueRatio: "", // LTV ratio for secured loans
+    eligibilityCriteria: "", // Additional eligibility criteria
+    lockInPeriod: "", // Lock-in period for investments
+    indemnityRequired: "No", // Indemnity requirements
   });
-
   const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState("");
+  const [tagInput, setTagInput] = useState('');
+  const [fetchedTags, setFetchedTags] = useState([]);
+  const [calculatedRisk, setCalculatedRisk] = useState(3);
+  const [calculatedCAGR, setCalculatedCAGR] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [availableTags, setAvailableTags] = useState([]);
-  const toast = useToast();
-  const router = useRouter();
 
+  const router = useRouter();
+  const toast = useToast();
+  const params = useParams();
+  const planId = params.planId;
+
+  // Subcategories for each investment category
   const subCategories = {
-    Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds"],
-    MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds"],
-    FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit"],
-    GoldInvestments: [
-      "Physical Gold",
-      "Digital Gold",
-      "Gold ETFs",
-      "Sovereign Gold Bonds",
-    ],
-    ProvidentFunds: ["EPF", "PPF", "GPF"],
+    Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds", "Treasury Bonds", "Zero Coupon Bonds", "Inflation-Indexed Bonds"],
+    MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds", "Index Funds", "Liquid Funds", "ELSS Funds", "Sector Funds"],
+    FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit", "Tax-Saving FD", "Senior Citizen FD", "Super Senior Citizen FD"],
+    GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds", "Gold Mutual Funds", "Gold Futures"],
+    ProvidentFunds: ["EPF", "PPF", "GPF", "VPF", "UPF", "EDLI"],
   };
+
+  // Loan subcategories for each loan type
+  const loanSubCategories = {
+    personal: ["General Purpose", "Debt Consolidation", "Wedding", "Medical Emergency", "Travel", "Home Renovation", "Education", "Used Vehicle"],
+    home: ["New Property Purchase", "Resale Property", "Construction", "Renovation", "Land Purchase", "Home Extension", "Balance Transfer", "Top-up Loan"],
+    education: ["Undergraduate", "Postgraduate", "Doctoral", "Professional Course", "Study Abroad", "Skill Development", "Research Programs"],
+    auto: ["New Car", "Used Car", "Two Wheeler", "Commercial Vehicle", "Electric Vehicle", "Luxury Vehicle"],
+    business: ["Working Capital", "Equipment Purchase", "Expansion", "Startup", "Invoice Financing", "Merchant Cash Advance", "Commercial Property"],
+  };
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        router.push("/login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      const tagsCollection = await getDocs(collection(db, "tags"));
+      const tagsList = tagsCollection.docs.map(doc => doc.data().tag);
+      setFetchedTags(tagsList);
+    };
+    fetchTags();
+  }, []);
+
+  // Calculate Risk Level for investment plans
+  useEffect(() => {
+    if (formData.planType === "investment") {
+      // Higher interest often comes with higher risk
+      const interestRiskFactor = parseFloat(formData.interestRate) / 5; // 0-4 scale (20% interest rate would be highest risk)
+      
+      // Shorter tenure may indicate lower risk
+      const tenureFactor = parseFloat(formData.tenure) / 120; // 0-1 scale (120 months is highest)
+      
+      // Higher minimum amount may suggest higher barrier/risk
+      const minAmountFactor = parseFloat(formData.minAmount) > 50000 ? 0.5 : 0.2;
+      
+      // Category risk factors
+      const categoryRiskFactors = {
+        FixedDeposits: 1.2,
+        ProvidentFunds: 1.5,
+        Bonds: 2.2,
+        GoldInvestments: 2.8,
+        MutualFunds: 3.5,
+      };
+      
+      const categoryFactor = categoryRiskFactors[formData.investmentCategory] || 2.5;
+      
+      // Calculate weighted risk score (1-5 scale)
+      let riskScore = (
+        interestRiskFactor * 0.4 +
+        tenureFactor * 0.2 +
+        minAmountFactor * 0.1 +
+        categoryFactor * 0.3
+      );
+      
+      // Clamp between 1-5
+      riskScore = Math.max(1, Math.min(5, riskScore));
+      setCalculatedRisk(parseFloat(riskScore.toFixed(1)));
+      
+      // Update form data
+      setFormData(prev => ({...prev, riskLevel: riskScore.toFixed(1)}));
+    }
+  }, [formData.interestRate, formData.tenure, formData.minAmount, formData.investmentCategory, formData.planType]);
+
+  // Calculate CAGR for investment plans
+  useEffect(() => {
+    if (formData.planType === "investment" && formData.interestRate && formData.tenure) {
+      const interestRate = parseFloat(formData.interestRate) / 100;
+      const tenureYears = parseFloat(formData.tenure) / 12;
+      
+      // CAGR calculation: (1 + r)^t - 1
+      const cagr = ((Math.pow(1 + interestRate, tenureYears) - 1) * 100).toFixed(2);
+      setCalculatedCAGR(cagr);
+      
+      // Update form data
+      setFormData(prev => ({...prev, cagr}));
+    }
+  }, [formData.interestRate, formData.tenure, formData.planType]);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -93,32 +233,110 @@ const EditPlan = () => {
         setAvailableTags(tagsList);
       } catch (error) {
         console.error("Error fetching tags:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch tags",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
       }
     };
+  
+    fetchTags();
+  }, [toast]);
 
+  useEffect(() => {
     const fetchPlanData = async () => {
       try {
-        const planRef = doc(db, "investmentplans", planId);
-        const investmentDoc = await getDoc(planRef);
-
+        setIsLoading(true);
+        // Try investment plans first
+        const investmentRef = doc(db, "investmentplans", planId);
+        const investmentDoc = await getDoc(investmentRef);
+  
         if (investmentDoc.exists()) {
-          setFormData({
+          const data = investmentDoc.data();
+          // Convert Timestamp to string if needed
+          const formattedData = {
+            ...data,
             id: investmentDoc.id,
-            ...investmentDoc.data(),
             planType: "investment",
-          });
-          setTags(investmentDoc.data().tags || []);
+            // Format any date fields if needed
+            createdAt: data.createdAt?.toDate?.() || null,
+            lastUpdated: data.lastUpdated?.toDate?.() || null,
+            // Ensure numbers are properly set
+            interestRate: data.interestRate?.toString() || "",
+            minAmount: data.minAmount?.toString() || "",
+            maxAmount: data.maxAmount?.toString() || "",
+            tenure: data.tenure?.toString() || "",
+            minimumTenure: data.minimumTenure?.toString() || "",
+            earlyWithdrawalPenalty: data.earlyWithdrawalPenalty?.toString() || "",
+            lockInPeriod: data.lockInPeriod?.toString() || "",
+            riskLevel: data.riskLevel || 3,
+            flexibilityScore: data.flexibilityScore || 3,
+          };
+          setFormData(formattedData);
+          setTags(data.tags || []);
+          setCalculatedRisk(parseFloat(data.riskLevel) || 3);
+          setCalculatedCAGR(data.cagr || 0);
+  
         } else {
+          // If not found, try loan plans
           const loanRef = doc(db, "loanplans", planId);
           const loanDoc = await getDoc(loanRef);
-
+  
           if (loanDoc.exists()) {
-            setFormData({
+            const data = loanDoc.data();
+            // Format loan plan data with all required fields
+            const formattedData = {
+              ...data,
               id: loanDoc.id,
-              ...loanDoc.data(),
               planType: "loan",
-            });
-            setTags(loanDoc.data().tags || []);
+              // Basic Details
+              loanName: data.loanName || "",
+              loanType: data.loanType || "",
+              loanSubCategory: data.loanSubCategory || "",
+              purpose: data.purpose || "",
+              description: data.description || "",
+              
+              // Financial Details
+              interestRate: data.interestRate?.toString() || "",
+              interestRateType: data.interestRateType || "fixed",
+              minAmount: data.minAmount?.toString() || "",
+              maxAmount: data.maxAmount?.toString() || "",
+              tenure: data.tenure?.toString() || "",
+              processingFeeType: data.processingFeeType || "fixed",
+              processingFeeAmount: data.processingFeeAmount?.toString() || "",
+              processingFeePercentage: data.processingFeePercentage?.toString() || "",
+  
+              // Eligibility Criteria
+              minMonthlyIncome: data.minMonthlyIncome?.toString() || "",
+              minAge: data.minAge?.toString() || "",
+              maxAge: data.maxAge?.toString() || "",
+              employmentType: data.employmentType || "",
+              cibilScore: data.cibilScore?.toString() || "",
+              repaymentSchedule: data.repaymentSchedule || "monthly",
+              prepaymentAllowed: data.prepaymentAllowed || "yes",
+              prepaymentCharges: data.prepaymentCharges?.toString() || "",
+  
+              // Additional Details
+              documentationRequired: data.documentationRequired || "",
+              collateralRequired: data.collateralRequired || "No",
+              collateralPercentage: data.collateralPercentage?.toString() || "",
+              guarantorRequired: data.guarantorRequired || "No",
+              isInsuranceRequired: data.isInsuranceRequired || "No",
+              paymentFrequency: data.paymentFrequency || "monthly",
+              indemnityRequired: data.indemnityRequired || "No",
+              flexibilityScore: data.flexibilityScore || 3,
+  
+              // Timestamps
+              createdAt: data.createdAt?.toDate?.() || null,
+              lastUpdated: data.lastUpdated?.toDate?.() || null,
+            };
+  
+            console.log("Formatted Loan Data:", formattedData); // For debugging
+            setFormData(formattedData);
+            setTags(data.tags || []);
           } else {
             toast({
               title: "Error",
@@ -131,6 +349,7 @@ const EditPlan = () => {
           }
         }
       } catch (error) {
+        console.error("Error fetching plan:", error);
         toast({
           title: "Error",
           description: "Failed to fetch plan data",
@@ -139,12 +358,16 @@ const EditPlan = () => {
           isClosable: true,
         });
         router.push("/bankplans");
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    fetchTags();
-    fetchPlanData();
-  }, [planId, toast, router]);
+  
+    if (planId) {
+      fetchPlanData();
+    }
+  }, [planId, router, toast]);
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -152,27 +375,107 @@ const EditPlan = () => {
       ...prev,
       [name]: value,
       ...(name === "investmentCategory" && { investmentSubCategory: "" }),
+      ...(name === "loanType" && { loanSubCategory: "" }),
     }));
   };
 
+  const handleRangeChange = (name, value) => {
+    setFormData(prev => ({...prev, [name]: value}));
+  };
+
   const handleAddTag = (tag) => {
-    if (!tags.includes(tag) && tags.length < 5) {
+    if (tag && !tags.includes(tag) && tags.length < 5) {
       setTags([...tags, tag]);
+      setFormData(prev => ({...prev, tags: [...tags, tag]}));
     }
-    setTagInput("");
+    setTagInput('');
   };
 
   const handleRemoveTag = (tagToRemove) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
+    const updatedTags = tags.filter(tag => tag !== tagToRemove);
+    setTags(updatedTags);
+    setFormData(prev => ({...prev, tags: updatedTags}));
   };
 
+  const validateForm = () => {
+    let isValid = true;
+    let errorMessage = '';
+    const missingFields = [];
+  
+    // Basic Details validation
+    if (formData.planType === "loan") {
+      if (!formData.loanName) missingFields.push("Loan Name");
+      if (!formData.loanType) missingFields.push("Loan Type");
+      if (!formData.loanSubCategory) missingFields.push("Loan Subcategory");
+      if (!formData.purpose) missingFields.push("Purpose");
+    } else {
+      if (!formData.planName) missingFields.push("Plan Name");
+      if (!formData.investmentCategory) missingFields.push("Investment Category");
+      if (!formData.investmentSubCategory) missingFields.push("Investment Subcategory");
+    }
+    if (!formData.description) missingFields.push("Description");
+  
+    // Financial Details validation
+    if (!formData.interestRate) missingFields.push("Interest Rate");
+    if (!formData.minAmount) missingFields.push("Minimum Amount");
+    if (!formData.maxAmount) missingFields.push("Maximum Amount");
+    if (!formData.tenure) missingFields.push("Tenure");
+  
+    // Processing Fee validation for loans
+    if (formData.planType === "loan") {
+      if (formData.processingFeeType === "fixed" && !formData.processingFeeAmount) {
+        missingFields.push("Processing Fee Amount");
+      }
+      if (formData.processingFeeType === "percentage" && !formData.processingFeePercentage) {
+        missingFields.push("Processing Fee Percentage");
+      }
+    }
+  
+    // Additional Details validation
+    if (!formData.documentationRequired) missingFields.push("Documentation Required");
+  
+    // Loan-specific validations
+    if (formData.planType === "loan") {
+      if (!formData.minMonthlyIncome) missingFields.push("Minimum Monthly Income");
+      if (!formData.minAge) missingFields.push("Minimum Age");
+      if (!formData.maxAge) missingFields.push("Maximum Age");
+      if (!formData.employmentType) missingFields.push("Employment Type");
+      if (!formData.cibilScore) missingFields.push("CIBIL Score");
+    }
+  
+    // Validate amounts
+    if (parseFloat(formData.minAmount) > parseFloat(formData.maxAmount)) {
+      errorMessage = "Minimum amount cannot be greater than maximum amount";
+      isValid = false;
+    }
+  
+    // Set error message if fields are missing
+    if (missingFields.length > 0) {
+      errorMessage = `Please fill in the following required fields: ${missingFields.join(", ")}`;
+      isValid = false;
+    }
+  
+    // Log validation results for debugging
+    console.log("Validation Results:", {
+      isValid,
+      errorMessage,
+      missingFields,
+      formData
+    });
+  
+    return { isValid, errorMessage };
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    if (parseFloat(formData.minAmount) > parseFloat(formData.maxAmount)) {
+    const { isValid, errorMessage } = validateForm();
+
+    if (!isValid) {
       toast({
         title: "Validation Error",
-        description: "Minimum amount cannot be greater than maximum amount.",
+        description: errorMessage,
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -181,36 +484,41 @@ const EditPlan = () => {
     }
 
     try {
-      const collectionName =
-        formData.planType === "loan" ? "loanplans" : "investmentplans";
-      const planData = {
+      const collectionName = formData.planType === "loan" ? "loanplans" : "investmentplans";
+      
+      // Prepare update data
+      const updateData = {
         ...formData,
         tags,
-        lastUpdated: new Date(),
+        lastUpdated: serverTimestamp(),
+        // Convert string numbers to numbers
+        interestRate: parseFloat(formData.interestRate) || 0,
+        minAmount: parseFloat(formData.minAmount) || 0,
+        maxAmount: parseFloat(formData.maxAmount) || 0,
+        tenure: parseInt(formData.tenure) || 0,
       };
 
-      if (formData.planType === "loan") {
-        await setDoc(doc(db, collectionName, planId), {
-          ...planData,
-          loanCategory: formData.loanType,
-          investmentCategory: "",
-          investmentSubCategory: "",
-        });
-      } else {
-        await setDoc(doc(db, collectionName, planId), planData);
+      // Remove id field before updating
+      delete updateData.id;
+
+      await updateDoc(doc(db, collectionName, planId), updateData);
+
+      // Update tags
+      for (const tag of tags) {
+        await setDoc(doc(db, "tags", tag), { tag }, { merge: true });
       }
 
       toast({
         title: "Success",
-        description: `${
-          formData.planType === "loan" ? "Loan" : "Investment"
-        } plan updated successfully`,
+        description: "Plan updated successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+
       router.push("/bankplans");
     } catch (error) {
+      console.error("Error updating plan:", error);
       toast({
         title: "Error",
         description: "Failed to update plan",
@@ -218,402 +526,851 @@ const EditPlan = () => {
         duration: 3000,
         isClosable: true,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+  
+
+  if (!user) return (
+    <Flex justify="center" align="center" h="100vh">
+      <Spinner size="xl" color="blue.500" />
+      <Text ml={4} fontSize="xl">Loading...</Text>
+    </Flex>
+  );
+
+  if (isLoading) {
+    return (
+      <Flex justify="center" align="center" h="100vh">
+        <Spinner size="xl" color="blue.500" />
+        <Text ml={4} fontSize="xl">Loading plan data...</Text>
+      </Flex>
+    );
+  }
 
   return (
-    <>
-      <Flex h="100vh">
-        {/* Sidebar */}
-        <Box w="20%" bg="gray.800" color="white" p={4} pos={"fixed"} h={"full"}>
-          <BankSidenav />
-        </Box>
+    <Flex direction="column" align="center" p={14}>
+       {/* Sidebar */}
+       <Box w="18.8%" bg="gray.800" color="white" p={4}>
+        <BankSidenav />
+      </Box>
 
-        {/* Main Content */}
-        <Box
-          w="80%"
-          bg="gray.50"
-          display="flex"
-          flexDirection="column"
-          ml="281"
-        >
-          {/* Fixed Header */}
-          <Box position="fixed" width="80%" zIndex={1000}>
-            <BankHeaders />
-          </Box>
-          <Box p={24} bg="gray.50" borderRadius="md" boxShadow="md">
-            <Heading as="h2" size="lg" mb={4}>
-              Edit {formData.planType === "loan" ? "Loan" : "Investment"} Plan
-            </Heading>
-            <Divider mb={4} />
-            <form onSubmit={handleSubmit}>
-              <VStack spacing={4} align="stretch">
-                {formData.planType === "investment" && (
-                  <>
-                    <FormControl isRequired>
-                      <FormLabel>Plan Name</FormLabel>
-                      <Input
-                        name="planName"
-                        value={formData.planName}
-                        onChange={handleInputChange}
-                        variant="filled"
-                      />
-                    </FormControl>
-                    <FormControl isRequired>
-                      <FormLabel>Category</FormLabel>
-                      <Select
-                        name="investmentCategory"
-                        value={formData.investmentCategory}
-                        onChange={handleInputChange}
-                        variant="filled"
-                      >
-                        <option value="Bonds">Bonds</option>
-                        <option value="MutualFunds">Mutual Funds</option>
-                        <option value="FixedDeposits">Fixed Deposits</option>
-                        <option value="GoldInvestments">
-                          Gold Investments
-                        </option>
-                        <option value="ProvidentFunds">Provident Funds</option>
-                      </Select>
-                    </FormControl>
-                    {formData.investmentCategory && (
+      {/* Main Content */}
+     
+  
+        
+        
+      <VStack
+        spacing={6}
+        w="100%"
+        maxW="900px"
+        bg="white"
+        p={8}
+        borderRadius="lg"
+        boxShadow="lg"
+      >
+        <Heading color="#2C319F" size="lg">
+          Edit Financial Plan
+        </Heading>
+        <Text color="gray.600">Welcome, {user.email}</Text>
+
+        <Box as="form" w="100%" onSubmit={handleSubmit}>
+          <VStack spacing={6} align="stretch">
+            {/* Plan Type Selection */}
+            <FormControl isRequired>
+              <FormLabel fontWeight="bold">Plan Type</FormLabel>
+              <Select
+                name="planType"
+                value={formData.planType}
+                onChange={handleInputChange}
+                placeholder="Select Plan Type"
+                bg="white"
+                borderColor="gray.300"
+                size="lg"
+              >
+                <option value="loan">Loan</option>
+                <option value="investment">Investment</option>
+              </Select>
+            </FormControl>
+
+            {formData.planType && (
+              <Tabs 
+                colorScheme="blue" 
+                index={activeTabIndex} 
+                onChange={(index) => setActiveTabIndex(index)}
+                variant="enclosed-colored"
+              >
+                <TabList>
+                  <Tab>Basic Details</Tab>
+                  <Tab>Financial Details</Tab>
+                  <Tab>Additional Details</Tab>
+                  {formData.planType === "loan" && (
+                    <Tab>Eligibility Criteria</Tab>
+                  )}
+                </TabList>
+
+                <TabPanels>
+                  {/* Basic Details Tab */}
+                  <TabPanel>
+                    <VStack spacing={5} align="start">
+                      {/* Plan Name */}
                       <FormControl isRequired>
-                        <FormLabel>Subcategory</FormLabel>
-                        <Select
-                          name="investmentSubCategory"
-                          value={formData.investmentSubCategory}
+                        <FormLabel fontWeight="bold">
+                          {formData.planType === "loan" ? "Loan Name" : "Investment Plan Name"}
+                        </FormLabel>
+                        <Input
+                          name={formData.planType === "loan" ? "loanName" : "planName"}
+                          value={formData.planType === "loan" ? formData.loanName : formData.planName}
                           onChange={handleInputChange}
-                          variant="filled"
-                        >
-                          {subCategories[formData.investmentCategory]?.map(
-                            (subCategory) => (
-                              <option key={subCategory} value={subCategory}>
-                                {subCategory}
-                              </option>
-                            )
-                          )}
-                        </Select>
+                          bg="white"
+                          borderColor="gray.300"
+                          placeholder={formData.planType === "loan" ? "e.g., Smart Home Loan" : "e.g., Premium Growth Fund"}
+                        />
                       </FormControl>
-                    )}
-                  </>
-                )}
 
-                {formData.planType === "loan" && (
-                  <>
-                    <FormControl isRequired>
-                      <FormLabel>Loan Type</FormLabel>
-                      <Select
-                        name="loanType"
-                        value={formData.loanType}
-                        onChange={handleInputChange}
-                        variant="filled"
-                      >
-                        <option value="personal">Personal Loan</option>
-                        <option value="home">Home Loan</option>
-                        <option value="education">Education Loan</option>
-                        <option value="auto">Auto Loan</option>
-                        <option value="business">Business Loan</option>
-                      </Select>
-                    </FormControl>
+                      {/* Categories */}
+                      {formData.planType === "investment" && (
+                        <>
+                          <FormControl isRequired>
+                            <FormLabel fontWeight="bold">Investment Category</FormLabel>
+                            <Select
+                              name="investmentCategory"
+                              value={formData.investmentCategory}
+                              onChange={handleInputChange}
+                              placeholder="Select Category"
+                              bg="white"
+                              borderColor="gray.300"
+                            >
+                              <option value="Bonds">Bonds</option>
+                              <option value="MutualFunds">Mutual Funds</option>
+                              <option value="FixedDeposits">Fixed Deposits</option>
+                              <option value="GoldInvestments">Gold Investments</option>
+                              <option value="ProvidentFunds">Provident Funds</option>
+                            </Select>
+                          </FormControl>
 
-                    <FormControl isRequired>
-                      <FormLabel>Loan Name</FormLabel>
-                      <Input
-                        name="loanName"
-                        value={formData.loanName}
-                        onChange={handleInputChange}
-                        variant="filled"
-                      />
-                    </FormControl>
-
-                    <FormControl isRequired>
-                      <FormLabel>Purpose</FormLabel>
-                      <Input
-                        name="purpose"
-                        value={formData.purpose}
-                        onChange={handleInputChange}
-                        variant="filled"
-                      />
-                    </FormControl>
-
-                    <FormControl isRequired>
-                      <FormLabel>Interest Rate Type</FormLabel>
-                      <RadioGroup
-                        name="interestRateType"
-                        value={formData.interestRateType}
-                        onChange={(value) =>
-                          handleInputChange({
-                            target: { name: "interestRateType", value },
-                          })
-                        }
-                      >
-                        <Stack direction="row">
-                          <Radio value="fixed">Fixed</Radio>
-                          <Radio value="floating">Floating</Radio>
-                        </Stack>
-                      </RadioGroup>
-                    </FormControl>
-
-                    <FormControl isRequired>
-                      <FormLabel>Processing Fee</FormLabel>
-                      <RadioGroup
-                        name="processingFeeType"
-                        value={formData.processingFeeType}
-                        onChange={(value) =>
-                          handleInputChange({
-                            target: { name: "processingFeeType", value },
-                          })
-                        }
-                      >
-                        <Stack direction="row" mb={2}>
-                          <Radio value="fixed">Fixed Amount</Radio>
-                          <Radio value="percentage">Percentage</Radio>
-                        </Stack>
-                      </RadioGroup>
-                      {formData.processingFeeType === "fixed" ? (
-                        <NumberInput min={0} variant="filled">
-                          <NumberInputField
-                            name="processingFeeAmount"
-                            value={formData.processingFeeAmount}
-                            onChange={handleInputChange}
-                          />
-                        </NumberInput>
-                      ) : (
-                        <NumberInput min={0} max={100} variant="filled">
-                          <NumberInputField
-                            name="processingFeePercentage"
-                            value={formData.processingFeePercentage}
-                            onChange={handleInputChange}
-                          />
-                        </NumberInput>
+                          {formData.investmentCategory && (
+                            <FormControl isRequired>
+                              <FormLabel fontWeight="bold">Subcategory</FormLabel>
+                              <Select
+                                name="investmentSubCategory"
+                                value={formData.investmentSubCategory}
+                                onChange={handleInputChange}
+                                placeholder="Select Subcategory"
+                                bg="white"
+                                borderColor="gray.300"
+                              >
+                                {subCategories[formData.investmentCategory]?.map(
+                                  (subCategory) => (
+                                    <option key={subCategory} value={subCategory}>
+                                      {subCategory}
+                                    </option>
+                                  )
+                                )}
+                              </Select>
+                            </FormControl>
+                          )}
+                        </>
                       )}
-                    </FormControl>
 
-                    <FormControl isRequired>
-                      <FormLabel>Eligibility Criteria</FormLabel>
-                      <VStack spacing={2}>
-                        <NumberInput min={0} variant="filled">
-                          <NumberInputField
-                            name="minMonthlyIncome"
-                            value={formData.minMonthlyIncome}
-                            onChange={handleInputChange}
-                            placeholder="Minimum Monthly Income"
-                          />
-                        </NumberInput>
-                        <HStack w="100%">
-                          <NumberInput min={18} max={100} variant="filled">
-                            <NumberInputField
-                              name="minAge"
-                              value={formData.minAge}
+                      {formData.planType === "loan" && (
+                        <>
+                          <FormControl isRequired>
+                            <FormLabel fontWeight="bold">Loan Type</FormLabel>
+                            <Select
+                              name="loanType"
+                              value={formData.loanType}
                               onChange={handleInputChange}
-                              placeholder="Min Age"
-                            />
-                          </NumberInput>
-                          <NumberInput min={18} max={100} variant="filled">
-                            <NumberInputField
-                              name="maxAge"
-                              value={formData.maxAge}
+                              placeholder="Select Loan Type"
+                              bg="white"
+                              borderColor="gray.300"
+                            >
+                              <option value="HomeLoans">Home Loan</option>
+                              <option value="PersonalLoans">Personal Loan</option>
+                              <option value="BusinessLoans">Business Loan</option>
+                              <option value="EducationLoans">Education Loan</option>
+                              <option value="CarLoans">Car Loan</option>
+                            </Select>
+                          </FormControl>
+
+                          {formData.loanType && (
+                            <FormControl isRequired>
+                              <FormLabel fontWeight="bold">Loan Subcategory</FormLabel>
+                              <Select
+                                name="loanSubCategory"
+                                value={formData.loanSubCategory}
+                                onChange={handleInputChange}
+                                placeholder="Select Subcategory"
+                                bg="white"
+                                borderColor="gray.300"
+                              >
+                                {loanSubCategories[formData.loanType?.toLowerCase().replace("loans", "")]?.map(
+                                  (subCategory) => (
+                                    <option key={subCategory} value={subCategory}>
+                                      {subCategory}
+                                    </option>
+                                  )
+                                )}
+                              </Select>
+                            </FormControl>
+                          )}
+
+                          <FormControl isRequired>
+                            <FormLabel fontWeight="bold">Purpose</FormLabel>
+                            <Input
+                              name="purpose"
+                              value={formData.purpose}
                               onChange={handleInputChange}
-                              placeholder="Max Age"
+                              placeholder="e.g., Home purchase, Vehicle, Business expansion"
+                              bg="white"
+                              borderColor="gray.300"
                             />
-                          </NumberInput>
-                        </HStack>
-                        <Select
-                          name="employmentType"
-                          value={formData.employmentType}
+                          </FormControl>
+                        </>
+                      )}
+                      
+                      {/* Description */}
+                      <FormControl isRequired>
+                        <FormLabel fontWeight="bold">Description</FormLabel>
+                        <Textarea
+                          name="description"
+                          value={formData.description}
                           onChange={handleInputChange}
-                          variant="filled"
-                        >
-                          <option value="salaried">Salaried</option>
-                          <option value="self-employed">Self-Employed</option>
-                          <option value="business">Business Owner</option>
-                        </Select>
-                        <NumberInput min={300} max={900} variant="filled">
-                          <NumberInputField
-                            name="cibilScore"
-                            value={formData.cibilScore}
-                            onChange={handleInputChange}
-                            placeholder="Minimum CIBIL Score"
+                          bg="white"
+                          borderColor="gray.300"
+                          placeholder="A brief summary about the loan/investment"
+                          rows={4}
+                        />
+                      </FormControl>
+                      
+                      {/* Tags Section */}
+                      <FormControl>
+                        <FormLabel fontWeight="bold">Tags (up to 5)</FormLabel>
+                        <HStack mb={2}>
+                          <Input
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            placeholder="Add tags"
+                            borderColor="gray.300"
                           />
-                        </NumberInput>
-                      </VStack>
-                    </FormControl>
+                          <Button
+                            onClick={() => handleAddTag(tagInput)}
+                            isDisabled={tags.length >= 5 || !tagInput}
+                            colorScheme="blue"
+                          >
+                            Add
+                          </Button>
+                        </HStack>
+                        
+                        {/* Display selected tags */}
+                        <Wrap spacing={2} mb={4}>
+                          {tags.map((tag) => (
+                            <WrapItem key={tag}>
+                              <Tag size="md" colorScheme="blue" borderRadius="full">
+                                <TagLabel>{tag}</TagLabel>
+                                <TagCloseButton onClick={() => handleRemoveTag(tag)} />
+                              </Tag>
+                            </WrapItem>
+                          ))}
+                        </Wrap>
 
-                    <FormControl isRequired>
-                      <FormLabel>Repayment Schedule</FormLabel>
-                      <Select
-                        name="repaymentSchedule"
-                        value={formData.repaymentSchedule}
-                        onChange={handleInputChange}
-                        variant="filled"
-                      >
-                        <option value="monthly">Monthly EMI</option>
-                        <option value="quarterly">Quarterly</option>
-                        <option value="annual">Annual</option>
-                      </Select>
-                    </FormControl>
+                        {/* Display fetched tags */}
+                        <Text mb={2} fontWeight="bold">Suggested Tags:</Text>
+                        <Wrap spacing={2}>
+                          {fetchedTags.map((tag) => (
+                            <WrapItem key={tag}>
+                              <Tag
+                                size="md"
+                                colorScheme="gray"
+                                borderRadius="full"
+                                cursor="pointer"
+                                onClick={() => handleAddTag(tag)}
+                                _hover={{ bg: "blue.100" }}
+                              >
+                                <TagLabel>{tag}</TagLabel>
+                              </Tag>
+                            </WrapItem>
+                          ))}
+                        </Wrap>
+                      </FormControl>
 
-                    <FormControl isRequired>
-                      <FormLabel>Prepayment Options</FormLabel>
-                      <RadioGroup
-                        name="prepaymentAllowed"
-                        value={formData.prepaymentAllowed}
-                        onChange={(value) =>
-                          handleInputChange({
-                            target: { name: "prepaymentAllowed", value },
-                          })
-                        }
-                      >
-                        <Stack direction="row" mb={2}>
-                          <Radio value="yes">Allowed</Radio>
-                          <Radio value="no">Not Allowed</Radio>
-                        </Stack>
-                      </RadioGroup>
-                      {formData.prepaymentAllowed === "yes" && (
-                        <NumberInput min={0} variant="filled">
-                          <NumberInputField
-                            name="prepaymentCharges"
-                            value={formData.prepaymentCharges}
-                            onChange={handleInputChange}
-                            placeholder="Prepayment Charges (%)"
-                          />
-                        </NumberInput>
+                      <Button colorScheme="blue" onClick={() => setActiveTabIndex(1)}>
+                        Next: Financial Details
+                      </Button>
+                    </VStack>
+                  </TabPanel>
+
+                  {/* Financial Details Tab */}
+                  <TabPanel>
+                    <VStack spacing={5} align="start">
+                      <Grid templateColumns={{base: "1fr", md: "1fr 1fr"}} gap={4} width="100%">
+                        {/* Interest Rate */}
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Interest Rate (%)</FormLabel>
+                          <NumberInput 
+                            min={0} 
+                            max={100} 
+                            step={0.1} 
+                            bg="white"
+                            defaultValue={formData.interestRate}
+                          >
+                            <NumberInputField
+                              name="interestRate"
+                              value={formData.interestRate}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+
+                        {/* Interest Rate Type */}
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Interest Rate Type</FormLabel>
+                          <RadioGroup 
+                            name="interestRateType" 
+                            value={formData.interestRateType} 
+                            onChange={(value) => handleInputChange({ target: { name: 'interestRateType', value }})}
+                          >
+                            <Stack direction="row">
+                              <Radio value="fixed">Fixed</Radio>
+                              <Radio value="floating">Floating</Radio>
+                            </Stack>
+                          </RadioGroup>
+                        </FormControl>
+
+                        {/* Min Amount */}
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">
+                            {formData.planType === "loan" ? "Minimum Loan Amount" : "Minimum Investment"}
+                          </FormLabel>
+                          <NumberInput min={0} bg="white">
+                            <NumberInputField
+                              name="minAmount"
+                              value={formData.minAmount}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+
+                        {/* Max Amount */}
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">
+                            {formData.planType === "loan" ? "Maximum Loan Amount" : "Maximum Investment"}
+                          </FormLabel>
+                          <NumberInput min={0} bg="white">
+                            <NumberInputField
+                              name="maxAmount"
+                              value={formData.maxAmount}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+
+                        {/* Tenure */}
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Tenure (months)</FormLabel>
+                          <NumberInput min={0} bg="white">
+                            <NumberInputField
+                              name="tenure"
+                              value={formData.tenure}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+                      </Grid>
+
+                      {/* Processing Fee */}
+                      {formData.planType === "loan" && (
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Processing Fee</FormLabel>
+                          <RadioGroup 
+                            name="processingFeeType" 
+                            value={formData.processingFeeType} 
+                            onChange={(value) => handleInputChange({ target: { name: 'processingFeeType', value }})}
+                          >
+                            <Stack direction="row" mb={2}>
+                              <Radio value="fixed">Fixed Amount</Radio>
+                              <Radio value="percentage">Percentage</Radio>
+                            </Stack>
+                          </RadioGroup>
+                          {formData.processingFeeType === 'fixed' ? (
+                            <NumberInput min={0} bg="white">
+                              <NumberInputField
+                                name="processingFeeAmount"
+                                value={formData.processingFeeAmount}
+                                onChange={handleInputChange}
+                                placeholder="Enter fixed amount"
+                                borderColor="gray.300"
+                              />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInput>
+                          ) : (
+                            <NumberInput min={0} max={100} bg="white">
+                              <NumberInputField
+                                name="processingFeePercentage"
+                                value={formData.processingFeePercentage}
+                                onChange={handleInputChange}
+                                placeholder="Enter percentage"
+                                borderColor="gray.300"
+                              />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInput>
+                          )}
+                        </FormControl>
                       )}
-                    </FormControl>
-                  </>
-                )}
 
-                <FormControl isRequired>
-                  <FormLabel>Interest Rate (%)</FormLabel>
-                  <NumberInput min={0} max={100} step={0.1} variant="filled">
-                    <NumberInputField
-                      name="interestRate"
-                      value={formData.interestRate}
-                      onChange={handleInputChange}
-                    />
-                  </NumberInput>
-                </FormControl>
+                      <Button colorScheme="blue" onClick={() => setActiveTabIndex(2)}>
+                        Next: Additional Details
+                      </Button>
+                    </VStack>
+                  </TabPanel>
 
-                <HStack spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Minimum Amount</FormLabel>
-                    <NumberInput min={0} variant="filled">
-                      <NumberInputField
-                        name="minAmount"
-                        value={formData.minAmount}
-                        onChange={handleInputChange}
-                      />
-                    </NumberInput>
-                  </FormControl>
-                  <FormControl isRequired>
-                    <FormLabel>Maximum Amount</FormLabel>
-                    <NumberInput min={0} variant="filled">
-                      <NumberInputField
-                        name="maxAmount"
-                        value={formData.maxAmount}
-                        onChange={handleInputChange}
-                      />
-                    </NumberInput>
-                  </FormControl>
-                </HStack>
+                  {/* Additional Details Tab */}
+                  <TabPanel>
+                    <VStack spacing={5} align="start">
+                      {/* Risk Level */}
+                      {formData.planType === "investment" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Risk Level</FormLabel>
+                          <Slider
+                            name="riskLevel"
+                            value={formData.riskLevel}
+                            onChange={(value) => handleRangeChange("riskLevel", value)}
+                            min={1}
+                            max={5}
+                            step={0.1}
+                            colorScheme="red"
+                          >
+                            <SliderTrack>
+                              <SliderFilledTrack />
+                            </SliderTrack>
+                            <SliderThumb boxSize={6}>
+                              <Box color="tomato" as={FiAlertTriangle} />
+                            </SliderThumb>
+                          </Slider>
+                          <FormHelperText>Calculated Risk Level: {calculatedRisk}</FormHelperText>
+                        </FormControl>
+                      )}
 
-                <FormControl isRequired>
-                  <FormLabel>Tenure (months)</FormLabel>
-                  <NumberInput min={0} variant="filled">
-                    <NumberInputField
-                      name="tenure"
-                      value={formData.tenure}
-                      onChange={handleInputChange}
-                    />
-                  </NumberInput>
-                </FormControl>
+                      {/* Flexibility Score */}
+                      <FormControl>
+                        <FormLabel fontWeight="bold">Flexibility Score</FormLabel>
+                        <Slider
+                          name="flexibilityScore"
+                          value={formData.flexibilityScore}
+                          onChange={(value) => handleRangeChange("flexibilityScore", value)}
+                          min={1}
+                          max={5}
+                          step={0.1}
+                          colorScheme="green"
+                        >
+                          <SliderTrack>
+                            <SliderFilledTrack />
+                          </SliderTrack>
+                          <SliderThumb boxSize={6}>
+                            <Box color="green.500" as={FiShield} />
+                          </SliderThumb>
+                        </Slider>
+                        <FormHelperText>Flexibility in terms (1-5)</FormHelperText>
+                      </FormControl>
 
-                <FormControl>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    variant="filled"
-                  />
-                </FormControl>
+                      {/* Tax Benefits */}
+                      {formData.planType === "investment" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Tax Benefits</FormLabel>
+                          <RadioGroup 
+                            name="taxBenefits" 
+                            value={formData.taxBenefits} 
+                            onChange={(value) => handleInputChange({ target: { name: 'taxBenefits', value }})}
+                          >
+                            <Stack direction="row">
+                              <Radio value="Yes">Yes</Radio>
+                              <Radio value="No">No</Radio>
+                            </Stack>
+                          </RadioGroup>
+                          {formData.taxBenefits === "Yes" && (
+                            <Textarea
+                              name="taxBenefitDetails"
+                              value={formData.taxBenefitDetails}
+                              onChange={handleInputChange}
+                              bg="white"
+                              borderColor="gray.300"
+                              placeholder="Provide details about tax benefits"
+                              rows={3}
+                            />
+                          )}
+                        </FormControl>
+                      )}
 
-                <FormControl>
-                  <FormLabel>Other Conditions</FormLabel>
-                  <Textarea
-                    name="otherConditions"
-                    value={formData.otherConditions}
-                    onChange={handleInputChange}
-                    variant="filled"
-                  />
-                </FormControl>
+                      {/* Minimum Tenure */}
+                      {formData.planType === "investment" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Minimum Tenure (months)</FormLabel>
+                          <NumberInput min={0} bg="white">
+                            <NumberInputField
+                              name="minimumTenure"
+                              value={formData.minimumTenure}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+                      )}
 
-                <FormControl>
-                  <FormLabel>Tags (up to 5)</FormLabel>
-                  <Wrap spacing={2} mb={4}>
-                    {tags.map((tag) => (
-                      <WrapItem key={tag}>
-                        <Tag size="md" colorScheme="blue" borderRadius="full">
-                          <TagLabel>{tag}</TagLabel>
-                          <TagCloseButton
-                            onClick={() => handleRemoveTag(tag)}
-                          />
-                        </Tag>
-                      </WrapItem>
-                    ))}
-                  </Wrap>
-                  <HStack>
-                    <Menu>
-                      <MenuButton
-                        as={Button}
-                        colorScheme="teal"
-                        isDisabled={tags.length >= 5}
-                      >
-                        Select Tag
-                      </MenuButton>
-                      <MenuList>
-                        {availableTags.map((tag) => (
-                          <MenuItem key={tag} onClick={() => handleAddTag(tag)}>
-                            {tag}
-                          </MenuItem>
-                        ))}
-                      </MenuList>
-                    </Menu>
-                    <Input
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      placeholder="Or add custom tag"
-                      variant="filled"
-                    />
-                    <Button
-                      onClick={() => handleAddTag(tagInput)}
-                      isDisabled={tags.length >= 5 || !tagInput.trim()}
-                      colorScheme="teal"
-                    >
-                      Add Custom
-                    </Button>
-                  </HStack>
-                </FormControl>
-                <HStack alignItems={"center"} justifyContent={"center"}>
-                  <Button type="submit" colorScheme="teal" mt={4}>
-                    Update{" "}
-                    {formData.planType === "loan" ? "Loan" : "Investment"} Plan
-                  </Button>
-                  <Button
-                    colorScheme="teal"
-                    mt={4}
-                    onClick={() => router.push("/bankplans")}
-                  >
-                    Cancel
-                  </Button>
-                </HStack>
-              </VStack>
-            </form>
-          </Box>
+                      {/* Early Withdrawal Penalty */}
+                      {formData.planType === "investment" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Early Withdrawal Penalty (%)</FormLabel>
+                          <NumberInput min={0} max={100} bg="white">
+                            <NumberInputField
+                              name="earlyWithdrawalPenalty"
+                              value={formData.earlyWithdrawalPenalty}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+                      )}
+
+                      {/* Guarantor Required */}
+                      {formData.planType === "loan" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Guarantor Required</FormLabel>
+                          <RadioGroup 
+                            name="guarantorRequired" 
+                            value={formData.guarantorRequired} 
+                            onChange={(value) => handleInputChange({ target: { name: 'guarantorRequired', value }})}
+                          >
+                            <Stack direction="row">
+                              <Radio value="Yes">Yes</Radio>
+                              <Radio value="No">No</Radio>
+                            </Stack>
+                          </RadioGroup>
+                        </FormControl>
+                      )}
+
+                      {/* Collateral Required */}
+                      {formData.planType === "loan" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Collateral Required</FormLabel>
+                          <RadioGroup 
+                            name="collateralRequired" 
+                            value={formData.collateralRequired} 
+                            onChange={(value) => handleInputChange({ target: { name: 'collateralRequired', value }})}
+                          >
+                            <Stack direction="row">
+                              <Radio value="Yes">Yes</Radio>
+                              <Radio value="No">No</Radio>
+                            </Stack>
+                          </RadioGroup>
+                          {formData.collateralRequired === "Yes" && (
+                            <NumberInput min={0} max={100} bg="white">
+                              <NumberInputField
+                                name="collateralPercentage"
+                                value={formData.collateralPercentage}
+                                onChange={handleInputChange}
+                                placeholder="Enter percentage"
+                                borderColor="gray.300"
+                              />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInput>
+                          )}
+                        </FormControl>
+                      )}
+
+                      {/* Documentation Required */}
+                      <FormControl>
+                        <FormLabel fontWeight="bold">Documentation Required</FormLabel>
+                        <Textarea
+                          name="documentationRequired"
+                          value={formData.documentationRequired}
+                          onChange={handleInputChange}
+                          bg="white"
+                          borderColor="gray.300"
+                          placeholder="List of required documents"
+                          rows={3}
+                        />
+                      </FormControl>
+
+                      {/* Investment Frequency */}
+                      {formData.planType === "investment" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Investment Frequency</FormLabel>
+                          <Select
+                            name="investmentFrequency"
+                            value={formData.investmentFrequency}
+                            onChange={handleInputChange}
+                            bg="white"
+                            borderColor="gray.300"
+                          >
+                            <option value="onetime">One-time</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="annual">Annual</option>
+                          </Select>
+                        </FormControl>
+                      )}
+
+                      {/* Payment Frequency */}
+                      {formData.planType === "loan" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Payment Frequency</FormLabel>
+                          <Select
+                            name="paymentFrequency"
+                            value={formData.paymentFrequency}
+                            onChange={handleInputChange}
+                            bg="white"
+                            borderColor="gray.300"
+                          >
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="annual">Annual</option>
+                          </Select>
+                        </FormControl>
+                      )}
+
+                      {/* Insurance Required */}
+                      {formData.planType === "loan" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Insurance Required</FormLabel>
+                          <RadioGroup 
+                            name="isInsuranceRequired" 
+                            value={formData.isInsuranceRequired} 
+                            onChange={(value) => handleInputChange({ target: { name: 'isInsuranceRequired', value }})}
+                          >
+                            <Stack direction="row">
+                              <Radio value="Yes">Yes</Radio>
+                              <Radio value="No">No</Radio>
+                            </Stack>
+                          </RadioGroup>
+                        </FormControl>
+                      )}
+
+                      {/* Lock-in Period */}
+                      {formData.planType === "investment" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Lock-in Period (months)</FormLabel>
+                          <NumberInput min={0} bg="white">
+                            <NumberInputField
+                              name="lockInPeriod"
+                              value={formData.lockInPeriod}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+                      )}
+
+                      {/* Indemnity Required */}
+                      {formData.planType === "loan" && (
+                        <FormControl>
+                          <FormLabel fontWeight="bold">Indemnity Required</FormLabel>
+                          <RadioGroup 
+                            name="indemnityRequired" 
+                            value={formData.indemnityRequired} 
+                            onChange={(value) => handleInputChange({ target: { name: 'indemnityRequired', value }})}
+                          >
+                            <Stack direction="row">
+                              <Radio value="Yes">Yes</Radio>
+                              <Radio value="No">No</Radio>
+                            </Stack>
+                          </RadioGroup>
+                        </FormControl>
+                      )}
+
+                      <Button colorScheme="blue" onClick={() => setActiveTabIndex(3)}>
+                        Next: Eligibility Criteria
+                      </Button>
+                    </VStack>
+                  </TabPanel>
+
+                  {/* Eligibility Criteria Tab */}
+                  {formData.planType === "loan" && (
+                    <TabPanel>
+                      <VStack spacing={5} align="start">
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Minimum Monthly Income</FormLabel>
+                          <NumberInput min={0} bg="white">
+                            <NumberInputField
+                              name="minMonthlyIncome"
+                              value={formData.minMonthlyIncome}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+
+                        <HStack w="100%">
+                          <FormControl isRequired>
+                            <FormLabel fontWeight="bold">Minimum Age</FormLabel>
+                            <NumberInput min={18} max={100} bg="white">
+                              <NumberInputField
+                                name="minAge"
+                                value={formData.minAge}
+                                onChange={handleInputChange}
+                                borderColor="gray.300"
+                              />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInput>
+                          </FormControl>
+
+                          <FormControl isRequired>
+                            <FormLabel fontWeight="bold">Maximum Age</FormLabel>
+                            <NumberInput min={18} max={100} bg="white">
+                              <NumberInputField
+                                name="maxAge"
+                                value={formData.maxAge}
+                                onChange={handleInputChange}
+                                borderColor="gray.300"
+                              />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInput>
+                          </FormControl>
+                        </HStack>
+
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Employment Type</FormLabel>
+                          <Select
+                            name="employmentType"
+                            value={formData.employmentType}
+                            onChange={handleInputChange}
+                            placeholder="Select Employment Type"
+                            bg="white"
+                            borderColor="gray.300"
+                          >
+                            <option value="salaried">Salaried</option>
+                            <option value="self-employed">Self-Employed</option>
+                            <option value="business">Business Owner</option>
+                          </Select>
+                        </FormControl>
+
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Minimum CIBIL Score</FormLabel>
+                          <NumberInput min={300} max={900} bg="white">
+                            <NumberInputField
+                              name="cibilScore"
+                              value={formData.cibilScore}
+                              onChange={handleInputChange}
+                              borderColor="gray.300"
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Repayment Schedule</FormLabel>
+                          <Select
+                            name="repaymentSchedule"
+                            value={formData.repaymentSchedule}
+                            onChange={handleInputChange}
+                            bg="white"
+                            borderColor="gray.300"
+                          >
+                            <option value="monthly">Monthly EMI</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="annual">Annual</option>
+                          </Select>
+                        </FormControl>
+
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="bold">Prepayment Options</FormLabel>
+                          <RadioGroup 
+                            name="prepaymentAllowed" 
+                            value={formData.prepaymentAllowed} 
+                            onChange={(value) => handleInputChange({ target: { name: 'prepaymentAllowed', value }})}
+                          >
+                            <Stack direction="row" mb={2}>
+                              <Radio value="yes">Allowed</Radio>
+                              <Radio value="no">Not Allowed</Radio>
+                            </Stack>
+                          </RadioGroup>
+                          {formData.prepaymentAllowed === 'yes' && (
+                            <NumberInput min={0} bg="white">
+                              <NumberInputField
+                                name="prepaymentCharges"
+                                value={formData.prepaymentCharges}
+                                onChange={handleInputChange}
+                                placeholder="Prepayment Charges (%)"
+                                borderColor="gray.300"
+                              />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInput>
+                          )}
+                        </FormControl>
+
+                        <Button colorScheme="blue" type="submit" isLoading={isSubmitting}>
+                          Submit Plan
+                        </Button>
+                      </VStack>
+                    </TabPanel>
+                  )}
+                </TabPanels>
+              </Tabs>
+            )}
+          </VStack>
+          
+          
         </Box>
-      </Flex>
-    </>
+      </VStack>
+      
+    </Flex>
   );
 };
 
-export default EditPlan;
+export default EditPlanForm;

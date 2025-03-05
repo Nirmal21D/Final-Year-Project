@@ -37,18 +37,7 @@ const AdminDashboard = () => {
   const [user, setUser] = useState(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-        router.push("/login");
-      }
-    });
 
-    return () => unsubscribe();
-  }, [router]);
 
   useEffect(() => {
     const fetchBankAndPlanData = async () => {
