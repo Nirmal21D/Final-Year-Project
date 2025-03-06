@@ -37,9 +37,55 @@ import {
   Avatar,
   Center,
   AvatarBadge,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  Flex,
+  Divider,
+  Image,
+  Progress,
+  useToast,
+  InputGroup,
+  InputRightElement,
+  ButtonGroup,
+  Icon,
+  Grid,
+  GridItem,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  InputLeftElement,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  keyframes
 } from "@chakra-ui/react";
-import { ChatIcon, AddIcon } from "@chakra-ui/icons";
-import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+import { 
+  ChatIcon, 
+  AddIcon, 
+  SearchIcon, 
+  StarIcon, 
+  TimeIcon,
+  CheckCircleIcon, 
+  InfoIcon
+} from "@chakra-ui/icons";
+import { 
+  FiTrendingUp, 
+  FiDollarSign, 
+  FiBarChart2, 
+  FiStar, 
+  FiCheckCircle, 
+  FiArrowRight,
+  FiShield,
+  FiActivity,
+  FiFilter
+} from "react-icons/fi";
+import { motion } from "framer-motion";
+import { collection, getDocs, doc, getDoc, setDoc, query, orderBy, limit, where } from "firebase/firestore";
 import { db, auth, storage } from "@/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -47,6 +93,10 @@ import Headers from "@/components/Headers";
 import Chat from "@/components/chat";
 import Welcome from "@/components/Welcome";
 import Footer from "@/components/footer";
+import { useRouter } from "next/navigation";
+const MotionBox = motion(Box);
+const MotionFlex = motion(Flex);
+const MotionCard = motion(Card);
 
 const MainPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -74,10 +124,40 @@ const MainPage = () => {
   const [formErrors, setFormErrors] = useState({});
   const [profilePhoto, setProfilePhoto] = useState("/images/photo-placeholder.jpg");
   const fileInputRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [featuredPlans, setFeaturedPlans] = useState([]);
+  const [trendingPlans, setTrendingPlans] = useState([]);
+  const [profileCompleteness, setProfileCompleteness] = useState(0);
+  const toast = useToast();
+  const router = useRouter();
+  
+  // Calculate profile completeness
+  useEffect(() => {
+    if (user && userProfile) {
+      const requiredFields = [
+        'name', 'mobileNumber', 'age', 'salary', 'cibilScore', 'profilePhoto', 'interests'
+      ];
+      
+      let completedFields = 0;
+      requiredFields.forEach(field => {
+        if (field === 'interests') {
+          if (userProfile[field] && userProfile[field].length > 0) completedFields++;
+        } else if (userProfile[field]) {
+          completedFields++;
+        }
+      });
+      
+      const percentage = Math.round((completedFields / requiredFields.length) * 100);
+      setProfileCompleteness(percentage);
+    }
+  }, [user, userProfile]);
 
+  // Fetch all investment plans
   useEffect(() => {
     const fetchPlans = async () => {
       try {
+        setIsLoading(true);
         const plansCollection = collection(db, "investmentplans");
         const plansSnapshot = await getDocs(plansCollection);
         const plansData = plansSnapshot.docs.map((doc) => ({
@@ -85,15 +165,34 @@ const MainPage = () => {
           ...doc.data(),
         }));
         setPlans(plansData);
+        
+        // Get featured plans (highest interest rate)
+        const featuredPlans = [...plansData]
+          .sort((a, b) => b.interestRate - a.interestRate)
+          .slice(0, 3);
+        setFeaturedPlans(featuredPlans);
+        
+        // Get trending plans (most popular or recently added)
+        const trendingPlans = [...plansData]
+          .sort((a, b) => b.popularity - a.popularity || b.createdAt - a.createdAt)
+          .slice(0, 4);
+        setTrendingPlans(trendingPlans);
       } catch (error) {
         console.error("Error fetching plans from Firebase:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load investment plans",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPlans();
-  }, []);
+  }, [toast]);
 
   // Update the user auth useEffect to include profile photo
   useEffect(() => {
@@ -108,7 +207,7 @@ const MainPage = () => {
             const userData = userDocSnapshot.data();
             setUserProfile(userData);
             setUserInterests(userData.interests || []);
-            // Set profile photo if it exists
+            
             if (userData.profilePhoto) {
               setProfilePhoto(userData.profilePhoto);
             }
@@ -152,7 +251,7 @@ const MainPage = () => {
     return () => unsubscribe();
   }, [onOpen]);
 
-  // Add this function to handle fetching suggested interests from Firestore
+  // Fetch suggested interests
   useEffect(() => {
     const fetchSuggestedInterests = async () => {
       try {
@@ -186,7 +285,6 @@ const MainPage = () => {
     }
   };
 
-  // Add this function to handle file uploads
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -218,7 +316,6 @@ const MainPage = () => {
     }
   };
 
-  // Update the validation function
   const validateForm = () => {
     const errors = {};
     
@@ -242,7 +339,6 @@ const MainPage = () => {
     return errors;
   };
 
-  // Update the submit handler to include profilePhoto
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -264,21 +360,36 @@ const MainPage = () => {
         salary: parseFloat(formValues.salary),
         cibilScore: parseInt(formValues.cibilScore),
         interests: formValues.interests,
-        profilePhoto: profilePhoto, // Add this line to include profilePhoto
+        profilePhoto: profilePhoto,
       }, { merge: true });
       
-      // Update local state with new values
+      // Update local state
       setUserInterests(formValues.interests);
       setMissingFields([]);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      
       onClose();
     } catch (error) {
       console.error("Error updating user profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Add these functions to handle interest management
   const handleAddInterest = (interest) => {
     if (!formValues.interests.includes(interest) && formValues.interests.length < 5 && interest.trim()) {
       setFormValues({
@@ -304,10 +415,56 @@ const MainPage = () => {
   };
 
   const toggleChat = () => setIsChatOpen(!isChatOpen);
-
+  
+  // Filter plans based on user interests and search query
   const filteredPlans = plans.filter(
-    (plan) => plan.tags && plan.tags.some((tag) => userInterests.includes(tag))
+    (plan) => {
+      // Category filter
+      if (selectedCategory !== "All" && plan.category !== selectedCategory) {
+        return false;
+      }
+      
+      // Search filter
+      if (searchQuery && !plan.planName.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      
+      // Interest filter (only if user has interests)
+      if (userInterests.length > 0) {
+        return plan.tags && plan.tags.some((tag) => userInterests.includes(tag));
+      }
+      
+      return true;
+    }
   );
+
+  // Animation variants
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  };
+  
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+  
+  // Plan categories
+  const categories = [
+    "All",
+    "Stocks", 
+    "Bonds", 
+    "Mutual Funds", 
+    "Fixed Deposits", 
+    "Real Estate", 
+    "Cryptocurrency"
+  ];
 
   return (
     <Box>
@@ -316,15 +473,16 @@ const MainPage = () => {
         <Headers />
       </Box>
 
-      {/* Hero Section */}
+      {/* Hero Section with Animated Elements */}
       <Box
         position="relative"
         height="100vh"
         width="100%"
-        backgroundImage="url('/images/bg1.jpg')" // Replace with your actual image URL
+        backgroundImage="url('/images/bg1.jpg')"
         backgroundSize="cover"
         backgroundPosition="center"
         backgroundAttachment="fixed"
+        pt="70px" // Add padding top to account for the fixed header
       >
         {/* Dark gradient overlay */}
         <Box
@@ -343,83 +501,470 @@ const MainPage = () => {
           position="relative"
           zIndex="1"
         >
-          <Stack
+          <Grid
             height="100%"
-            justifyContent="center"
-            alignItems="flex-start"
-            spacing="6"
-            maxW="xl"
+            templateColumns={{ base: "1fr", lg: "1fr 1fr" }}
+            gap={8}
+            alignItems="center"
           >
-            <Welcome />
-            {/* <Heading
-              color="white"
-              fontSize={{ base: "4xl", md: "5xl", lg: "6xl" }}
-              fontWeight="bold"
+            <GridItem>
+              <MotionBox
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              >
+                <Welcome />
+              </MotionBox>
+            </GridItem>
+            
+            <GridItem display={{ base: "none", lg: "block" }}>
+              <MotionBox
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                <Card 
+                  bg="rgba(255, 255, 255, 0.9)"
+                  backdropFilter="blur(10px)"
+                  borderRadius="xl"
+                  overflow="hidden"
+                  boxShadow="2xl"
+                >
+                  <CardBody p={8}>
+                    <VStack spacing={6} align="stretch">
+                      <Heading size="md" color="teal.700">Start Your Investment Journey</Heading>
+                      
+                      {user ? (
+  <>
+    <Box>
+      {profileCompleteness < 100 ? (
+        <>
+          <Text mb={2} fontWeight="medium">Profile Completion</Text>
+          <Progress 
+            value={profileCompleteness} 
+            colorScheme="teal" 
+            borderRadius="full" 
+            size="sm"
+            hasStripe
+          />
+          <Flex justify="space-between" mt={1}>
+            <Text fontSize="sm" color="gray.600">{profileCompleteness}% Complete</Text>
+            <Text 
+              fontSize="sm" 
+              color="teal.600" 
+              fontWeight="medium" 
+              cursor="pointer"
+              onClick={onOpen}
+              _hover={{ textDecoration: "underline" }}
             >
-              Invest in Your Future
+              Complete Now
+            </Text>
+          </Flex>
+        </>
+      ) : (
+        <Flex 
+          bg="green.50" 
+          p={3} 
+          borderRadius="md" 
+          align="center"
+          color="green.700"
+        >
+          <Icon as={FiCheckCircle} mr={3} boxSize={5} />
+          <Text fontWeight="medium">Profile Completed</Text>
+        </Flex>
+      )}
+    </Box>
+    
+    <SimpleGrid columns={2} spacing={4}>
+      <Link href="/plan1">
+        <Button 
+          variant="outline" 
+          colorScheme="teal" 
+          size="lg" 
+          width="full"
+          borderRadius="full"
+          rightIcon={<FiBarChart2 />}
+        >
+          Explore Plans
+        </Button>
+      </Link>
+      <Link href="/loanplans">
+        <Button 
+          colorScheme="teal"
+          size="lg"
+          width="full"
+          borderRadius="full"
+          rightIcon={<FiDollarSign />}
+        >
+          Apply for Loan
+        </Button>
+      </Link>
+    </SimpleGrid>
+  </>
+) : (
+  <>
+    <Text color="gray.600">
+      Create an account to discover personalized investment recommendations 
+      and manage your financial goals.
+    </Text>
+    <SimpleGrid columns={2} spacing={4}>
+      <Link href="/login">
+        <Button 
+          variant="outline" 
+          colorScheme="teal" 
+          size="lg" 
+          width="full"
+          borderRadius="full"
+        >
+          Log In
+        </Button>
+      </Link>
+      <Link href="/signup">
+        <Button 
+          colorScheme="teal"
+          size="lg"
+          width="full"
+          borderRadius="full"
+        >
+          Sign Up
+        </Button>
+      </Link>
+    </SimpleGrid>
+  </>
+)}
+                    </VStack>
+                  </CardBody>
+                </Card>
+              </MotionBox>
+            </GridItem>
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* Featured Plans Section */}
+      <Box py={16} bg="gray.50">
+        <Container maxW="container.xl">
+          <Flex justify="space-between" align="center" mb={8}>
+            <Heading as="h2" size="xl">
+              Featured Plans
             </Heading>
-            <Text
-              color="gray.100"
-              fontSize={{ base: "lg", md: "xl" }}
-              maxW="lg"
-            >
-              Discover personalized investment plans tailored to your goals.
-              Start your journey to financial freedom today with our expert
-              guidance and proven strategies.
-            </Text> */}
-          </Stack>
+            <Link href="/plan1">
+              <Button rightIcon={<FiArrowRight />} colorScheme="teal" variant="ghost">
+                View All Plans
+              </Button>
+            </Link>
+          </Flex>
+          
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
+            {isLoading ? (
+              Array(3).fill(0).map((_, i) => (
+                <Skeleton key={i} height="300px" borderRadius="lg" />
+              ))
+            ) : (
+              featuredPlans.map((plan, index) => (
+                <MotionCard
+                  key={plan.id}
+                  as={Link}
+                  href={`/plan1/${plan.id}`}
+                  initial="hidden"
+                  animate="visible"
+                  custom={index}
+                  variants={cardVariants}
+                  borderRadius="xl"
+                  overflow="hidden"
+                  boxShadow="lg"
+                  bg="white"
+                  _hover={{ transform: "translateY(-8px)", boxShadow: "xl", transition: "all 0.3s ease" }}
+                >
+                  <Box h="8px" bg="teal.500" />
+                  <CardBody p={6}>
+                    <Badge 
+                      colorScheme="teal" 
+                      fontSize="0.8em" 
+                      mb={2}
+                    >
+                      FEATURED
+                    </Badge>
+                    <Heading size="md" mb={3}>{plan.planName}</Heading>
+                    <Text color="gray.600" noOfLines={2} mb={4}>
+                      {plan.description || "Invest in this high-return plan with excellent benefits"}
+                    </Text>
+                    
+                    <Divider my={4} />
+                    
+                    <SimpleGrid columns={2} spacing={4} mb={4}>
+                      <Box>
+                        <Text fontSize="sm" color="gray.500">Interest Rate</Text>
+                        <Text fontSize="xl" fontWeight="bold" color="teal.600">
+                          {plan.interestRate}%
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="sm" color="gray.500">Min Investment</Text>
+                        <Text fontSize="xl" fontWeight="bold">
+                          ${plan.minAmount}
+                        </Text>
+                      </Box>
+                    </SimpleGrid>
+                    
+                    <HStack mt={4} spacing={2}>
+                      {plan.tags && plan.tags.slice(0, 3).map(tag => (
+                        <Tag key={tag} size="sm" colorScheme="gray" borderRadius="full">
+                          {tag}
+                        </Tag>
+                      ))}
+                    </HStack>
+                  </CardBody>
+                </MotionCard>
+              ))
+            )}
+          </SimpleGrid>
         </Container>
       </Box>
 
       {/* Recommended Plans Section */}
-      <Box bg="gray.50" py="16" background="rgba(0,128,128,0.08)">
+      <Box py={16} background="rgba(0,128,128,0.08)">
         <Container maxW="container.xl">
-          <Heading as="h2" size="xl" mb="8">
-            Recommended For you
-          </Heading>
+          <Box mb={8}>
+            <Heading as="h2" size="xl" mb={3}>
+              Recommended For You
+            </Heading>
+            <Text color="gray.600" fontSize="md">
+              {user ? 
+                "Based on your interests and investment profile" : 
+                "Create an account to get personalized recommendations"}
+            </Text>
+          </Box>
+          
           {isLoading ? (
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing="6">
-              {[...Array(3)].map((_, index) => (
-                <Skeleton key={index} height="250px" borderRadius="lg" />
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+              {Array(6).fill(0).map((_, i) => (
+                <Skeleton key={i} height="250px" borderRadius="lg" />
               ))}
             </SimpleGrid>
-          ) : (
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing="6">
-              {filteredPlans.map((plan) => (
-                <Card
-                  key={plan.id}
-                  as={Link}
-                  href={`/plan1/${plan.id}`}
-                  _hover={{
-                    transform: "translateY(-5px)",
-                    transition: "transform 0.3s ease",
-                  }}
-                  bg="gray.50"
-                  borderRadius="lg"
-                  overflow="hidden"
-                  boxShadow="md"
-                >
-                  <CardBody>
-                    <VStack align="stretch" spacing="4">
-                      <Heading size="md">{plan.planName}</Heading>
-                      <Text fontSize="3xl" fontWeight="bold">
-                        ${plan.minAmount}
-                        <Box as="span" fontSize="sm" fontWeight="normal" ml="1">
-                          /month
+          ) : (user && userInterests.length > 0) ? (
+            <MotionBox
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              as={SimpleGrid}
+              columns={{ base: 1, md: 2, lg: 3 }}
+              spacing={6}
+            >
+              {/* Update filtering logic to only filter by user interests, no categories or search */}
+              {plans
+                .filter(plan => plan.tags && plan.tags.some(tag => userInterests.includes(tag)))
+                .slice(0, 6) // Limit to 6 plans
+                .map((plan) => (
+                  <MotionCard
+                    key={plan.id}
+                    variants={cardVariants}
+                    as={Link}
+                    href={`/plan1/${plan.id}`}
+                    borderRadius="xl"
+                    overflow="hidden"
+                    boxShadow="md"
+                    bg="white"
+                    _hover={{
+                      transform: "translateY(-5px)",
+                      transition: "transform 0.3s ease",
+                      boxShadow: "lg",
+                    }}
+                  >
+                    <CardBody p={6}>
+                      <Flex justify="space-between" align="start" mb={3}>
+                        <Heading size="md">{plan.planName}</Heading>
+                        <Badge colorScheme="green">{plan.interestRate}%</Badge>
+                      </Flex>
+                      
+                      <Text fontSize="sm" color="gray.600" noOfLines={2} mb={4}>
+                        {plan.description || "A great investment opportunity with competitive returns."}
+                      </Text>
+                      
+                      <Divider my={3} />
+                      
+                      <SimpleGrid columns={2} spacing={4} mb={3}>
+                        <Box>
+                          <Text fontSize="xs" color="gray.500">Min Investment</Text>
+                          <Text fontSize="lg" fontWeight="semibold">
+                            ${plan.minAmount}
+                          </Text>
                         </Box>
-                      </Text>
-                      <Badge colorScheme="green" alignSelf="flex-start">
-                        {plan.interestRate}% Interest Rate
-                      </Badge>
-                      <Text fontSize="sm" color="gray.500">
-                        Click to view plan details
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              ))}
-            </SimpleGrid>
+                        <Box>
+                          <Text fontSize="xs" color="gray.500">Duration</Text>
+                          <Text fontSize="lg" fontWeight="semibold">
+                            {plan.duration || "Flexible"}
+                          </Text>
+                        </Box>
+                      </SimpleGrid>
+                      
+                      <HStack mt={3} spacing={2} flexWrap="wrap">
+                        {plan.tags && plan.tags.slice(0, 3).map(tag => (
+                          <Tag key={tag} size="sm" colorScheme="teal" variant="subtle" borderRadius="full">
+                            {tag}
+                          </Tag>
+                        ))}
+                      </HStack>
+                    </CardBody>
+                  </MotionCard>
+                ))}
+            </MotionBox>
+          ) : (
+            <Box 
+              textAlign="center" 
+              py={10} 
+              px={6} 
+              borderRadius="lg" 
+              bg="white" 
+              boxShadow="sm"
+            >
+              <InfoIcon boxSize={10} color="teal.500" mb={4} />
+              <Heading as="h3" size="lg" mb={2}>
+                {user ? "Complete Your Profile" : "Create an Account"}
+              </Heading>
+              <Text color="gray.600" mb={5}>
+                {user 
+                  ? "Add your investment interests to see personalized recommendations." 
+                  : "Sign up to get personalized investment recommendations based on your profile."}
+              </Text>
+              <Button 
+                colorScheme="teal"
+                onClick={() => user ? onOpen() : router.push('/signup')}
+              >
+                {user ? "Update Profile" : "Sign Up"}
+              </Button>
+            </Box>
           )}
+
+          {/* Add a view more button at the bottom if there are plans */}
+          {!isLoading && user && userInterests.length > 0 && plans.filter(plan => 
+            plan.tags && plan.tags.some(tag => userInterests.includes(tag))
+          ).length > 0 && (
+            <Flex justify="center" mt={8}>
+              <Button
+                colorScheme="teal"
+                variant="outline"
+                size="lg"
+                rightIcon={<FiArrowRight />}
+                onClick={() => router.push('/plan1')}
+              >
+                View All Recommended Plans
+              </Button>
+            </Flex>
+          )}
+        </Container>
+      </Box>
+      
+      {/* Key Benefits Section */}
+      <Box py={16} bg="white">
+        <Container maxW="container.xl">
+          <VStack spacing={12}>
+            <Box textAlign="center" maxW="800px" mx="auto">
+              <Heading size="xl" mb={4}>Why Choose Finance Mastery</Heading>
+              <Text color="gray.600" fontSize="lg">
+                Experience the advantages of smart investing with our platform's unique features
+              </Text>
+            </Box>
+            
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={10}>
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <VStack spacing={4} align="start">
+                  <Flex
+                    w={14}
+                    h={14}
+                    justify="center"
+                    align="center"
+                    borderRadius="full"
+                    bg="teal.100"
+                    color="teal.700"
+                  >
+                    <Icon as={FiTrendingUp} boxSize={6} />
+                  </Flex>
+                  <Heading size="md">Higher Returns</Heading>
+                  <Text color="gray.600">
+                    Access investment plans with higher returns than traditional savings accounts
+                  </Text>
+                </VStack>
+              </MotionBox>
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <VStack spacing={4} align="start">
+                  <Flex
+                    w={14}
+                    h={14}
+                    justify="center"
+                    align="center"
+                    borderRadius="full"
+                    bg="teal.100"
+                    color="teal.700"
+                  >
+                    <Icon as={FiShield} boxSize={6} />
+                  </Flex>
+                  <Heading size="md">Secure Investments</Heading>
+                  <Text color="gray.600">
+                    Invest with confidence knowing your funds are secure and protected
+                  </Text>
+                </VStack>
+              </MotionBox>
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <VStack spacing={4} align="start">
+                  <Flex
+                    w={14}
+                    h={14}
+                    justify="center"
+                    align="center"
+                    borderRadius="full"
+                    bg="teal.100"
+                    color="teal.700"
+                  >
+                    <Icon as={FiActivity} boxSize={6} />
+                  </Flex>
+                  <Heading size="md">Expert Guidance</Heading>
+                  <Text color="gray.600">
+                    Receive personalized advice and support from our financial experts
+                  </Text>
+                </VStack>
+              </MotionBox>
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <VStack spacing={4} align="start">
+                  <Flex
+                    w={14}
+                    h={14}
+                    justify="center"
+                    align="center"
+                    borderRadius="full"
+                    bg="teal.100"
+                    color="teal.700"
+                  >
+                    <Icon as={FiFilter} boxSize={6} />
+                  </Flex>
+                  <Heading size="md">Diverse Options</Heading>
+                  <Text color="gray.600">
+                    Choose from a wide range of investment plans tailored to your needs
+                  </Text>
+                </VStack>
+              </MotionBox>
+            </SimpleGrid>
+          </VStack>
         </Container>
       </Box>
 

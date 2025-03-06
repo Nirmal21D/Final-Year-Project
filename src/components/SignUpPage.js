@@ -12,76 +12,87 @@ import {
   Select,
   Grid,
   GridItem,
+  FormControl,
+  FormLabel,
+  InputGroup,
+  InputRightElement,
+  FormErrorMessage,
+  Heading,
+  VStack,
+  HStack,
+  Icon,
+  Image
 } from "@chakra-ui/react";
-import {
-  auth,
-  db,
-  googleProvider,
-  signInWithPopup,
-  createUserWithEmailAndPassword,
-} from "../firebase"; // Adjust the path as necessary
-import { setDoc, doc, getDoc } from "firebase/firestore"; // Firestore functions
+import { auth, db, createUserWithEmailAndPassword } from "../firebase";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import { onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation"; // Changed from next/router
+import { useRouter } from "next/navigation";
+import { FiEye, FiEyeOff, FiUser, FiMail, FiLock, FiCheck } from "react-icons/fi";
 
 const SignUpPage = () => {
   // State variables
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [salary, setSalary] = useState();
-  const [mobileNumber, setMobileNumber] = useState();
-  const [profileImage, setProfileImage] = useState(null);
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [userType, setUserType] = useState("regular");
   const [bankEmail, setBankEmail] = useState("");
   const [bankName, setBankName] = useState("");
   const [bpaswd, setBpaswd] = useState("");
-  const [status, setStatus] = useState("pending");
-  const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const [user, setUser] = useState(null);
-  const router = useRouter(); // Initialize useRouter
-
+  
+  const router = useRouter();
   const toast = useToast();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        router.push('/'); // Redirect to home if user is already logged in
+        router.push('/');
       } else {
         setUser(null);
       }
     });
 
     return () => unsubscribe();
-  }, [router]); // Add router to dependency array
+  }, [router]);
+
+  // Form validation
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (userType === "regular") {
+      if (!name.trim()) newErrors.name = "Name is required";
+      if (!email.trim()) newErrors.email = "Email is required";
+      else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Email is invalid";
+      
+      if (!password) newErrors.password = "Password is required";
+      else if (password.length < 6) newErrors.password = "Password must be at least 6 characters";
+      
+      if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
+    } else {
+      if (!bankName.trim()) newErrors.bankName = "Bank name is required";
+      if (!bankEmail.trim()) newErrors.bankEmail = "Bank email is required";
+      else if (!/\S+@\S+\.\S+/.test(bankEmail)) newErrors.bankEmail = "Email is invalid";
+      
+      if (!bpaswd) newErrors.bpaswd = "Password is required";
+      else if (bpaswd.length < 6) newErrors.bpaswd = "Password must be at least 6 characters";
+    }
+    
+    return newErrors;
+  };
 
   // Handle Sign Up
   const handleSignUp = async (e) => {
     e.preventDefault();
-
-    // Basic validation for regular users
-    if (userType === "regular" && (!name || !email || !password)) {
-      toast({
-        title: "Error",
-        description: "Please fill in all the required fields.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    // Basic validation for bank users
-    if (userType === "bank" && (!bankEmail || !bankName || !bpaswd)) {
-      toast({
-        title: "Error",
-        description: "Please fill in all the required fields for Bank.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+    
+    const formErrors = validateForm();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
       return;
     }
 
@@ -107,9 +118,10 @@ const SignUpPage = () => {
       if (userType === "regular") {
         await setDoc(doc(db, "users", user.uid), {
           userId: user.uid,
-          name: userType === "regular" ? name : null,
-          email: userType === "regular" ? email : bankEmail,
+          name,
+          email,
           userType,
+          createdAt: new Date(),
           salary: null,
           mobileNumber: null,
           profileImage: null,
@@ -118,29 +130,30 @@ const SignUpPage = () => {
         await setDoc(doc(db, "Banks", user.uid), {
           bankEmail,
           bankName,
-          bpaswd,
-          isVerified: false, // Set isVerified to false for bank accounts
+          createdAt: new Date(),
+          isVerified: false,
         });
       }
 
       toast({
-        title: "Sign Up Successful",
-        description: `Welcome, ${
-          userType === "bank" ? bankName : name
-        }! Your account has been created.`,
+        title: "Account Created Successfully",
+        description: userType === "bank" 
+          ? "Welcome to Finance Mastery! Your bank account is pending verification." 
+          : "Welcome to Finance Mastery! Your account has been created.",
         status: "success",
         duration: 5000,
         isClosable: true,
       });
 
       if (userType === "regular") {
-        window.location.href = "/";
+        router.push("/");
       } else if (userType === "bank") {
-        window.location.href = "/bankdashboard";
+        router.push("/bankdashboard");
       }
     } catch (error) {
       console.error("Sign Up Error:", error);
       let errorMessage = "An error occurred during sign up.";
+      
       if (error.code === "auth/email-already-in-use") {
         errorMessage = "This email is already in use.";
       } else if (error.code === "auth/invalid-email") {
@@ -148,6 +161,7 @@ const SignUpPage = () => {
       } else if (error.code === "auth/weak-password") {
         errorMessage = "The password is too weak.";
       }
+      
       toast({
         title: "Error",
         description: errorMessage,
@@ -160,351 +174,269 @@ const SignUpPage = () => {
     }
   };
 
-  // Handle Google Sign Up
-  const handleGoogleSignUp = async () => {
-    setIsLoading(true); // Start loading
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-
-      // Check if user already exists in Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        // Add user data to Firestore
-        await setDoc(userDocRef, {
-          userId: user.uid,
-          name: user.displayName || "",
-          userType,
-          salary: null,
-          mobileNumber: null,
-          profileImage: null,
-          email: user.email,
-        });
-      }
-
-      toast({
-        title: "Google Sign Up Successful",
-        description: `Welcome, ${user.displayName || "User"}!`,
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
-      if (userType === "regular") {
-        window.location.href = "/";
-      } else if (userType === "bank") {
-        window.location.href = "/bankdashboard";
-      }
-    } catch (error) {
-      console.error("Google Sign Up Error:", error);
-      let errorMessage = "An error occurred during Google sign up.";
-      if (error.code === "auth/popup-closed-by-user") {
-        errorMessage = "The popup was closed before completing the sign in.";
-      }
-      toast({
-        title: "Error",
-        description: errorMessage,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  //
+  const toggleShowPassword = () => setShowPassword(!showPassword);
 
   return (
-    <>
-      <Grid templateColumns={{ base: "1fr", md: "2fr 1.2fr" }} height="100vh">
-        <GridItem
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          flexDirection={"column"}
-        >
-          <Box
-            // border="1px solid #000000"
-            display="flex"
-            alignItems="flex-start"
-            justifyContent="flex-start"
-            w="62%"
+    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} minHeight="100vh">
+      {/* Left side - Form */}
+      <GridItem 
+        display="flex" 
+        flexDirection="column" 
+        justifyContent="center" 
+        p={{ base: 6, md: 10 }}
+        bg="white"
+      >
+        <Box maxW="500px" mx="auto" w="full">
+          <Heading 
+            as="h1" 
+            size="xl" 
+            color="teal.600" 
+            mb={8}
+            fontWeight="bold"
           >
-            <Text
-              fontSize="2xl"
-              fontWeight="bold"
-              textAlign="center"
-              color="#003a5c"
-              position={"fixed"}
-              top={28}
-            >
-              Sign Up for Finance Mastery
-            </Text>
-          </Box>
-          <Box
-            // display="flex"
-            // flexDirection="column"
-            // alignItems="center"
-            // justifyContent="center"
-            // p={6}
-            // color="white"
-            // borderRadius="xl"
-            // width="100%"
-            // maxWidth="600px"
-            // mx="auto"
-            // mt={10}
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            px={6}
-            color="#003a5c"
-            borderRadius="xl"
-            width="100%"
-            maxWidth="600px"
-            mx="auto"
-            position="relative"
-            top={14}
+            Create your account
+          </Heading>
+          
+          <Box 
+            as="form" 
+            onSubmit={handleSignUp} 
+            boxShadow="lg" 
+            p={8} 
+            borderRadius="xl" 
+            bg="white"
+            borderWidth="1px"
+            borderColor="gray.200"
           >
-            <form onSubmit={handleSignUp} style={{ width: "100%" }}>
-              {/* User Type Selection */}
-              <Flex mb={4} width="100%" alignItems="center">
-                <Text width="40%" fontWeight="bold" mr={4}>
-                  User Type
-                </Text>
-                <Select
-                  value={userType}
-                  onChange={(e) => setUserType(e.target.value)}
-                  bg="white"
-                  color="black"
+            {/* User Type Selection */}
+            <FormControl mb={6}>
+              <FormLabel fontWeight="medium">I am a</FormLabel>
+              <HStack spacing={4}>
+                <Button
+                  type="button"
+                  colorScheme={userType === "regular" ? "teal" : "gray"}
+                  variant={userType === "regular" ? "solid" : "outline"}
                   size="lg"
                   flex="1"
-                  placeholder="Select user type"
-                  required
+                  onClick={() => setUserType("regular")}
+                  leftIcon={<Icon as={FiUser} />}
                 >
-                  <option value="regular">Regular User</option>
-                  <option value="bank">Bank</option>
-                </Select>
-              </Flex>
+                  Individual
+                </Button>
+                <Button
+                  type="button"
+                  colorScheme={userType === "bank" ? "teal" : "gray"}
+                  variant={userType === "bank" ? "solid" : "outline"}
+                  size="lg"
+                  flex="1"
+                  onClick={() => setUserType("bank")}
+                  leftIcon={<Icon as={FiCheck} />}
+                >
+                  Bank
+                </Button>
+              </HStack>
+            </FormControl>
 
-              {/* Regular User Fields */}
-              {userType === "regular" && (
-                <>
-                  <Flex mb={4} width="100%" alignItems="center">
-                    <Text width="40%" fontWeight="bold" mr={4}>
-                      Name
-                    </Text>
+            {/* Regular User Fields */}
+            {userType === "regular" ? (
+              <VStack spacing={5} align="stretch">
+                <FormControl isInvalid={errors.name}>
+                  <FormLabel fontWeight="medium">Full Name</FormLabel>
+                  <InputGroup>
                     <Input
                       type="text"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter your Name"
-                      bg="white"
-                      color="black"
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        setErrors({...errors, name: null});
+                      }}
+                      placeholder="Enter your full name"
                       size="lg"
-                      flex="1"
-                      required
+                      _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
                     />
-                  </Flex>
+                  </InputGroup>
+                  {errors.name && <FormErrorMessage>{errors.name}</FormErrorMessage>}
+                </FormControl>
 
-                  <Flex mb={4} width="100%" alignItems="center">
-                    <Text width="40%" fontWeight="bold" mr={4}>
-                      Email
-                    </Text>
+                <FormControl isInvalid={errors.email}>
+                  <FormLabel fontWeight="medium">Email Address</FormLabel>
+                  <InputGroup>
                     <Input
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your Email"
-                      bg="white"
-                      color="black"
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setErrors({...errors, email: null});
+                      }}
+                      placeholder="name@example.com"
                       size="lg"
-                      flex="1"
-                      required
+                      _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
                     />
-                  </Flex>
+                  </InputGroup>
+                  {errors.email && <FormErrorMessage>{errors.email}</FormErrorMessage>}
+                </FormControl>
 
-                  <Flex mb={4} width="100%" alignItems="center">
-                    <Text width="40%" fontWeight="bold" mr={4}>
-                      Password
-                    </Text>
+                <FormControl isInvalid={errors.password}>
+                  <FormLabel fontWeight="medium">Password</FormLabel>
+                  <InputGroup>
                     <Input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your Password"
-                      bg="white"
-                      color="black"
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setErrors({...errors, password: null});
+                      }}
+                      placeholder="Create a password"
                       size="lg"
-                      flex="1"
-                      required
+                      _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
                     />
-                  </Flex>
-                  <Button
-                    type="submit"
-                    isLoading={isLoading}
-                    loadingText="Signing Up..."
-                    width="full"
-                    mb={4}
-                    colorScheme="teal"
-                    borderRadius={50}
-                  >
-                    Sign Up
-                  </Button>
-                  <Divider my={4} borderColor="#007b83" />
-                  <Text textAlign="center" mb={4}>
-                    OR
-                  </Text>
+                    <InputRightElement width="4.5rem" h="100%">
+                      <Button h="1.75rem" size="sm" onClick={toggleShowPassword}>
+                        {showPassword ? <FiEyeOff /> : <FiEye />}
+                      </Button>
+                    </InputRightElement>
+                  </InputGroup>
+                  {errors.password && <FormErrorMessage>{errors.password}</FormErrorMessage>}
+                </FormControl>
 
-                  <Button
-                    color="#007b83"
-                    bg="white"
-                    border="2px solid"
-                    borderColor="#007b83"
-                    width="100%"
-                    borderRadius={50}
-                    onClick={handleGoogleSignUp}
-                  >
-                    Signup with Google
-                  </Button>
-                </>
-              )}
+                <FormControl isInvalid={errors.confirmPassword}>
+                  <FormLabel fontWeight="medium">Confirm Password</FormLabel>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setErrors({...errors, confirmPassword: null});
+                    }}
+                    placeholder="Confirm your password"
+                    size="lg"
+                    _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
+                  />
+                  {errors.confirmPassword && <FormErrorMessage>{errors.confirmPassword}</FormErrorMessage>}
+                </FormControl>
+              </VStack>
+            ) : (
+              <VStack spacing={5} align="stretch">
+                <FormControl isInvalid={errors.bankName}>
+                  <FormLabel fontWeight="medium">Bank Name</FormLabel>
+                  <Input
+                    type="text"
+                    value={bankName}
+                    onChange={(e) => {
+                      setBankName(e.target.value);
+                      setErrors({...errors, bankName: null});
+                    }}
+                    placeholder="Enter your bank's name"
+                    size="lg"
+                    _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
+                  />
+                  {errors.bankName && <FormErrorMessage>{errors.bankName}</FormErrorMessage>}
+                </FormControl>
 
-              {/* Bank User Fields */}
-              {userType === "bank" && (
-                <>
-                  <Flex mb={4} width="100%" alignItems="center">
-                    <Text width="40%" fontWeight="bold" mr={4}>
-                      Bank Email
-                    </Text>
+                <FormControl isInvalid={errors.bankEmail}>
+                  <FormLabel fontWeight="medium">Bank Email</FormLabel>
+                  <Input
+                    type="email"
+                    value={bankEmail}
+                    onChange={(e) => {
+                      setBankEmail(e.target.value);
+                      setErrors({...errors, bankEmail: null});
+                    }}
+                    placeholder="bank@example.com"
+                    size="lg"
+                    _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
+                  />
+                  {errors.bankEmail && <FormErrorMessage>{errors.bankEmail}</FormErrorMessage>}
+                </FormControl>
+
+                <FormControl isInvalid={errors.bpaswd}>
+                  <FormLabel fontWeight="medium">Password</FormLabel>
+                  <InputGroup>
                     <Input
-                      type="email"
-                      value={bankEmail}
-                      onChange={(e) => setBankEmail(e.target.value)}
-                      placeholder="Enter your Bank Email"
-                      bg="white"
-                      color="black"
-                      size="lg"
-                      flex="1"
-                      required
-                    />
-                  </Flex>
-
-                  <Flex mb={4} width="100%" alignItems="center">
-                    <Text width="40%" fontWeight="bold" mr={4}>
-                      Bank Name
-                    </Text>
-                    <Input
-                      type="text"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      placeholder="Enter your Bank Name"
-                      bg="white"
-                      color="black"
-                      size="lg"
-                      flex="1"
-                      required
-                    />
-                  </Flex>
-
-                  <Flex mb={4} width="100%" alignItems="center">
-                    <Text width="40%" fontWeight="bold" mr={4}>
-                      Bank Password
-                    </Text>
-                    <Input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={bpaswd}
-                      onChange={(e) => setBpaswd(e.target.value)}
-                      placeholder="Enter your Bank Password"
-                      bg="white"
-                      color="black"
+                      onChange={(e) => {
+                        setBpaswd(e.target.value);
+                        setErrors({...errors, bpaswd: null});
+                      }}
+                      placeholder="Create a secure password"
                       size="lg"
-                      flex="1"
-                      required
+                      _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
                     />
-                  </Flex>
+                    <InputRightElement width="4.5rem" h="100%">
+                      <Button h="1.75rem" size="sm" onClick={toggleShowPassword}>
+                        {showPassword ? <FiEyeOff /> : <FiEye />}
+                      </Button>
+                    </InputRightElement>
+                  </InputGroup>
+                  {errors.bpaswd && <FormErrorMessage>{errors.bpaswd}</FormErrorMessage>}
+                </FormControl>
+              </VStack>
+            )}
 
-                  <Button
-                    type="submit"
-                    isLoading={isLoading}
-                    loadingText="Signing Up..."
-                    width="full"
-                    mb={4}
-                    colorScheme="teal"
-                    borderRadius={50}
-                  >
-                    Sign Up
-                  </Button>
-                  <Divider my={4} borderColor="#007b83" />
-                  <Text textAlign="center" mb={4}>
-                    OR
-                  </Text>
-
-                  <Button
-                    color="#007b83"
-                    bg="white"
-                    border="2px solid"
-                    borderColor="#007b83"
-                    width="100%"
-                    borderRadius={50}
-                    onClick={handleGoogleSignUp}
-                  >
-                    Signup with Google
-                  </Button>
-                </>
-              )}
-            </form>
-          </Box>
-        </GridItem>
-        <GridItem>
-          <Box
-            position="relative"
-            backgroundImage="url(/images/login7.png)"
-            backgroundPosition="center"
-            backgroundRepeat="no-repeat"
-            backgroundSize="cover"
-            height="100%"
-          >
-            <Box
-              position="absolute"
-              top="50%"
-              left="50%"
-              transform="translate(-50%, -50%)"
+            <Button
+              type="submit"
+              colorScheme="teal"
+              size="lg"
               width="full"
-              height="full"
-              display="flex"
-              flexDirection={"column"}
-              justifyContent={"center"}
-              alignItems={"center"}
-              color="#003a5c"
+              mt={8}
+              isLoading={isLoading}
+              loadingText="Creating Account..."
+              fontWeight="bold"
+              py={7}
+              _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+              transition="all 0.2s"
             >
-              <Text fontSize="2xl" fontWeight="bold">
-                Don't have an Account?
-              </Text>
-              <Text fontSize="2xl" fontWeight="bold">
-                Create one now!
-              </Text>
-              <Box
-                pt={16}
-                display="flex"
-                flexDirection={"column"}
-                justifyContent={"center"}
-                alignItems={"center"}
-                gap={4}
-              >
-                <Text fontSize="lg">Already have an Account?</Text>
-                <Link href=" /login">
-                  <Button colorScheme={"teal"} borderRadius={50}>
-                    Login
-                  </Button>
-                </Link>
-              </Box>
-            </Box>
+              Create Account
+            </Button>
+            
+            <Text mt={6} textAlign="center" color="gray.600">
+              Already have an account?{" "}
+              <Link href="/login" passHref>
+                <Box as="span" color="teal.600" fontWeight="bold" _hover={{ textDecoration: "underline" }}>
+                  Log In
+                </Box>
+              </Link>
+            </Text>
           </Box>
-        </GridItem>
-      </Grid>
-    </>
+        </Box>
+      </GridItem>
+
+      {/* Right side - Image */}
+      <GridItem 
+        display={{ base: "none", md: "flex" }} 
+        bg="teal.500" 
+        position="relative"
+        overflow="hidden"
+      >
+        <Box 
+          position="absolute" 
+          top={0} 
+          right={0} 
+          bottom={0} 
+          left={0} 
+          backgroundImage="url(/images/login7.png)"
+          backgroundSize="cover"
+          backgroundPosition="center"
+        >
+          <Flex 
+            direction="column" 
+            justify="center" 
+            align="center" 
+            h="full" 
+            bg="rgba(0,58,92,0.7)"
+            p={8}
+            color="white"
+            textAlign="center"
+          >
+            <Heading size="2xl" mb={6}>Join Finance Mastery</Heading>
+            <Text fontSize="xl" maxW="md">
+              Take control of your financial future with smart investment planning and loan management.
+            </Text>
+          </Flex>
+        </Box>
+      </GridItem>
+    </Grid>
   );
 };
+
 export default SignUpPage;

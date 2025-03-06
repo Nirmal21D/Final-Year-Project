@@ -3,298 +3,338 @@ import {
   Box,
   Button,
   Input,
-  Select,
   Text,
   Flex,
   useToast,
-  Divider,
   Grid,
   GridItem,
-  Container,
+  FormControl,
+  FormLabel,
+  InputGroup,
+  InputRightElement,
+  FormErrorMessage,
+  Heading,
+  VStack,
+  Link as ChakraLink,
+  Icon,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "@/firebase";
+import React, { useState, useEffect } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase";
+import { FiEye, FiEyeOff, FiMail, FiLock } from "react-icons/fi";
 
 const LoginPage = () => {
-  const [identifier, setIdentifier] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("user");
-  const [bankIdentifier, setBankIdentifier] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [mounted, setMounted] = useState(false);
   const toast = useToast();
   const router = useRouter();
 
+  // Fix hydration issues by ensuring component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const toggleShowPassword = () => setShowPassword(!showPassword);
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Email is invalid";
+    }
+    
+    if (!password) {
+      newErrors.password = "Password is required";
+    }
+    
+    return newErrors;
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    if (
-      (userType === "user" && !identifier) ||
-      (userType === "bank" && !bankIdentifier) ||
-      !password
-    ) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+    
+    const formErrors = validateForm();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      const email = userType === "user" ? identifier : bankIdentifier;
+      // Sign in user
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
-      console.log(`User logged in: ${userCredential.user.uid}`);
+      
+      // Check user type in Firestore
+      const userDocRef = doc(db, "users", userCredential.user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-      toast({
-        title: "Login Successful",
-        description: `Logged in as ${userType}.`,
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome back!`,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
 
-      // Redirect based on user type
-      if (userType === "user") {
-        router.push("/");
-      } else if (userType === "bank") {
-        router.push("/bankdashboard");
+        // Redirect based on user type
+        if (userData.userType === "regular") {
+          router.push("/");
+        } else {
+          router.push("/bankdashboard");
+        }
+      } else {
+        // Try to check if it's a bank account
+        const bankDocRef = doc(db, "Banks", userCredential.user.uid);
+        const bankDoc = await getDoc(bankDocRef);
+        
+        if (bankDoc.exists()) {
+          toast({
+            title: "Login Successful",
+            description: "Welcome back to your bank account!",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+          router.push("/bankdashboard");
+        } else {
+          // Handle case where user document doesn't exist
+          console.error("User profile not found");
+          toast({
+            title: "Error",
+            description: "User profile not found",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
+      let errorMessage = "An error occurred during login.";
+      
+      if (error.code === "auth/invalid-credential" || error.code === "auth/invalid-email") {
+        errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email.";
+      } else if (error.code === "auth/wrong-password") {
+        errorMessage = "Incorrect password.";
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "An error occurred during login.",
+        title: "Login Failed",
+        description: errorMessage,
         status: "error",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log("Google login successful:", result.user);
-
-      toast({
-        title: "Google Login Successful",
-        description: "You've been logged in with Google.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-
-      router.push("/");
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred during Google login.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
+  // Return null during server-side rendering
+  if (!mounted) return null;
 
   return (
-    <>
-      <Grid templateColumns={{ base: "1fr", md: "1.2fr 2fr" }} height="100vh">
-        <GridItem>
-          <Box
-            position="relative"
-            backgroundImage="url(/images/login7.png)"
-            backgroundPosition="center"
-            backgroundRepeat="no-repeat"
-            backgroundSize="cover"
-            height="100%"
-          >
-            <Box
-              position="absolute"
-              top="50%"
-              left="50%"
-              transform="translate(-50%, -50%)"
-              width="full"
-              height="full"
-              display="flex"
-              flexDirection={"column"}
-              justifyContent={"center"}
-              alignItems={"center"}
-              color="#003a5c"
-            >
-              <Text fontSize="2xl" fontWeight="bold">
-                Welcome Back!
-              </Text>
-              <Text fontSize="2xl" fontWeight="bold">
-                Log in to access your account.
-              </Text>
-              <Box
-                pt={16}
-                display="flex"
-                flexDirection={"column"}
-                justifyContent={"center"}
-                alignItems={"center"}
-                gap={4}
-              >
-                <Text fontSize="lg">Don't have an Account?</Text>
-                <Link href=" /signup">
-                  <Button colorScheme={"teal"} borderRadius={50}>
-                    Sign Up
-                  </Button>
-                </Link>
-              </Box>
-            </Box>
-          </Box>
-        </GridItem>
-        <GridItem
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          flexDirection={"column"}
+    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} minHeight="100vh">
+      {/* Left side - Image and intro */}
+      <GridItem
+        display={{ base: "none", md: "flex" }} 
+        position="relative"
+        overflow="hidden"
+        bg="teal.500"
+      >
+        <Box 
+          position="absolute" 
+          top={0} 
+          right={0} 
+          bottom={0} 
+          left={0} 
+          backgroundImage="url(/images/login7.png)"
+          backgroundPosition="center"
+          backgroundSize="cover"
+          backgroundRepeat="no-repeat"
         >
-          <Box
-            // border="1px solid #000000"
-            display="flex"
-            alignItems="flex-start"
-            justifyContent="flex-start"
-            w="62%"
+          <Flex 
+            direction="column" 
+            justify="center" 
+            align="center" 
+            h="full" 
+            bg="rgba(0,58,92,0.7)" 
+            p={8}
+            color="white"
+            textAlign="center"
           >
-            <Text
-              fontSize="2xl"
+            <Heading size="2xl" mb={6}>Welcome Back!</Heading>
+            <Text fontSize="xl" maxW="md" mb={10}>
+              Log in to access your account and continue managing your finances.
+            </Text>
+            
+            <VStack spacing={4} mt={8}>
+              <Text fontSize="lg">Don't have an account?</Text>
+              <Link href="/signup" passHref legacyBehavior>
+                <Button 
+                  as="a" 
+                  colorScheme="teal" 
+                  size="lg"
+                  borderRadius="full"
+                  fontWeight="bold"
+                  px={8}
+                  bg="whiteAlpha.200"
+                  _hover={{ bg: "whiteAlpha.300", transform: "translateY(-2px)" }}
+                  transition="all 0.2s"
+                >
+                  Create Account
+                </Button>
+              </Link>
+            </VStack>
+          </Flex>
+        </Box>
+      </GridItem>
+
+      {/* Right side - Login form */}
+      <GridItem
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        p={{ base: 6, md: 10 }}
+        bg="white"
+      >
+        <Box maxW="450px" mx="auto" w="full">
+          <VStack align="start" spacing={8} mb={8}>
+            <Heading 
+              as="h1" 
+              size="xl" 
+              color="teal.600" 
               fontWeight="bold"
-              textAlign="center"
-              color="#003a5c"
             >
               Login to Finance Mastery
+            </Heading>
+            <Text color="gray.600">
+              Enter your credentials to access your account
             </Text>
-          </Box>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            px={6}
-            color="#003a5c"
-            borderRadius="xl"
-            width="100%"
-            maxWidth="600px"
-            mx="auto"
-            position="relative"
-            top={14}
+          </VStack>
+          
+          <Box 
+            as="form" 
+            onSubmit={handleLogin} 
+            boxShadow="lg" 
+            p={8} 
+            borderRadius="xl" 
+            bg="white"
+            borderWidth="1px"
+            borderColor="gray.200"
           >
-            <form onSubmit={handleLogin} style={{ width: "100%" }}>
-              <Flex mb={4} width="100%" alignItems="center">
-                <Text color="black" width="40%" fontWeight="bold" mr={4}>
-                  Login as:
-                </Text>
-                <Select
-                  value={userType}
-                  onChange={(e) => {
-                    setUserType(e.target.value);
-                    setIdentifier("");
-                    setBankIdentifier("");
-                  }}
-                  bg="white"
-                  color="black"
-                  size="lg"
-                  flex="1"
+            <VStack spacing={5} align="stretch">
+              {/* Email Field */}
+              <FormControl isInvalid={errors.email}>
+                <FormLabel fontWeight="medium">Email Address</FormLabel>
+                <InputGroup>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors({...errors, email: null});
+                    }}
+                    placeholder="your@email.com"
+                    size="lg"
+                    _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
+                  />
+                </InputGroup>
+                {errors.email && <FormErrorMessage>{errors.email}</FormErrorMessage>}
+              </FormControl>
+
+              {/* Password Field */}
+              <FormControl isInvalid={errors.password}>
+                <FormLabel fontWeight="medium">Password</FormLabel>
+                <InputGroup>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrors({...errors, password: null});
+                    }}
+                    placeholder="Enter your password"
+                    size="lg"
+                    _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 1px teal.400" }}
+                  />
+                  <InputRightElement width="4.5rem" h="100%">
+                    <Button h="1.75rem" size="sm" onClick={toggleShowPassword}>
+                      {showPassword ? <FiEyeOff /> : <FiEye />}
+                    </Button>
+                  </InputRightElement>
+                </InputGroup>
+                {errors.password && <FormErrorMessage>{errors.password}</FormErrorMessage>}
+              </FormControl>
+
+              {/* Forgot Password */}
+              <Flex justify="flex-end">
+                <ChakraLink 
+                  color="teal.600" 
+                  fontWeight="medium"
+                  fontSize="sm"
+                  _hover={{ textDecoration: "underline" }}
+                  onClick={() => router.push("/forgot-password")}
+                  cursor="pointer"
                 >
-                  <option value="user">User</option>
-                  <option value="bank">Bank</option>
-                </Select>
-              </Flex>
-              {userType === "user" && (
-                <Flex mb={4} width="100%" alignItems="center">
-                  <Text width="40%" fontWeight="bold" mr={4}>
-                    Email or Username
-                  </Text>
-                  <Input
-                    type="text"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="Enter your Email or Username"
-                    bg="white"
-                    color="black"
-                    size="lg"
-                    flex="1"
-                  />
-                </Flex>
-              )}
-
-              {userType === "bank" && (
-                <Flex mb={4} width="100%" alignItems="center">
-                  <Text width="40%" fontWeight="bold" mr={4}>
-                    Bank ID or Bank Email
-                  </Text>
-                  <Input
-                    type="text"
-                    value={bankIdentifier}
-                    onChange={(e) => setBankIdentifier(e.target.value)}
-                    placeholder="Enter your Bank ID or Bank Email"
-                    bg="white"
-                    color="black"
-                    size="lg"
-                    flex="1"
-                  />
-                </Flex>
-              )}
-
-              <Flex mb={4} width="100%" alignItems="center">
-                <Text width="40%" fontWeight="bold" mr={4}>
-                  Password
-                </Text>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your Password"
-                  bg="white"
-                  color="black"
-                  size="lg"
-                  flex="1"
-                />
+                  Forgot Password?
+                </ChakraLink>
               </Flex>
 
+              {/* Login Button */}
               <Button
-                color="white"
                 colorScheme="teal"
-                width="100%"
-                mb={4}
+                size="lg"
+                width="full"
+                mt={4}
                 type="submit"
-                borderRadius={50}
+                isLoading={isLoading}
+                loadingText="Logging In..."
+                fontWeight="bold"
+                py={7}
+                borderRadius="full"
+                _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+                transition="all 0.2s"
               >
                 Login
               </Button>
-
-              <Divider my={4} borderColor="#007b83" />
-              <Text textAlign="center" mb={4}>
-                OR
-              </Text>
-
-              <Button
-                color="#007b83"
-                bg="white"
-                border="2px solid"
-                borderColor="#007b83"
-                width="100%"
-                borderRadius={50}
-                onClick={handleGoogleLogin}
-              >
-                Login with Google
-              </Button>
-            </form>
+              
+              {/* Mobile Sign Up Link */}
+              <Box display={{ base: "block", md: "none" }} textAlign="center" mt={6}>
+                <Text color="gray.600">
+                  Don't have an account?{" "}
+                  <Link href="/signup" passHref legacyBehavior>
+                    <Box as="a" color="teal.600" fontWeight="bold" _hover={{ textDecoration: "underline" }}>
+                      Sign Up
+                    </Box>
+                  </Link>
+                </Text>
+              </Box>
+            </VStack>
           </Box>
-        </GridItem>
-      </Grid>
-    </>
+        </Box>
+      </GridItem>
+    </Grid>
   );
 };
 
