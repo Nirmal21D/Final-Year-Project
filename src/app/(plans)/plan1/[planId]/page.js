@@ -261,7 +261,7 @@ const handlePayment = async (amount) => {
       });
     }
 
-    // Updated Razorpay options
+    // Updated Razorpay options - removed prefill section
     const options = {
       key: "rzp_test_NJWnOpRjPVFmkA", // Test key
       amount: data.order.amount, // Amount in paise
@@ -338,7 +338,7 @@ const handlePayment = async (amount) => {
                   totalInvestmentAmount: (plan.totalInvestmentAmount || 0) + parseFloat(amount)
                 });
                 
-                // Optional: Navigate user to investment history/profile page
+                // Navigate user to investment history/profile page
                 setTimeout(() => {
                   router.push("/profile");
                 }, 3000);
@@ -368,11 +368,6 @@ const handlePayment = async (amount) => {
           });
         }
       },
-      prefill: {
-        name: user?.name || "Test User",
-        email: user?.email || "test@example.com",
-        contact: user?.mobileNumber || "9999999999", // Add dummy number if not available
-      },
       notes: {
         plan_id: planId,
         plan_name: plan.planName,
@@ -381,7 +376,6 @@ const handlePayment = async (amount) => {
       theme: {
         color: "#3182CE",
       },
-      // Force open a specific payment method (optional)
       modal: {
         escape: false,
         ondismiss: function() {
@@ -444,7 +438,7 @@ const generateReceiptPDF = async (user, plan, investmentAmount) => {
     doc.line(20, 72, 190, 72);
     
     doc.setFontSize(11);
-    doc.text(`Name: ${user.displayName || user.email || "Investor"}`, 20, 80);
+    doc.text(`Name: ${user.name || user.email || "Investor"}`, 20, 80);
     doc.text(`Email: ${user.email || "N/A"}`, 20, 88);
     doc.text(`User ID: ${user.uid}`, 20, 96);
     
