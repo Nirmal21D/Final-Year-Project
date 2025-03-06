@@ -128,14 +128,31 @@ export default function PlanVerifyPage() {
       try {
         const investmentPlansRef = collection(db, "investmentplans");
         const loanPlansRef = collection(db, "loanplans");
-        
-        const investmentQuery = query(investmentPlansRef, where("status", "==", "pending"));
+
+        const investmentQuery = query(
+          investmentPlansRef,
+          where("status", "==", "pending")
+        );
         const loanQuery = query(loanPlansRef, where("status", "==", "pending"));
 
         const investmentSnapshot = await getDocs(investmentQuery);
         const loanSnapshot = await getDocs(loanQuery);
 
-        const pendingInvestmentPlans = investmentSnapshot.docs.map(async (docSnapshot) => {
+        const pendingInvestmentPlans = investmentSnapshot.docs.map(
+          async (docSnapshot) => {
+            const planData = docSnapshot.data();
+            const bankRef = doc(db, "Banks", planData.createdBy);
+            const bankDoc = await getDoc(bankRef);
+            const bankData = bankDoc.data();
+            return {
+              id: docSnapshot.id,
+              ...planData,
+              bankName: bankData?.bankName || "N/A",
+            };
+          }
+        );
+
+        const pendingLoanPlans = loanSnapshot.docs.map(async (docSnapshot) => {
           const planData = docSnapshot.data();
           const bankRef = doc(db, "Banks", planData.createdBy);
           const bankDoc = await getDoc(bankRef);
@@ -147,19 +164,9 @@ export default function PlanVerifyPage() {
           };
         });
 
-        const pendingLoanPlans = loanSnapshot.docs.map(async (docSnapshot) => {
-          const planData = docSnapshot.data();
-          const bankRef = doc(db, "Banks", planData.createdBy);
-          const bankDoc = await getDoc(bankRef);
-          const bankData = bankDoc.data();
-          return {
-            id: docSnapshot.id,
-            ...planData,
-            bankName: bankData?.bankName || 'N/A',
-          };
-        });
-
-        const resolvedInvestmentPlans = await Promise.all(pendingInvestmentPlans);
+        const resolvedInvestmentPlans = await Promise.all(
+          pendingInvestmentPlans
+        );
         const resolvedLoanPlans = await Promise.all(pendingLoanPlans);
 
         setInvestmentPlans(resolvedInvestmentPlans);
@@ -181,7 +188,11 @@ export default function PlanVerifyPage() {
 
   const handleVerifyPlan = async (planId, isApproved, isLoanPlan = false) => {
     try {
-      const planRef = doc(db, isLoanPlan ? "loanplans" : "investmentplans", planId);
+      const planRef = doc(
+        db,
+        isLoanPlan ? "loanplans" : "investmentplans",
+        planId
+      );
       if (isApproved) {
         await updateDoc(planRef, {
           isVerified: true,
@@ -191,7 +202,9 @@ export default function PlanVerifyPage() {
         if (isLoanPlan) {
           setLoanPlans(loanPlans.filter((plan) => plan.id !== planId));
         } else {
-          setInvestmentPlans(investmentPlans.filter((plan) => plan.id !== planId));
+          setInvestmentPlans(
+            investmentPlans.filter((plan) => plan.id !== planId)
+          );
         }
       }
     } catch (error) {
@@ -223,7 +236,11 @@ export default function PlanVerifyPage() {
     }
 
     try {
-      const planRef = doc(db, isLoanPlan ? "loanplans" : "investmentplans", selectedPlanId);
+      const planRef = doc(
+        db,
+        isLoanPlan ? "loanplans" : "investmentplans",
+        selectedPlanId
+      );
       await updateDoc(planRef, {
         isVerified: false,
         status: "rejected",
@@ -236,7 +253,9 @@ export default function PlanVerifyPage() {
       if (isLoanPlan) {
         setLoanPlans(loanPlans.filter((plan) => plan.id !== selectedPlanId));
       } else {
-        setInvestmentPlans(investmentPlans.filter((plan) => plan.id !== selectedPlanId));
+        setInvestmentPlans(
+          investmentPlans.filter((plan) => plan.id !== selectedPlanId)
+        );
       }
     } catch (error) {
       console.error("Error rejecting plan:", error);
