@@ -266,7 +266,7 @@ const Page = () => {
       const reasoning = [];
 
       // Overall summary
-      reasoning.push(`${bestPlan.planName} is the recommended option with an overall score of ${(bestPlan.totalScore * 100).toFixed(1)}%.`);
+   
       
       // Add specific advantages
       otherPlans.forEach((otherPlan) => {
