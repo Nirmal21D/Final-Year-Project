@@ -53,7 +53,11 @@ import {
   AccordionIcon,
   Progress,
   Spinner,
-  
+  SimpleGrid,
+  InputGroup,
+  InputLeftElement,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react";
 import { auth, db } from "@/firebase";
 import { useRouter } from "next/navigation";
@@ -112,6 +116,18 @@ const AddPlanForm = () => {
     eligibilityCriteria: "", // Additional eligibility criteria
     lockInPeriod: "", // Lock-in period for investments
     indemnityRequired: "No", // Indemnity requirements
+    maturityCalculation: "compound", // simple or compound interest
+    compoundingFrequency: "annually", // quarterly, monthly, etc.
+    expectedReturns: "", // projected returns
+    minimumSIPAmount: "", // for SIP investments
+    redemptionPeriod: "", // time to get money after redemption request
+    fundManager: "", // for mutual funds
+    benchmarkIndex: "", // reference index for comparison
+    pastPerformance: "", // historical performance data
+    sectorFocus: [], // industry sectors the investment focuses on
+    investmentObjective: "", // growth, income, balanced
+    eligibleInvestors: "all", // retail, HNI, institutional
+    exitLoad: "", // exit charges in percentage
   });
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
@@ -218,6 +234,64 @@ const AddPlanForm = () => {
     }
   }, [formData.interestRate, formData.tenure, formData.planType]);
 
+  const calculateReturnProjections = () => {
+    if (!formData.minAmount || !formData.interestRate || !formData.tenure) {
+      return { maturityValue: 0, totalInterest: 0 };
+    }
+
+    const principal = parseFloat(formData.minAmount);
+    const rate = parseFloat(formData.interestRate) / 100;
+    const tenureYears = parseFloat(formData.tenure) / 12;
+    
+    let maturityValue = 0;
+    
+    if (formData.maturityCalculation === "simple") {
+      // Simple interest calculation
+      maturityValue = principal * (1 + (rate * tenureYears));
+    } else {
+      // Compound interest calculation
+      const compoundingPeriodsPerYear = {
+        annually: 1,
+        semiannually: 2,
+        quarterly: 4,
+        monthly: 12,
+        daily: 365
+      }[formData.compoundingFrequency];
+      
+      const n = compoundingPeriodsPerYear * tenureYears;
+      const r = rate / compoundingPeriodsPerYear;
+      
+      maturityValue = principal * Math.pow(1 + r, n);
+    }
+    
+    const totalInterest = maturityValue - principal;
+    
+    return {
+      maturityValue: maturityValue.toFixed(2),
+      totalInterest: totalInterest.toFixed(2)
+    };
+  };
+
+  useEffect(() => {
+    if (formData.planType === "investment" && 
+        formData.interestRate && 
+        formData.minAmount && 
+        formData.tenure) {
+      const { maturityValue, totalInterest } = calculateReturnProjections();
+      setFormData(prev => ({
+        ...prev,
+        expectedReturns: maturityValue
+      }));
+    }
+  }, [
+    formData.interestRate, 
+    formData.tenure, 
+    formData.minAmount, 
+    formData.maturityCalculation, 
+    formData.compoundingFrequency, 
+    formData.planType
+  ]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -246,74 +320,101 @@ const AddPlanForm = () => {
     setFormData(prev => ({...prev, tags: updatedTags}));
   };
 
-  const validateForm = () => {
-    let isValid = true;
-    let errorMessage = '';
-    const missingFields = [];
-  
-    // Basic Details validation
-    if (formData.planType === "loan") {
-      if (!formData.loanName) missingFields.push("Loan Name");
-      if (!formData.loanType) missingFields.push("Loan Type");
-      if (!formData.loanSubCategory) missingFields.push("Loan Subcategory");
-      if (!formData.purpose) missingFields.push("Purpose");
-    } else {
-      if (!formData.planName) missingFields.push("Plan Name");
-      if (!formData.investmentCategory) missingFields.push("Investment Category");
-      if (!formData.investmentSubCategory) missingFields.push("Investment Subcategory");
+  // Update the validateForm function with additional investment validations
+
+const validateForm = () => {
+  let isValid = true;
+  let errorMessage = '';
+  const missingFields = [];
+
+  // Basic Details validation
+  if (formData.planType === "loan") {
+    if (!formData.loanName) missingFields.push("Loan Name");
+    if (!formData.loanType) missingFields.push("Loan Type");
+    if (!formData.loanSubCategory) missingFields.push("Loan Subcategory");
+    if (!formData.purpose) missingFields.push("Purpose");
+  } else {
+    if (!formData.planName) missingFields.push("Plan Name");
+    if (!formData.investmentCategory) missingFields.push("Investment Category");
+    if (!formData.investmentSubCategory) missingFields.push("Investment Subcategory");
+  }
+  if (!formData.description) missingFields.push("Description");
+
+  // Financial Details validation
+  if (!formData.interestRate) missingFields.push("Interest Rate");
+  if (!formData.minAmount) missingFields.push("Minimum Amount");
+  if (!formData.maxAmount) missingFields.push("Maximum Amount");
+  if (!formData.tenure) missingFields.push("Tenure");
+
+  // Processing Fee validation for loans
+  if (formData.planType === "loan") {
+    if (formData.processingFeeType === "fixed" && !formData.processingFeeAmount) {
+      missingFields.push("Processing Fee Amount");
     }
-    if (!formData.description) missingFields.push("Description");
-  
-    // Financial Details validation
-    if (!formData.interestRate) missingFields.push("Interest Rate");
-    if (!formData.minAmount) missingFields.push("Minimum Amount");
-    if (!formData.maxAmount) missingFields.push("Maximum Amount");
-    if (!formData.tenure) missingFields.push("Tenure");
-  
-    // Processing Fee validation for loans
-    if (formData.planType === "loan") {
-      if (formData.processingFeeType === "fixed" && !formData.processingFeeAmount) {
-        missingFields.push("Processing Fee Amount");
-      }
-      if (formData.processingFeeType === "percentage" && !formData.processingFeePercentage) {
-        missingFields.push("Processing Fee Percentage");
-      }
+    if (formData.processingFeeType === "percentage" && !formData.processingFeePercentage) {
+      missingFields.push("Processing Fee Percentage");
     }
-  
-    // Additional Details validation
-    if (!formData.documentationRequired) missingFields.push("Documentation Required");
-  
-    // Loan-specific validations
-    if (formData.planType === "loan") {
-      if (!formData.minMonthlyIncome) missingFields.push("Minimum Monthly Income");
-      if (!formData.minAge) missingFields.push("Minimum Age");
-      if (!formData.maxAge) missingFields.push("Maximum Age");
-      if (!formData.employmentType) missingFields.push("Employment Type");
-      if (!formData.cibilScore) missingFields.push("CIBIL Score");
+  }
+
+  // Additional Details validation
+  if (!formData.documentationRequired) missingFields.push("Documentation Required");
+
+  // Loan-specific validations
+  if (formData.planType === "loan") {
+    if (!formData.minMonthlyIncome) missingFields.push("Minimum Monthly Income");
+    if (!formData.minAge) missingFields.push("Minimum Age");
+    if (!formData.maxAge) missingFields.push("Maximum Age");
+    if (!formData.employmentType) missingFields.push("Employment Type");
+    if (!formData.cibilScore) missingFields.push("CIBIL Score");
+  }
+
+  // Investment-specific validations
+  if (formData.planType === "investment") {
+    // Required fields for investments
+    if (!formData.investmentFrequency) missingFields.push("Investment Frequency");
+    
+    // Validation for mutual funds
+    if (formData.investmentCategory === "MutualFunds") {
+      if (!formData.fundManager) missingFields.push("Fund Manager");
+      if (!formData.benchmarkIndex) missingFields.push("Benchmark Index");
     }
-  
-    // Validate amounts
-    if (parseFloat(formData.minAmount) > parseFloat(formData.maxAmount)) {
-      errorMessage = "Minimum amount cannot be greater than maximum amount";
-      isValid = false;
+    
+    // Validate investment objective
+    if (!formData.investmentObjective) missingFields.push("Investment Objective");
+    
+    // Validate maturity calculation
+    if (formData.maturityCalculation === "compound" && !formData.compoundingFrequency) {
+      missingFields.push("Compounding Frequency");
     }
-  
-    // Set error message if fields are missing
-    if (missingFields.length > 0) {
-      errorMessage = `Please fill in the following required fields: ${missingFields.join(", ")}`;
-      isValid = false;
+    
+    // Validate redemption period for investments
+    if (formData.planType === "investment" && !formData.redemptionPeriod) {
+      missingFields.push("Redemption Period");
     }
-  
-    // Log validation results for debugging
-    console.log("Validation Results:", {
-      isValid,
-      errorMessage,
-      missingFields,
-      formData
-    });
-  
-    return { isValid, errorMessage };
-  };
+  }
+
+  // Validate amounts
+  if (parseFloat(formData.minAmount) > parseFloat(formData.maxAmount)) {
+    errorMessage = "Minimum amount cannot be greater than maximum amount";
+    isValid = false;
+  }
+
+  // Set error message if fields are missing
+  if (missingFields.length > 0) {
+    errorMessage = `Please fill in the following required fields: ${missingFields.join(", ")}`;
+    isValid = false;
+  }
+
+  // Log validation results for debugging
+  console.log("Validation Results:", {
+    isValid,
+    errorMessage,
+    missingFields,
+    formData
+  });
+
+  return { isValid, errorMessage };
+};
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -445,6 +546,18 @@ const AddPlanForm = () => {
         eligibilityCriteria: "",
         lockInPeriod: "",
         indemnityRequired: "No",
+        maturityCalculation: "compound",
+        compoundingFrequency: "annually",
+        expectedReturns: "",
+        minimumSIPAmount: "",
+        redemptionPeriod: "",
+        fundManager: "",
+        benchmarkIndex: "",
+        pastPerformance: "",
+        sectorFocus: [],
+        investmentObjective: "",
+        eligibleInvestors: "all",
+        exitLoad: "",
       });
       setTags([]);
       setActiveTabIndex(0);
@@ -856,6 +969,235 @@ const AddPlanForm = () => {
                         </FormControl>
                       )}
 
+                      {formData.planType === "investment" && (
+                        <>
+                          <Divider my={4} />
+                          <Heading size="md" mb={4}>Investment-Specific Details</Heading>
+                          
+                          <Grid templateColumns={{base: "1fr", md: "1fr 1fr"}} gap={4} width="100%">
+                            {/* Maturity Calculation */}
+                            <FormControl>
+                              <FormLabel fontWeight="bold">Interest Calculation</FormLabel>
+                              <RadioGroup 
+                                name="maturityCalculation" 
+                                value={formData.maturityCalculation} 
+                                onChange={(value) => handleInputChange({ target: { name: 'maturityCalculation', value }})}
+                              >
+                                <Stack direction="row">
+                                  <Radio value="simple">Simple Interest</Radio>
+                                  <Radio value="compound">Compound Interest</Radio>
+                                </Stack>
+                              </RadioGroup>
+                            </FormControl>
+                  
+                            {/* Compounding Frequency */}
+                            {formData.maturityCalculation === "compound" && (
+                              <FormControl>
+                                <FormLabel fontWeight="bold">Compounding Frequency</FormLabel>
+                                <Select
+                                  name="compoundingFrequency"
+                                  value={formData.compoundingFrequency}
+                                  onChange={handleInputChange}
+                                  bg="white"
+                                  borderColor="gray.300"
+                                >
+                                  <option value="annually">Annually</option>
+                                  <option value="semiannually">Semi-annually</option>
+                                  <option value="quarterly">Quarterly</option>
+                                  <option value="monthly">Monthly</option>
+                                  <option value="daily">Daily</option>
+                                </Select>
+                              </FormControl>
+                            )}
+                            
+                            {/* Projected Returns */}
+                            <FormControl>
+                              <FormLabel fontWeight="bold">Projected Maturity Value</FormLabel>
+                              <InputGroup>
+                                <InputLeftElement pointerEvents="none" color="gray.300" fontSize="1.2em" children="₹" />
+                                <Input 
+                                  value={formData.expectedReturns} 
+                                  isReadOnly 
+                                  bg="gray.50"
+                                />
+                              </InputGroup>
+                              <FormHelperText>
+                                Based on min investment amount and interest rate
+                              </FormHelperText>
+                            </FormControl>
+                            
+                            {/* Minimum SIP Amount */}
+                            <FormControl>
+                              <FormLabel fontWeight="bold">Minimum SIP Amount</FormLabel>
+                              <NumberInput min={0} bg="white">
+                                <NumberInputField
+                                  name="minimumSIPAmount"
+                                  value={formData.minimumSIPAmount}
+                                  onChange={handleInputChange}
+                                  borderColor="gray.300"
+                                  placeholder="For systematic investments"
+                                />
+                                <NumberInputStepper>
+                                  <NumberIncrementStepper />
+                                  <NumberDecrementStepper />
+                                </NumberInputStepper>
+                              </NumberInput>
+                              <FormHelperText>Monthly systematic investment plan amount</FormHelperText>
+                            </FormControl>
+                          </Grid>
+                  
+                          <Grid templateColumns={{base: "1fr", md: "1fr 1fr"}} gap={4} width="100%" mt={4}>
+                            {/* Redemption Period */}
+                            <FormControl>
+                              <FormLabel fontWeight="bold">Redemption Period (Days)</FormLabel>
+                              <NumberInput min={0} bg="white">
+                                <NumberInputField
+                                  name="redemptionPeriod"
+                                  value={formData.redemptionPeriod}
+                                  onChange={handleInputChange}
+                                  borderColor="gray.300"
+                                />
+                                <NumberInputStepper>
+                                  <NumberIncrementStepper />
+                                  <NumberDecrementStepper />
+                                </NumberInputStepper>
+                              </NumberInput>
+                              <FormHelperText>Time to process redemption requests</FormHelperText>
+                            </FormControl>
+                            
+                            {/* Exit Load */}
+                            <FormControl>
+                              <FormLabel fontWeight="bold">Exit Load (%)</FormLabel>
+                              <NumberInput min={0} max={100} step={0.01} bg="white">
+                                <NumberInputField
+                                  name="exitLoad"
+                                  value={formData.exitLoad}
+                                  onChange={handleInputChange}
+                                  borderColor="gray.300"
+                                />
+                                <NumberInputStepper>
+                                  <NumberIncrementStepper />
+                                  <NumberDecrementStepper />
+                                </NumberInputStepper>
+                              </NumberInput>
+                              <FormHelperText>Charges for early redemption</FormHelperText>
+                            </FormControl>
+                          </Grid>
+                          
+                          <Box mt={4}>
+                            <FormControl>
+                              <FormLabel fontWeight="bold">Investment Objective</FormLabel>
+                              <Select
+                                name="investmentObjective"
+                                value={formData.investmentObjective}
+                                onChange={handleInputChange}
+                                bg="white"
+                                borderColor="gray.300"
+                              >
+                                <option value="growth">Growth</option>
+                                <option value="income">Income</option>
+                                <option value="balanced">Balanced</option>
+                                <option value="taxSaving">Tax Saving</option>
+                                <option value="capital">Capital Preservation</option>
+                              </Select>
+                              <FormHelperText>Primary goal of this investment plan</FormHelperText>
+                            </FormControl>
+                          </Box>
+                          
+                          <Box mt={4}>
+                            <FormControl>
+                              <FormLabel fontWeight="bold">Eligible Investors</FormLabel>
+                              <Select
+                                name="eligibleInvestors"
+                                value={formData.eligibleInvestors}
+                                onChange={handleInputChange}
+                                bg="white"
+                                borderColor="gray.300"
+                              >
+                                <option value="all">All Investors</option>
+                                <option value="retail">Retail Investors Only</option>
+                                <option value="hni">High Net Worth Individuals</option>
+                                <option value="institutional">Institutional Investors</option>
+                                <option value="nri">NRI Investors</option>
+                              </Select>
+                            </FormControl>
+                          </Box>
+                          
+                          {/* For mutual fund specific fields */}
+                          {formData.investmentCategory === "MutualFunds" && (
+                            <>
+                              <Grid templateColumns={{base: "1fr", md: "1fr 1fr"}} gap={4} width="100%" mt={4}>
+                                <FormControl>
+                                  <FormLabel fontWeight="bold">Fund Manager</FormLabel>
+                                  <Input
+                                    name="fundManager"
+                                    value={formData.fundManager}
+                                    onChange={handleInputChange}
+                                    bg="white"
+                                    borderColor="gray.300"
+                                    placeholder="Name of fund manager"
+                                  />
+                                </FormControl>
+                                
+                                <FormControl>
+                                  <FormLabel fontWeight="bold">Benchmark Index</FormLabel>
+                                  <Input
+                                    name="benchmarkIndex"
+                                    value={formData.benchmarkIndex}
+                                    onChange={handleInputChange}
+                                    bg="white"
+                                    borderColor="gray.300"
+                                    placeholder="e.g., NIFTY 50, BSE SENSEX"
+                                  />
+                                </FormControl>
+                              </Grid>
+                              
+                              <FormControl mt={4}>
+                                <FormLabel fontWeight="bold">Past Performance</FormLabel>
+                                <Textarea
+                                  name="pastPerformance"
+                                  value={formData.pastPerformance}
+                                  onChange={handleInputChange}
+                                  bg="white"
+                                  borderColor="gray.300"
+                                  placeholder="e.g., 12% (1Y), 9.5% (3Y), 8.2% (5Y)"
+                                  rows={2}
+                                />
+                                <FormHelperText>Historical returns over different time periods</FormHelperText>
+                              </FormControl>
+                            </>
+                          )}
+                          
+                          {/* Sector Focus */}
+                          <FormControl mt={4}>
+                            <FormLabel fontWeight="bold">Sector Focus</FormLabel>
+                            <VStack align="start">
+                              <Wrap>
+                                {["Technology", "Healthcare", "Financial", "Consumer", "Energy", "Industrial", "Utilities", "Real Estate"].map(sector => (
+                                  <WrapItem key={sector}>
+                                    <Tag 
+                                      size="md" 
+                                      variant={formData.sectorFocus.includes(sector) ? "solid" : "outline"}
+                                      colorScheme="blue"
+                                      onClick={() => {
+                                        const updatedSectors = formData.sectorFocus.includes(sector) 
+                                          ? formData.sectorFocus.filter(s => s !== sector)
+                                          : [...formData.sectorFocus, sector];
+                                        setFormData(prev => ({...prev, sectorFocus: updatedSectors}));
+                                      }}
+                                      cursor="pointer"
+                                    >
+                                      {sector}
+                                    </Tag>
+                                  </WrapItem>
+                                ))}
+                              </Wrap>
+                              <FormHelperText>Click to select sectors (for equity investments)</FormHelperText>
+                            </VStack>
+                          </FormControl>
+                        </>
+                      )}
+
                       <Button colorScheme="blue" onClick={() => setActiveTabIndex(2)}>
                         Next: Additional Details
                       </Button>
@@ -1130,9 +1472,129 @@ const AddPlanForm = () => {
                         </FormControl>
                       )}
 
-                      <Button colorScheme="blue" onClick={() => setActiveTabIndex(3)}>
-                        Next: Eligibility Criteria
-                      </Button>
+                      {formData.planType === "investment" && (
+                        <Box mt={6} p={4} borderWidth="1px" borderRadius="lg" bg="gray.50">
+                          <Heading size="sm" mb={4}>Investment Performance Preview</Heading>
+                          
+                          <SimpleGrid columns={{base: 1, md: 2}} spacing={6}>
+                            <Box>
+                              <Text fontWeight="bold" mb={2}>Projected Investment Growth</Text>
+                              <VStack align="start" spacing={1}>
+                                <HStack justify="space-between" w="100%">
+                                  <Text>Initial Investment:</Text>
+                                  <Text fontWeight="bold">₹{parseFloat(formData.minAmount || 0).toLocaleString()}</Text>
+                                </HStack>
+                                <HStack justify="space-between" w="100%">
+                                  <Text>Interest Rate:</Text>
+                                  <Text fontWeight="bold">{formData.interestRate}%</Text>
+                                </HStack>
+                                <HStack justify="space-between" w="100%">
+                                  <Text>Tenure:</Text>
+                                  <Text fontWeight="bold">{formData.tenure} months</Text>
+                                </HStack>
+                                <Divider my={1} />
+                                <HStack justify="space-between" w="100%">
+                                  <Text>Expected Returns:</Text>
+                                  <Text fontWeight="bold" color="green.600">
+                                    ₹{formData.expectedReturns ? parseFloat(formData.expectedReturns).toLocaleString() : "0"}
+                                  </Text>
+                                </HStack>
+                                <HStack justify="space-between" w="100%">
+                                  <Text>Estimated Gain:</Text>
+                                  <Text fontWeight="bold" color="green.600">
+                                    ₹{formData.expectedReturns && formData.minAmount 
+                                      ? (parseFloat(formData.expectedReturns) - parseFloat(formData.minAmount)).toLocaleString() 
+                                      : "0"}
+                                  </Text>
+                                </HStack>
+                              </VStack>
+                            </Box>
+                            
+                            <Box>
+                              <Text fontWeight="bold" mb={2}>Investment Risk Assessment</Text>
+                              <VStack align="start" spacing={3} width="100%">
+                                <Box width="100%">
+                                  <Text mb={1}>Risk Level: <Badge colorScheme={
+                                    calculatedRisk < 2 ? "green" : 
+                                    calculatedRisk < 3 ? "blue" : 
+                                    calculatedRisk < 4 ? "yellow" : 
+                                    "red"
+                                  }>
+                                    {calculatedRisk < 2 ? "Low Risk" :
+                                    calculatedRisk < 3 ? "Moderate Risk" :
+                                    calculatedRisk < 4 ? "Medium Risk" :
+                                    "High Risk"}
+                                  </Badge></Text>
+                                  <Progress 
+                                    value={calculatedRisk * 20} 
+                                    colorScheme={
+                                      calculatedRisk < 2 ? "green" : 
+                                      calculatedRisk < 3 ? "blue" : 
+                                      calculatedRisk < 4 ? "yellow" : 
+                                      "red"
+                                    } 
+                                    size="sm" 
+                                  />
+                                  <Text fontSize="xs" mt={1}>Score: {calculatedRisk}/5</Text>
+                                </Box>
+                                
+                                <Box width="100%">
+                                  <Text mb={1}>Flexibility: <Badge colorScheme={
+                                    formData.flexibilityScore < 2 ? "red" : 
+                                    formData.flexibilityScore < 3 ? "orange" : 
+                                    formData.flexibilityScore < 4 ? "blue" : 
+                                    "green"
+                                  }>
+                                    {formData.flexibilityScore < 2 ? "Very Rigid" :
+                                    formData.flexibilityScore < 3 ? "Rigid" :
+                                    formData.flexibilityScore < 4 ? "Flexible" :
+                                    "Very Flexible"}
+                                  </Badge></Text>
+                                  <Progress 
+                                    value={formData.flexibilityScore * 20} 
+                                    colorScheme={
+                                      formData.flexibilityScore < 2 ? "red" : 
+                                      formData.flexibilityScore < 3 ? "orange" : 
+                                      formData.flexibilityScore < 4 ? "blue" : 
+                                      "green"
+                                    } 
+                                    size="sm" 
+                                  />
+                                  <Text fontSize="xs" mt={1}>Score: {formData.flexibilityScore}/5</Text>
+                                </Box>
+                              </VStack>
+                            </Box>
+                          </SimpleGrid>
+                          
+                          <Alert status="info" mt={4} borderRadius="md">
+                            <AlertIcon />
+                            <Box fontSize="sm">
+                              <AlertTitle>Investment Summary</AlertTitle>
+                              <AlertDescription>
+                                This {formData.investmentCategory || "investment"} plan offers 
+                                {formData.interestRate}% {formData.interestRateType} interest rate 
+                                with a {formData.minimumTenure || formData.tenure} month minimum tenure. 
+                                {formData.taxBenefits === "Yes" ? " It provides tax benefits under the Income Tax Act." : ""}
+                              </AlertDescription>
+                            </Box>
+                          </Alert>
+                        </Box>
+                      )}
+
+                      {formData.planType === "loan" ? (
+                        <Button colorScheme="blue" onClick={() => setActiveTabIndex(3)}>
+                          Next: Eligibility Criteria
+                        </Button>
+                      ) : (
+                        <Button 
+                          colorScheme="blue" 
+                          type="submit" 
+                          isLoading={isSubmitting}
+                          onClick={handleSubmit}
+                        >
+                          Submit Investment Plan
+                        </Button>
+                      )}
                     </VStack>
                   </TabPanel>
 

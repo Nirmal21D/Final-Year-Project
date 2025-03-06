@@ -47,6 +47,7 @@ import {
   deleteDoc,
   doc,
   setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db, auth } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -63,6 +64,7 @@ export default function PlanDisplay() {
   const [planToDelete, setPlanToDelete] = useState(null);
   const toast = useToast();
   const router = useRouter();
+  const [bankVerified, setBankVerified] = useState(false);
 
   const initialFormData = {
     planName: "",
@@ -116,6 +118,24 @@ export default function PlanDisplay() {
 
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    const fetchBankStatus = async () => {
+      if (user) {
+        try {
+          const bankDocRef = doc(db, "Banks", user.uid);
+          const bankDocSnap = await getDoc(bankDocRef);
+          if (bankDocSnap.exists()) {
+            setBankVerified(bankDocSnap.data().isVerified || false);
+          }
+        } catch (err) {
+          console.error("Error fetching bank status:", err);
+        }
+      }
+    };
+
+    fetchBankStatus();
+  }, [user]);
 
   const fetchInvestmentPlans = async (userId) => {
     try {
@@ -296,36 +316,65 @@ export default function PlanDisplay() {
 
   const PlanCard = ({ plan, type }) => {
     const router = useRouter();
-
+    const hasRejection = Boolean(plan.rejectionReason);
+    const planStatus = plan.status || "pending";
+  
     return (
       <Card
         variant="elevated"
         shadow="sm"
         transition="all 0.2s"
         _hover={{ shadow: "md", transform: "translateY(-2px)" }}
+        borderLeft={hasRejection ? "4px solid" : !bankVerified ? "4px solid" : "none"}
+        borderColor={hasRejection ? "red.600" : !bankVerified ? "orange.500" : "none"}
+        bg={hasRejection ? "red.50" : !bankVerified ? "orange.50" : "white"}
       >
         <CardHeader pb={0}>
           <Flex justify="space-between" align="center">
-            <Heading size="md" color="teal.600">
+            <Heading size="md" color={hasRejection ? "red.700" : !bankVerified ? "orange.700" : "teal.600"}>
               {type === "loan" ? plan.loanName : plan.planName}
             </Heading>
-            <Tag size="sm" colorScheme={type === "loan" ? "purple" : "teal"}>
-              <TagLabel>{type === "loan" ? "Loan" : "Investment"}</TagLabel>
-            </Tag>
+            <HStack spacing={2}>
+              {hasRejection && (
+                <Tag size="sm" colorScheme="red" variant="solid">
+                  <TagLabel>Rejected</TagLabel>
+                </Tag>
+              )}
+              {!hasRejection && planStatus === "pending" && (
+                <Tag size="sm" colorScheme="yellow">
+                  <TagLabel>Pending</TagLabel>
+                </Tag>
+              )}
+              {!hasRejection && planStatus === "approved" && (
+                <Tag size="sm" colorScheme="green">
+                  <TagLabel>Approved</TagLabel>
+                </Tag>
+              )}
+              {!bankVerified && !hasRejection && (
+                <Tag size="sm" colorScheme="orange">
+                  <TagLabel>Unverified Bank</TagLabel>
+                </Tag>
+              )}
+              <Tag size="sm" colorScheme={type === "loan" ? "purple" : "teal"}>
+                <TagLabel>{type === "loan" ? "Loan" : "Investment"}</TagLabel>
+              </Tag>
+            </HStack>
           </Flex>
         </CardHeader>
-
+  
         <CardBody>
           <Stack spacing={3}>
-            <Box h={"30vh"}>
+            <Box>
               <Stack spacing={3}>
                 <HStack justify="space-between">
                   <Text fontSize="sm" color="gray.600">
                     Interest Rate
                   </Text>
-                  <Badge colorScheme="green">{plan.interestRate}%</Badge>
+                  <Badge colorScheme={hasRejection ? "red" : "green"}>
+                    {plan.interestRate}%
+                  </Badge>
                 </HStack>
-
+  
                 <HStack justify="space-between">
                   <Text fontSize="sm" color="gray.600">
                     Amount Range
@@ -335,7 +384,7 @@ export default function PlanDisplay() {
                     {Number(plan.maxAmount).toLocaleString()}
                   </Text>
                 </HStack>
-
+  
                 <HStack justify="space-between">
                   <Text fontSize="sm" color="gray.600">
                     Tenure
@@ -344,14 +393,14 @@ export default function PlanDisplay() {
                     {plan.tenure} months
                   </Text>
                 </HStack>
-
+  
                 {type === "investment" && (
                   <>
                     <HStack justify="space-between">
                       <Text fontSize="sm" color="gray.600">
                         Category
                       </Text>
-                      <Badge colorScheme="blue">
+                      <Badge colorScheme={hasRejection ? "red" : "blue"}>
                         {plan.investmentCategory}
                       </Badge>
                     </HStack>
@@ -359,31 +408,56 @@ export default function PlanDisplay() {
                       <Text fontSize="sm" color="gray.600">
                         Sub Category
                       </Text>
-                      <Badge colorScheme="purple">
+                      <Badge colorScheme={hasRejection ? "red" : "purple"}>
                         {plan.investmentSubCategory}
                       </Badge>
                     </HStack>
                   </>
                 )}
-
+  
                 <Box>
                   <Text fontSize="sm" color="gray.600" mb={1}>
                     Description
                   </Text>
-                  <Text fontSize="sm">{plan.description}</Text>
+                  <Text fontSize="sm" noOfLines={3}>
+                    {plan.description}
+                  </Text>
                 </Box>
               </Stack>
             </Box>
             <Divider />
-
+  
+            {/* Show rejection reason when it exists */}
+            {hasRejection && (
+              <Alert status="error" size="sm" borderRadius="md" variant="left-accent">
+                <AlertIcon />
+                <Box>
+                  <AlertTitle fontSize="sm">Rejection Reason</AlertTitle>
+                  <AlertDescription fontSize="sm">
+                    {plan.rejectionReason}
+                  </AlertDescription>
+                </Box>
+              </Alert>
+            )}
+            
+            {/* Only show unverified message for non-rejected plans */}
+            {!bankVerified && !hasRejection && (
+              <Alert status="warning" size="sm" borderRadius="md">
+                <AlertIcon />
+                <Text fontSize="xs">
+                  This plan is not visible to customers until your bank is verified
+                </Text>
+              </Alert>
+            )}
+  
             <HStack justify="flex-end" spacing={2}>
               <Button
                 size="sm"
-                colorScheme="teal"
+                colorScheme={hasRejection ? "red" : "teal"}
                 variant="outline"
                 onClick={() => router.push(`/editplan/${plan.id}`)}
               >
-                Edit
+                {hasRejection ? "Edit & Resubmit" : "Edit"}
               </Button>
               <Button
                 size="sm"
@@ -400,58 +474,29 @@ export default function PlanDisplay() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <Flex justify="center" align="center" height="100vh">
-        <Spinner size="xl" color="teal.500" thickness="4px" />
-      </Flex>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert status="error" variant="left-accent" borderRadius="md">
-        <AlertIcon />
-        <Box>
-          <AlertTitle>Error occurred</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Box>
-      </Alert>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Alert
-        status="warning"
-        variant="subtle"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        textAlign="center"
-        height="200px"
-        borderRadius="md"
-      >
-        <AlertIcon boxSize="40px" mr={0} />
-        <AlertTitle mt={4} mb={1} fontSize="lg">
-          Authentication Required
-        </AlertTitle>
-        <AlertDescription maxWidth="sm">
-          Please log in to access the bank panel.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <Container maxW="container.xl" py={8}>
       <VStack spacing={8} align="stretch">
         <Box>
           <Heading size="lg" color="gray.700" mb={2}>
-            Bank Panel
+            Bank Dashboard
           </Heading>
-          <Text color="gray.500">Welcome back, {user.email}</Text>
+          <Text color="gray.500">Welcome back, {user?.email}</Text>
         </Box>
+
+        {/* Summary of rejected plans */}
+        {(investmentPlans.some(plan => plan.rejectionReason) || loanPlans.some(plan => plan.rejectionReason)) && (
+          <Alert status="error" mb={6} borderRadius="md">
+            <AlertIcon />
+            <Box>
+              <AlertTitle>Rejected Plans</AlertTitle>
+              <AlertDescription>
+                You have {investmentPlans.concat(loanPlans).filter(plan => plan.rejectionReason).length} rejected plan(s). 
+                Please review the rejection reasons and make necessary changes before resubmitting.
+              </AlertDescription>
+            </Box>
+          </Alert>
+        )}
 
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
           {investmentPlans.map((plan) => (
@@ -547,51 +592,9 @@ export default function PlanDisplay() {
                     }
                     isRequired
                   >
-                    <NumberInputField placeholder="Tenure (months)" />
+                      <NumberInputField placeholder="Tenure (months)" />
                   </NumberInput>
-                  {/* {!isEditingLoan && (
-                    <>
-                      <Select
-                        placeholder="Select Category"
-                        value={formData.investmentCategory}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            investmentCategory: e.target.value,
-                          })
-                        }
-                        isRequired
-                      >
-                        <option value="Bonds">Bonds</option>
-                        <option value="MutualFunds">Mutual Funds</option>
-                        <option value="FixedDeposits">Fixed Deposits</option>
-                        <option value="GoldInvestments">
-                          Gold Investments
-                        </option>
-                        <option value="ProvidentFunds">Provident Funds</option>
-                      </Select>
-                      <Select
-                        placeholder="Select Sub Category"
-                        value={formData.investmentSubCategory}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            investmentSubCategory: e.target.value,
-                          })
-                        }
-                        isRequired
-                      >
-                        {subCategories[formData.investmentCategory]?.map(
-                          (subCategory) => (
-                            <option key={subCategory} value={subCategory}>
-                              {subCategory}
-                            </option>
-                          )
-                        )}
-                      </Select>
-                    </>
-                  )} */}
-                  {/* <Textarea
+                  <Textarea
                     name="description"
                     value={formData.description}
                     onChange={(e) =>
@@ -600,7 +603,7 @@ export default function PlanDisplay() {
                     placeholder="Description"
                     isRequired
                   />
-                  <HStack spacing={4} width="full">
+                  <HStack spacing={4} w="full">
                     <Button
                       type="submit"
                       colorScheme="teal"
@@ -620,7 +623,7 @@ export default function PlanDisplay() {
                     >
                       Cancel
                     </Button>
-                  </HStack> */}
+                  </HStack>
                 </VStack>
               </form>
             </CardBody>

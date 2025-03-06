@@ -1218,9 +1218,20 @@ const EditPlanForm = () => {
                         </FormControl>
                       )}
 
-                      <Button colorScheme="blue" onClick={() => setActiveTabIndex(3)}>
-                        Next: Eligibility Criteria
-                      </Button>
+                      {formData.planType === "loan" ? (
+                        <Button colorScheme="blue" onClick={() => setActiveTabIndex(3)}>
+                          Next: Eligibility Criteria
+                        </Button>
+                      ) : (
+                        <Button 
+                          colorScheme="blue" 
+                          type="submit" 
+                          isLoading={isSubmitting}
+                          onClick={handleSubmit}
+                        >
+                          Update Investment Plan
+                        </Button>
+                      )}
                     </VStack>
                   </TabPanel>
 
