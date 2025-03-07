@@ -655,68 +655,7 @@ const BankDashboard = () => {
             </Stat>
           </SimpleGrid>
 
-          {/* Stats Overview */}
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-            <Stat
-              p={6}
-              bg="white"
-              borderRadius="lg"
-              boxShadow="sm"
-              borderTop="4px"
-              borderColor="blue.500"
-            >
-              <StatLabel fontSize="md">Total Loan Amount</StatLabel>
-              <StatNumber fontSize="2xl">
-                ₹{(analytics?.totalLoanAmount || 0).toLocaleString()}
-              </StatNumber>
-              <StatHelpText>Across all applications</StatHelpText>
-            </Stat>
-
-            <Stat
-              p={6}
-              bg="white"
-              borderRadius="lg"
-              boxShadow="sm"
-              borderTop="4px"
-              borderColor="green.500"
-            >
-              <StatLabel fontSize="md">Average Loan Size</StatLabel>
-              <StatNumber fontSize="2xl">
-                ₹{(Math.round(analytics?.avgLoanAmount) || 0).toLocaleString()}
-              </StatNumber>
-              <StatHelpText>Per application</StatHelpText>
-            </Stat>
-
-            <Stat
-              p={6}
-              bg="white"
-              borderRadius="lg"
-              boxShadow="sm"
-              borderTop="4px"
-              borderColor="purple.500"
-            >
-              <StatLabel fontSize="md">Approval Rate</StatLabel>
-              <StatNumber fontSize="2xl">
-                {analytics?.approvalRate || 0}%
-              </StatNumber>
-              <StatHelpText>Of total applications</StatHelpText>
-            </Stat>
-
-            <Stat
-              p={6}
-              bg="white"
-              borderRadius="lg"
-              boxShadow="sm"
-              borderTop="4px"
-              borderColor="orange.500"
-            >
-              <StatLabel fontSize="md">Total Applications</StatLabel>
-              <StatNumber fontSize="2xl">
-                {analytics?.totalApplications || 0}
-              </StatNumber>
-              <StatHelpText>All time</StatHelpText>
-            </Stat>
-          </SimpleGrid>
+         
 
           {/* Charts Section */}
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8} mb={8}>

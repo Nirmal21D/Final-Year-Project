@@ -28,7 +28,20 @@ import {
   Badge,
   Center,
   Spinner,
+  IconButton, 
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverBody,
+  PopoverHeader,
+  PopoverCloseButton
 } from "@chakra-ui/react";
+import { FiCamera, FiEdit2 } from "react-icons/fi";
 import React, { useState, useEffect, useRef } from "react";
 import {
   doc,
@@ -39,6 +52,7 @@ import {
   arrayUnion,
   query,
   where,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -220,11 +234,54 @@ const ProfilePage = () => {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+      // Validate file type
+      if (!file.type.match('image.*')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file (JPEG, PNG, etc.)",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Profile photo should be less than 2MB",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result;
         setProfilePhoto(base64String);
+        
+        toast({
+          title: "Photo updated",
+          description: "Your profile photo has been updated. Remember to save your profile.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
       };
+      
+      reader.onerror = () => {
+        toast({
+          title: "Error",
+          description: "Failed to read the image file",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      };
+      
       reader.readAsDataURL(file);
     }
   };
@@ -288,13 +345,35 @@ const ProfilePage = () => {
 
   const saveProfile = async () => {
     try {
+      // Show loading toast
+      const loadingToastId = toast({
+        title: "Saving profile",
+        description: "Please wait while we update your information...",
+        status: "loading",
+        duration: null,
+        isClosable: false,
+      });
+      
+      // Compress the profile photo if it's a Base64 string (not the default)
+      let photoToSave = profilePhoto;
+      if (profilePhoto && profilePhoto !== "/images/photo-placeholder.jpg" && profilePhoto.startsWith('data:image')) {
+        photoToSave = await compressProfilePhoto(profilePhoto);
+      }
+      
       await updateDoc(doc(db, "users", user.uid), {
         email,
         mobileNumber,
         salary,
         name,
-        profilePhoto,
+        age,
+        cibilScore,
+        profilePhoto: photoToSave,
+        lastUpdated: serverTimestamp(),
       });
+      
+      // Close loading toast
+      toast.close(loadingToastId);
+      
       toast({
         title: "Profile Updated",
         description: "Your profile information has been saved",
@@ -306,12 +385,59 @@ const ProfilePage = () => {
       console.error("Error saving profile:", error);
       toast({
         title: "Error",
-        description: "Failed to save profile",
+        description: "Failed to save profile: " + error.message,
         status: "error",
         duration: 3000,
         isClosable: true,
       });
     }
+  };
+
+  // Helper function to compress profile photos
+  const compressProfilePhoto = (base64Image) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        // Max dimensions
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        
+        let width = img.width;
+        let height = img.height;
+        
+        // Calculate new dimensions while maintaining aspect ratio
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round(height * (MAX_WIDTH / width));
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round(width * (MAX_HEIGHT / height));
+            height = MAX_HEIGHT;
+          }
+        }
+        
+        // Create canvas for resizing
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Get compressed data URL (JPEG format with 0.8 quality)
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(compressedBase64);
+      };
+      
+      img.onerror = (error) => {
+        reject(error);
+      };
+      
+      img.src = base64Image;
+    });
   };
 
   const renderHorizontalInput = (label, value, onChange, type = "text") => (
@@ -370,9 +496,22 @@ const ProfilePage = () => {
 
   return (
     <Box pb={8} px={16} maxWidth="1200px" margin="auto">
-      <Text fontSize="3xl" fontWeight="bold" mb={2}>
-        YOUR PROFILE
-      </Text>
+      <Flex justify="space-between" align="center" mb={6}>
+        <Text fontSize="3xl" fontWeight="bold">
+          YOUR PROFILE
+        </Text>
+        
+        {user && (
+          <HStack spacing={3}>
+            <Text>{user.email}</Text>
+            <Avatar 
+              size="md" 
+              src={profilePhoto} 
+              name={name || user.name || user.email} 
+            />
+          </HStack>
+        )}
+      </Flex>
 
       <Text fontSize="sm" mb={8}>
         This information will be used to personalize your experience.
@@ -388,14 +527,89 @@ const ProfilePage = () => {
         <TabPanels>
           <TabPanel>
             {/* User Info Section */}
+            <Box mb={8}>
+              <Flex direction={{ base: "column", md: "row" }} align="center" mb={8}>
+                <Box position="relative" mr={{ md: 8 }} mb={{ base: 4, md: 0 }}>
+                  <Avatar 
+                    size="2xl" 
+                    src={profilePhoto} 
+                    name={name || "User"}
+                    border="3px solid"
+                    borderColor="blue.500"
+                  />
+                  
+                  {/* Edit profile photo button */}
+                  <Popover placement="bottom">
+                    <PopoverTrigger>
+                      <IconButton
+                        aria-label="Edit profile photo"
+                        icon={<FiEdit2 />}
+                        size="sm"
+                        colorScheme="blue"
+                        isRound
+                        position="absolute"
+                        bottom={1}
+                        right={1}
+                        boxShadow="md"
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent width="250px">
+                      <PopoverArrow />
+                      <PopoverCloseButton />
+                      <PopoverHeader fontWeight="bold">Profile Photo</PopoverHeader>
+                      <PopoverBody>
+                        <VStack spacing={3} align="stretch">
+                          <Button 
+                            leftIcon={<FiCamera />}
+                            size="sm"
+                            onClick={() => fileInputRef.current.click()}
+                            colorScheme="blue"
+                          >
+                            Upload New Photo
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setProfilePhoto("/images/photo-placeholder.jpg")}
+                          >
+                            Reset to Default
+                          </Button>
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            style={{ display: "none" }}
+                            accept="image/*"
+                            onChange={handleFileChange}
+                          />
+                        </VStack>
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+                </Box>
 
+                <VStack align="start">
+                  <Text fontSize="2xl" fontWeight="bold">
+                    {name || "Your Name"}
+                  </Text>
+                  <Text color="gray.600">{email || "email@example.com"}</Text>
+                  <HStack spacing={3} mt={1}>
+                    <Badge colorScheme={cibilScore > 700 ? "green" : cibilScore > 600 ? "yellow" : "red"}>
+                      CIBIL: {cibilScore || "N/A"}
+                    </Badge>
+                    {age && <Badge colorScheme="purple">Age: {age}</Badge>}
+                    {mobileNumber && (
+                      <Badge colorScheme="blue">
+                        Mobile: {mobileNumber}
+                      </Badge>
+                    )}
+                  </HStack>
+                </VStack>
+              </Flex>
+            </Box>
+
+            {/* Keep the rest of the form fields */}
             {renderHorizontalInput("Email", email, setEmail, "email")}
-            {renderHorizontalInput(
-              "Mobile Number",
-              mobileNumber,
-              setmobileNumber,
-              "number"
-            )}
+            {renderHorizontalInput("Mobile Number", mobileNumber, setmobileNumber, "number")}
             {renderHorizontalInput("Salary", salary, setSalary)}
             {renderHorizontalInput("Name", name, setName)}
             {renderHorizontalInput("Age", age, setAge)}
@@ -454,13 +668,20 @@ const ProfilePage = () => {
                 ))}
               </Wrap>
             </Box>
-            <Box
-              display={"flex"}
-              alignItems={"center"}
-              justifyContent={"center"}
-            >
+            <Box display="flex" alignItems="center" justifyContent="center" flexDirection="column">
+              <Flex align="center" mb={4} direction={{ base: "column", md: "row" }}>
+                <Text fontSize="sm" color="gray.600" mb={{ base: 2, md: 0 }} mr={{ md: 4 }}>
+                  Your profile photo will be displayed as:
+                </Text>
+                <HStack spacing={4}>
+                  <Avatar size="md" src={profilePhoto} name={name || "User"} />
+                  <Avatar size="sm" src={profilePhoto} name={name || "User"} />
+                  <Avatar size="xs" src={profilePhoto} name={name || "User"} />
+                </HStack>
+              </Flex>
+              
               <Button
-                mt={10}
+                mt={2}
                 color="#ebeff4"
                 colorScheme="teal"
                 onClick={saveProfile}
