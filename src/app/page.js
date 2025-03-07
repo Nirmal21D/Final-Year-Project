@@ -702,7 +702,7 @@ const MainPage = () => {
                       <Box>
                         <Text fontSize="sm" color="gray.500">Min Investment</Text>
                         <Text fontSize="xl" fontWeight="bold">
-                          ${plan.minAmount}
+                        ₹{plan.minAmount}
                         </Text>
                       </Box>
                     </SimpleGrid>
@@ -787,7 +787,7 @@ const MainPage = () => {
                         <Box>
                           <Text fontSize="xs" color="gray.500">Min Investment</Text>
                           <Text fontSize="lg" fontWeight="semibold">
-                            ${plan.minAmount}
+                          ₹{plan.minAmount}
                           </Text>
                         </Box>
                         <Box>

@@ -359,7 +359,7 @@ const Page = () => {
       const reasoning = [];
 
       // Overall summary
-      reasoning.push(`${bestLoan.planName} is the recommended loan option with an overall score of ${(bestLoan.totalScore * 100).toFixed(1)}%.`);
+      reasoning.push(`${bestLoan.loanName} is the recommended loan option with an overall score of ${(bestLoan.totalScore * 100).toFixed(1)}%.`);
       
       // Compare with other loans
       otherLoans.forEach((otherLoan) => {
@@ -384,7 +384,7 @@ const Page = () => {
 
         if (comparisons.length > 0) {
           reasoning.push(
-            `Compared to ${otherLoan.planName}, it offers ${comparisons.join(", ")}`
+            `Compared to ${otherLoan.loanName}, it offers ${comparisons.join(", ")}`
           );
         }
       });
@@ -417,7 +417,7 @@ const Page = () => {
       otherLoans,
       reasoning: generateDetailedReasoning(bestLoan, otherLoans),
       scores: compareAllLoans.map(({ loan, totalScore, scores }) => ({
-        planName: loan?.planName,
+        loanName: loan?.loanName,
         planId: loan?.id,
         totalScore: (totalScore * 100).toFixed(2),
         detailedScores: {
@@ -621,7 +621,7 @@ const Page = () => {
         const beforeCount = result.length;
         result = result.filter(
           loan => 
-            loan.planName?.toLowerCase().includes(searchLower) ||
+            loan.loanName?.toLowerCase().includes(searchLower) ||
             loan.description?.toLowerCase().includes(searchLower) ||
             loan.loanCategory?.toLowerCase().includes(searchLower) ||
             loan.loanSubCategory?.toLowerCase().includes(searchLower)
@@ -827,18 +827,27 @@ const Page = () => {
               <Text fontWeight="bold" mb={2}>Loan Categories</Text>
               <CheckboxGroup
                 value={categoryFilter}
-                onChange={(values) => setCategoryFilter(values)}
+                onChange={(values) => {
+                  setCategoryFilter(values);
+                  setSubCategoryFilter([]); // Reset subcategory when category changes
+                }}
               >
                 <Stack direction="column" spacing={1}>
                   <Checkbox value="HomeLoans">Home Loans</Checkbox>
                   <Checkbox value="PersonalLoans">Personal Loans</Checkbox>
-                  <Checkbox value="CarLoans">Car Loans</Checkbox>
                   <Checkbox value="EducationLoans">Education Loans</Checkbox>
+                  <Checkbox value="CarLoans">Car Loans</Checkbox>
                   <Checkbox value="BusinessLoans">Business Loans</Checkbox>
+                  <Checkbox value="AgricultureLoans">Agriculture Loans</Checkbox>
+                  <Checkbox value="MortgageLoans">Mortgage Loans</Checkbox>
+                  <Checkbox value="GoldLoans">Gold Loans</Checkbox>
+                  <Checkbox value="MicroFinance">Microfinance Loans</Checkbox>
+                  <Checkbox value="GreenLoans">Green/Sustainability Loans</Checkbox>
+                  <Checkbox value="OverdraftLoans">Overdraft & Credit Line</Checkbox>
                 </Stack>
               </CheckboxGroup>
             </Box>
-            
+
             {/* SubCategories Section */}
             {categoryFilter.length > 0 && (
               <Box mb={4}>
@@ -847,40 +856,99 @@ const Page = () => {
                   value={subCategoryFilter}
                   onChange={(values) => setSubCategoryFilter(values)}
                 >
-                  <Stack direction="column" spacing={1}>
+                  <Stack direction="column" spacing={1} maxH="200px" overflowY="auto">
                     {categoryFilter.includes("HomeLoans") && (
                       <>
-                        <Checkbox value="FixedRateHome">Fixed Rate Home Loans</Checkbox>
-                        <Checkbox value="VariableRateHome">Variable Rate Home Loans</Checkbox>
-                        <Checkbox value="BalanceTransferHome">Balance Transfer</Checkbox>
+                        {["New Property Purchase", "Resale Property", "Construction", "Renovation", "Land Purchase", 
+                          "Home Extension", "Balance Transfer", "Top-up Loan", "Home Improvement", "Joint Home Loan", 
+                          "NRI Home Loan", "Luxury Property", "Affordable Housing", "Plot Purchase & Construction"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
                       </>
                     )}
                     {categoryFilter.includes("PersonalLoans") && (
                       <>
-                        <Checkbox value="UnsecuredPersonal">Unsecured Personal Loans</Checkbox>
-                        <Checkbox value="SecuredPersonal">Secured Personal Loans</Checkbox>
-                        <Checkbox value="DebtConsolidation">Debt Consolidation</Checkbox>
-                      </>
-                    )}
-                    {categoryFilter.includes("CarLoans") && (
-                      <>
-                        <Checkbox value="NewCar">New Car Loans</Checkbox>
-                        <Checkbox value="UsedCar">Used Car Loans</Checkbox>
-                        <Checkbox value="RefinanceCar">Car Refinancing</Checkbox>
+                        {["General Purpose", "Debt Consolidation", "Wedding", "Medical Emergency", "Travel", 
+                          "Home Renovation", "Education", "Used Vehicle", "Festivities", "Consumer Durables", 
+                          "Family Function", "Emergency Cash", "Professional Development"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
                       </>
                     )}
                     {categoryFilter.includes("EducationLoans") && (
                       <>
-                        <Checkbox value="Undergraduate">Undergraduate Loans</Checkbox>
-                        <Checkbox value="Graduate">Graduate Loans</Checkbox>
-                        <Checkbox value="Study-Abroad">Study Abroad Loans</Checkbox>
+                        {["Undergraduate", "Postgraduate", "Doctoral", "Professional Course", "Study Abroad", 
+                          "Skill Development", "Research Programs", "Vocational Training", "Executive Education", 
+                          "Online Courses", "School Education", "Competitive Exam Coaching", "Scholar Loans"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
+                      </>
+                    )}
+                    {categoryFilter.includes("CarLoans") && (
+                      <>
+                        {["New Car", "Used Car", "Two Wheeler", "Commercial Vehicle", "Electric Vehicle", 
+                          "Luxury Vehicle", "Vintage/Classic Car", "Fleet Financing", "Taxi Finance", 
+                          "Leasing Options", "Vehicle Refinancing"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
                       </>
                     )}
                     {categoryFilter.includes("BusinessLoans") && (
                       <>
-                        <Checkbox value="SmallBusiness">Small Business Loans</Checkbox>
-                        <Checkbox value="Startup">Startup Loans</Checkbox>
-                        <Checkbox value="WorkingCapital">Working Capital Loans</Checkbox>
+                        {["Working Capital", "Equipment Purchase", "Expansion", "Startup", "Invoice Financing", 
+                          "Merchant Cash Advance", "Commercial Property", "Franchise Financing", "Supply Chain Financing", 
+                          "Trade Finance", "Contract Financing", "Agriculture Business", "MSME Loans", "Term Loans"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
+                      </>
+                    )}
+                    {categoryFilter.includes("AgricultureLoans") && (
+                      <>
+                        {["Crop Loans", "Farm Mechanization", "Land Development", "Irrigation Systems", "Allied Activities", 
+                          "Plantation Crops", "Warehouse Construction", "Cold Storage", "Rural Development", "Horticulture", 
+                          "Dairy Farming", "Poultry Farming", "Fisheries"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
+                      </>
+                    )}
+                    {categoryFilter.includes("MortgageLoans") && (
+                      <>
+                        {["Fixed-Rate Mortgage", "Adjustable-Rate Mortgage", "Jumbo Loans", "Bridge Loans", "Reverse Mortgage", 
+                          "Second Mortgage", "Commercial Mortgage", "Construction-to-Permanent", "Interest-Only Mortgage"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
+                      </>
+                    )}
+                    {categoryFilter.includes("GoldLoans") && (
+                      <>
+                        {["Gold Jewelry Loan", "Gold Coin/Bar Loan", "Gold Overdraft", "Agricultural Gold Loan", 
+                          "Business Gold Loan", "Personal Gold Loan", "Doorstep Gold Loan"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
+                      </>
+                    )}
+                    {categoryFilter.includes("MicroFinance") && (
+                      <>
+                        {["Group Lending", "Individual Microloans", "Joint Liability", "Self-Help Groups", "Income Generation", 
+                          "Women Empowerment", "Rural Microfinance", "Urban Microfinance"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
+                      </>
+                    )}
+                    {categoryFilter.includes("GreenLoans") && (
+                      <>
+                        {["Solar Panel Financing", "Electric Vehicle", "Energy Efficiency Projects", "Sustainable Agriculture", 
+                          "Green Building", "Clean Water Projects", "Renewable Energy", "Eco-Tourism Ventures"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
+                      </>
+                    )}
+                    {categoryFilter.includes("OverdraftLoans") && (
+                      <>
+                        {["Salary Overdraft", "Business Overdraft", "Secured Overdraft", "Current Account Overdraft", 
+                          "Cash Credit", "Working Capital Demand Loan", "Temporary Overdraft", "Flexible Credit Line"].map(sub => (
+                          <Checkbox key={sub} value={sub}>{sub}</Checkbox>
+                        ))}
                       </>
                     )}
                   </Stack>
@@ -1110,7 +1178,7 @@ const Page = () => {
                     />
                     
                     <Heading size="md" color="#2C319F" mt={4}>
-                      {loan.planName}
+                      {loan.loanName}
                     </Heading>
                     
                     <Box mt={2} bg="blue.50" p={2} borderRadius="md">
@@ -1274,7 +1342,7 @@ const Page = () => {
                     />
                     
                     <Heading size="md" color="#2C319F" mt={4}>
-                      {loan.planName}
+                      {loan.loanName}
                     </Heading>
                     
                     <Text fontSize="sm" mt={2} noOfLines={2} color="gray.600">
@@ -1397,9 +1465,9 @@ const Page = () => {
                   <Tr>
                     <Th>Loan Detail</Th>
                     {comparisonResults.otherLoans.map((loan) => (
-                      <Th key={loan.id}>{loan.planName}</Th>
+                      <Th key={loan.id}>{loan.loanName}</Th>
                     ))}
-                    <Th bg="green.50">{comparisonResults.bestLoan.planName}</Th>
+                    <Th bg="green.50">{comparisonResults.bestLoan.loanName}</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -1491,7 +1559,7 @@ const Page = () => {
                   <Tr>
                     <Td>Comparison Score</Td>
                     {comparisonResults.scores.slice(1).map((score) => (
-                      <Td key={score.planName}>{score.totalScore}%</Td>
+                      <Td key={score.loanName}>{score.totalScore}%</Td>
                     ))}
                     <Td bg="green.50">{comparisonResults.scores[0].totalScore}%</Td>
                   </Tr>

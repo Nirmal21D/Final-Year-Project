@@ -142,20 +142,54 @@ const AddPlanForm = () => {
 
   // Subcategories for each investment category
   const subCategories = {
-    Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds", "Treasury Bonds", "Zero Coupon Bonds", "Inflation-Indexed Bonds"],
-    MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds", "Index Funds", "Liquid Funds", "ELSS Funds", "Sector Funds"],
-    FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit", "Tax-Saving FD", "Senior Citizen FD", "Super Senior Citizen FD"],
-    GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds", "Gold Mutual Funds", "Gold Futures"],
-    ProvidentFunds: ["EPF", "PPF", "GPF", "VPF", "UPF", "EDLI"],
+    Bonds: ["Government Bonds", "Corporate Bonds", "Municipal Bonds", "Treasury Bonds", "Zero Coupon Bonds", "Inflation-Indexed Bonds", "Convertible Bonds", "Sovereign Bonds"],
+    
+    MutualFunds: ["Equity Funds", "Debt Funds", "Balanced Funds", "Index Funds", "Liquid Funds", "ELSS Funds", "Sector Funds", "International Funds", "Dividend Yield Funds", "Value Funds", "Growth Funds", "Small Cap", "Mid Cap", "Large Cap", "Multi Cap"],
+    
+    FixedDeposits: ["Short-Term FD", "Long-Term FD", "Recurring Deposit", "Tax-Saving FD", "Senior Citizen FD", "Super Senior Citizen FD", "Flexi FD", "Corporate FD", "Bank FD", "Special Deposit Schemes"],
+    
+    GoldInvestments: ["Physical Gold", "Digital Gold", "Gold ETFs", "Sovereign Gold Bonds", "Gold Mutual Funds", "Gold Futures", "Gold Mining Stocks", "Gold Jewelry", "Gold Coins", "Gold Accumulation Plans"],
+    
+    ProvidentFunds: ["EPF", "PPF", "GPF", "VPF", "UPF", "EDLI", "NPS", "APY"],
+    
+    Stocks: ["Direct Equity", "IPO Investments", "Blue Chip Stocks", "Penny Stocks", "Growth Stocks", "Value Stocks", "Dividend Stocks", "Preferred Stocks"],
+    
+    RealEstate: ["REITs", "Commercial Property", "Residential Property", "Rental Property", "Land", "Vacation Homes", "Fractional Ownership", "Real Estate Crowdfunding"],
+    
+    Commodities: ["Precious Metals", "Industrial Metals", "Energy Resources", "Agricultural Products", "Commodity ETFs", "Commodity Futures", "Commodity Options"],
+    
+    InsurancePlans: ["ULIPs", "Endowment Plans", "Money-Back Plans", "Whole Life Plans", "Retirement Plans", "Child Plans", "Pension Plans", "Annuity Plans"],
+    
+    AlternativeInvestments: ["Private Equity", "Venture Capital", "Hedge Funds", "Structured Products", "Art & Collectibles", "Wine & Spirits", "Peer-to-Peer Lending", "Cryptocurrencies", "NFTs", "Carbon Credits"],
+    
+    TaxSaving: ["ELSS Mutual Funds", "PPF", "Tax-Saving FDs", "NPS", "ULIP", "Senior Citizens Savings Scheme", "Sukanya Samriddhi Yojana", "NSC"],
+    
+    ShortTermInstruments: ["Treasury Bills", "Commercial Papers", "Certificate of Deposits", "Money Market Funds", "Liquid Funds", "Ultra Short Term Funds", "Overnight Funds", "Arbitrage Funds"]
   };
 
   // Loan subcategories for each loan type
   const loanSubCategories = {
-    personal: ["General Purpose", "Debt Consolidation", "Wedding", "Medical Emergency", "Travel", "Home Renovation", "Education", "Used Vehicle"],
-    home: ["New Property Purchase", "Resale Property", "Construction", "Renovation", "Land Purchase", "Home Extension", "Balance Transfer", "Top-up Loan"],
-    education: ["Undergraduate", "Postgraduate", "Doctoral", "Professional Course", "Study Abroad", "Skill Development", "Research Programs"],
-    auto: ["New Car", "Used Car", "Two Wheeler", "Commercial Vehicle", "Electric Vehicle", "Luxury Vehicle"],
-    business: ["Working Capital", "Equipment Purchase", "Expansion", "Startup", "Invoice Financing", "Merchant Cash Advance", "Commercial Property"],
+    personal: ["General Purpose", "Debt Consolidation", "Wedding", "Medical Emergency", "Travel", "Home Renovation", "Education", "Used Vehicle", "Festivities", "Consumer Durables", "Family Function", "Emergency Cash", "Professional Development"],
+    
+    home: ["New Property Purchase", "Resale Property", "Construction", "Renovation", "Land Purchase", "Home Extension", "Balance Transfer", "Top-up Loan", "Home Improvement", "Joint Home Loan", "NRI Home Loan", "Luxury Property", "Affordable Housing", "Plot Purchase & Construction"],
+    
+    education: ["Undergraduate", "Postgraduate", "Doctoral", "Professional Course", "Study Abroad", "Skill Development", "Research Programs", "Vocational Training", "Executive Education", "Online Courses", "School Education", "Competitive Exam Coaching", "Scholar Loans"],
+    
+    car: ["New Car", "Used Car", "Two Wheeler", "Commercial Vehicle", "Electric Vehicle", "Luxury Vehicle", "Vintage/Classic Car", "Fleet Financing", "Taxi Finance", "Leasing Options", "Vehicle Refinancing"],
+    
+    business: ["Working Capital", "Equipment Purchase", "Expansion", "Startup", "Invoice Financing", "Merchant Cash Advance", "Commercial Property", "Franchise Financing", "Supply Chain Financing", "Trade Finance", "Contract Financing", "Agriculture Business", "MSME Loans", "Term Loans"],
+    
+    agriculture: ["Crop Loans", "Farm Mechanization", "Land Development", "Irrigation Systems", "Allied Activities", "Plantation Crops", "Warehouse Construction", "Cold Storage", "Rural Development", "Horticulture", "Dairy Farming", "Poultry Farming", "Fisheries"],
+    
+    mortgage: ["Fixed-Rate Mortgage", "Adjustable-Rate Mortgage", "Jumbo Loans", "Bridge Loans", "Reverse Mortgage", "Second Mortgage", "Commercial Mortgage", "Construction-to-Permanent", "Interest-Only Mortgage"],
+    
+    gold: ["Gold Jewelry Loan", "Gold Coin/Bar Loan", "Gold Overdraft", "Agricultural Gold Loan", "Business Gold Loan", "Personal Gold Loan", "Doorstep Gold Loan"],
+    
+    micro: ["Group Lending", "Individual Microloans", "Joint Liability", "Self-Help Groups", "Income Generation", "Women Empowerment", "Rural Microfinance", "Urban Microfinance"],
+    
+    green: ["Solar Panel Financing", "Electric Vehicle", "Energy Efficiency Projects", "Sustainable Agriculture", "Green Building", "Clean Water Projects", "Renewable Energy", "Eco-Tourism Ventures"],
+    
+    overdraft: ["Salary Overdraft", "Business Overdraft", "Secured Overdraft", "Current Account Overdraft", "Cash Credit", "Working Capital Demand Loan", "Temporary Overdraft", "Flexible Credit Line"]
   };
 
   useEffect(() => {
@@ -671,6 +705,13 @@ const validateForm = () => {
                               <option value="FixedDeposits">Fixed Deposits</option>
                               <option value="GoldInvestments">Gold Investments</option>
                               <option value="ProvidentFunds">Provident Funds</option>
+                              <option value="Stocks">Stocks & Shares</option>
+                              <option value="RealEstate">Real Estate Investments</option>
+                              <option value="Commodities">Commodity Investments</option>
+                              <option value="InsurancePlans">Insurance Investment Plans</option>
+                              <option value="AlternativeInvestments">Alternative Investments</option>
+                              <option value="TaxSaving">Tax-Saving Instruments</option>
+                              <option value="ShortTermInstruments">Short-Term Instruments</option>
                             </Select>
                           </FormControl>
 
@@ -715,6 +756,12 @@ const validateForm = () => {
                               <option value="BusinessLoans">Business Loan</option>
                               <option value="EducationLoans">Education Loan</option>
                               <option value="CarLoans">Car Loan</option>
+                              <option value="AgricultureLoans">Agriculture Loan</option>
+                              <option value="MortgageLoans">Mortgage Loan</option>
+                              <option value="GoldLoans">Gold Loan</option>
+                              <option value="MicroFinance">Microfinance Loan</option>
+                              <option value="GreenLoans">Green/Sustainability Loan</option>
+                              <option value="OverdraftLoans">Overdraft & Credit Line</option>
                             </Select>
                           </FormControl>
 
