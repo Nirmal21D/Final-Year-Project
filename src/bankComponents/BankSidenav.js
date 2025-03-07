@@ -22,16 +22,23 @@ import {
   FiEdit,
   FiFileText,
   FiUser,
-  FiLogOut
+  FiLogOut,
 } from "react-icons/fi";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import Link from "next/link";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { usePathname } from 'next/navigation';
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 const SideNav = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -42,8 +49,7 @@ const SideNav = () => {
   const [pendingApplications, setPendingApplications] = useState(0);
   const [pendingInvestments, setPendingInvestments] = useState(0);
   const [notifications, setNotifications] = useState(0);
- 
-  
+
   // Color styles
   const activeBgColor = useColorModeValue("blue.100", "blue.700");
   useEffect(() => {
@@ -98,8 +104,8 @@ const SideNav = () => {
           title: "Dashboard",
           icon: FiHome,
           path: "/bankdashboard",
-        }
-      ]
+        },
+      ],
     },
 
     // Plan Management
@@ -116,7 +122,6 @@ const SideNav = () => {
           icon: FiFilePlus,
           path: "/addplans",
         },
-        
       ],
     },
 
@@ -129,29 +134,19 @@ const SideNav = () => {
           icon: FiFileText,
           path: "/loanApplication",
           badge: pendingApplications,
-        }
+        },
       ],
     },
 
     // Profile
-    {
-      title: "Settings",
-      items: [
-        {
-          title: "Bank Profile",
-          icon: FiUser,
-          path: "/bankprofile",
-        }
-      ],
-    },
   ];
 
   // Add styles for the navigation
   const NavItem = ({ item, isNested = false }) => {
     const active = isActive(item.path);
-    
+
     return (
-      <Link href={item.path} style={{ textDecoration: 'none' }}>
+      <Link href={item.path} style={{ textDecoration: "none" }}>
         <Box
           as={motion.div}
           whileHover={{ x: 4 }}
@@ -195,8 +190,8 @@ const SideNav = () => {
                 _groupHover={{ transform: "scale(1.1)", color: "white" }}
               />
             )}
-            <Text 
-              fontSize="sm" 
+            <Text
+              fontSize="sm"
               fontWeight={active ? "bold" : "medium"}
               letterSpacing="0.4px"
             >
@@ -230,7 +225,7 @@ const SideNav = () => {
           fontSize="xs"
           fontWeight="bold"
           textTransform="uppercase"
-          color="gray.500"  // Darker category text
+          color="gray.500" // Darker category text
           letterSpacing="wider"
           mb={3}
         >
@@ -256,24 +251,24 @@ const SideNav = () => {
       pb="10"
       overflowX="hidden"
       overflowY="auto"
-      bg="gray.900"  // Changed to dark background
+      bg="gray.900" // Changed to dark background
       borderRight="1px"
-      borderRightColor="gray.700"  // Darker border
+      borderRightColor="gray.700" // Darker border
       w={["280px", "20%"]} // Responsive width: 280px on mobile, 20% on larger screens
       maxW="400px" // Add maximum width to prevent too wide sidebar on large screens
       minW="280px" // Add minimum width to prevent too narrow sidebar
-      shadow="dark-lg"  // Darker shadow
+      shadow="dark-lg" // Darker shadow
       css={{
-        '&::-webkit-scrollbar': {
-          width: '4px',
+        "&::-webkit-scrollbar": {
+          width: "4px",
         },
-        '&::-webkit-scrollbar-track': {
-          width: '6px',
-          background: '#1A202C',  // Dark scrollbar track
+        "&::-webkit-scrollbar-track": {
+          width: "6px",
+          background: "#1A202C", // Dark scrollbar track
         },
-        '&::-webkit-scrollbar-thumb': {
-          background: '#2D3748',  // Dark scrollbar thumb
-          borderRadius: '24px',
+        "&::-webkit-scrollbar-thumb": {
+          background: "#2D3748", // Dark scrollbar thumb
+          borderRadius: "24px",
         },
       }}
     >
@@ -288,10 +283,9 @@ const SideNav = () => {
         zIndex="sticky"
       >
         <Flex align="center" mb={2}>
-          <Image src="/logo.png" h="8" />
-          <Text 
-            fontSize="xl" 
-            ml="3" 
+          <Text
+            fontSize="xl"
+            ml="3"
             fontWeight="bold"
             bgGradient="linear(to-r, blue.400, blue.300)"
             bgClip="text"
@@ -315,42 +309,42 @@ const SideNav = () => {
         </Flex>
       </Box>
 
-      <Box 
-        position="sticky" 
-        bottom="0" 
-        w="full" 
-        bg="gray.900"  // Dark background
-        borderTop="1px" 
-        borderColor="gray.700"  // Darker border
+      <Box
+        position="sticky"
+        bottom="0"
+        w="full"
+        bg="gray.900" // Dark background
+        borderTop="1px"
+        borderColor="gray.700" // Darker border
         p="4"
       >
         <VStack spacing="4">
-          <HStack 
-            spacing="3" 
-            width="full" 
-            p="3" 
-            bg="gray.800"  // Dark background
+          <HStack
+            spacing="3"
+            width="full"
+            p="3"
+            bg="gray.800" // Dark background
             borderRadius="lg"
           >
-            <Avatar 
-              size="sm" 
-              name={userData?.name} 
-              src={userData?.avatar} 
+            <Avatar
+              size="sm"
+              name={userData?.name}
+              src={userData?.avatar}
               bg="blue.500"
             />
             <Box flex="1">
-              <Text 
-                fontSize="sm" 
+              <Text
+                fontSize="sm"
                 fontWeight="medium"
-                color="gray.100"  // Lighter text
+                color="gray.100" // Lighter text
               >
-                {userData?.name || 'Bank Staff'}
+                {userData?.name || "Bank Staff"}
               </Text>
-              <Text 
-                fontSize="xs" 
-                color="gray.400"  // Lighter secondary text
+              <Text
+                fontSize="xs"
+                color="gray.400" // Lighter secondary text
               >
-                {userData?.role || 'Administrator'}
+                {userData?.role || "Administrator"}
               </Text>
             </Box>
           </HStack>
@@ -366,7 +360,7 @@ const SideNav = () => {
             color="red.400"
             bg="transparent"
             _hover={{
-              bg: "red.900"
+              bg: "red.900",
             }}
           >
             Log Out

@@ -67,19 +67,19 @@ const NavbarMain = () => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [notificationCount, setNotificationCount] = useState(2); // Example notification count
-  
+
   // Use a ref for the hamburger button
   const btnRef = useRef();
-  
+
   // Color scheme
   const navBg = useColorModeValue("white", "gray.800");
   const menuBg = useColorModeValue("white", "gray.800");
   const buttonBg = useColorModeValue("#567C8D", "#3F5B68");
   const buttonHover = useColorModeValue("blue.100", "blue.700");
-  const textColor = useColorModeValue("#e9ecef", "#e9ecef");
+  const textColor = useColorModeValue("#008080", "#008080");
   const hoverTextColor = useColorModeValue("#11212d", "#ffffff");
   const borderColor = useColorModeValue("gray.200", "gray.600");
-  
+
   // Responsive design
   const isMobile = useBreakpointValue({ base: true, md: false });
   const buttonSize = useBreakpointValue({ base: "sm", md: "md" });
@@ -128,7 +128,11 @@ const NavbarMain = () => {
     color: textColor,
     fontWeight: "medium",
     rounded: "md",
-    _hover: { bg: buttonHover, color: hoverTextColor, transform: "translateY(-2px)" },
+    _hover: {
+      bg: buttonHover,
+      color: hoverTextColor,
+      transform: "translateY(-2px)",
+    },
     transition: "all 0.2s",
     p: 2,
     minW: "auto",
@@ -172,14 +176,24 @@ const NavbarMain = () => {
       label: "News",
       href: "/news",
       icon: <FaNewspaper />,
-    }
+    },
   ];
 
   // Desktop navigation rendering
   const renderDesktopNav = () => (
-    <HStack spacing={2} display={{ base: "none", md: "flex" }} w="100%" justifyContent="space-around">
+    <HStack
+      spacing={2}
+      display={{ base: "none", md: "flex" }}
+      w="100%"
+      justifyContent="space-around"
+    >
       {navItems.map((item) => (
-        <Link href={item.href} key={item.label} passHref style={{ width: "100%" }}>
+        <Link
+          href={item.href}
+          key={item.label}
+          passHref
+          style={{ width: "100%" }}
+        >
           <Button {...navButtonStyles} variant="ghost" justifyContent="center">
             <HStack spacing={2}>
               <Box>{item.icon}</Box>
@@ -201,8 +215,14 @@ const NavbarMain = () => {
     >
       <DrawerOverlay />
       <DrawerContent>
-        <DrawerHeader borderBottomWidth="1px" display="flex" alignItems="center">
-          <Text fontWeight="bold" fontSize="lg">Navigation</Text>
+        <DrawerHeader
+          borderBottomWidth="1px"
+          display="flex"
+          alignItems="center"
+        >
+          <Text fontWeight="bold" fontSize="lg">
+            Navigation
+          </Text>
           <Spacer />
           <CloseButton onClick={onClose} />
         </DrawerHeader>
@@ -218,7 +238,7 @@ const NavbarMain = () => {
                   py={3}
                   px={4}
                   borderRadius={0}
-                  borderBottomWidth="1px" 
+                  borderBottomWidth="1px"
                   borderColor={borderColor}
                 >
                   <HStack spacing={3}>
@@ -229,15 +249,15 @@ const NavbarMain = () => {
               </Link>
             ))}
           </VStack>
-          
+
           {/* Mobile Auth */}
           <Box p={4} mt={4}>
             {!user ? (
               <VStack spacing={3} align="stretch">
                 <Link href="/login" passHref>
-                  <Button 
-                    w="100%" 
-                    colorScheme="blue" 
+                  <Button
+                    w="100%"
+                    colorScheme="blue"
                     leftIcon={<FaSignInAlt />}
                     onClick={onClose}
                   >
@@ -245,9 +265,9 @@ const NavbarMain = () => {
                   </Button>
                 </Link>
                 <Link href="/signup" passHref>
-                  <Button 
-                    w="100%" 
-                    variant="outline" 
+                  <Button
+                    w="100%"
+                    variant="outline"
                     colorScheme="blue"
                     leftIcon={<FaUserPlus />}
                     onClick={onClose}
@@ -259,21 +279,23 @@ const NavbarMain = () => {
             ) : (
               <VStack spacing={3} align="stretch">
                 <Flex align="center" p={2} borderWidth="1px" borderRadius="md">
-                  <Avatar 
-                    size="sm" 
+                  <Avatar
+                    size="sm"
                     name={userData?.name || "User"}
                     src={userData?.photoURL}
                     mr={3}
                   />
                   <Box>
                     <Text fontWeight="medium">{userData?.name || "User"}</Text>
-                    <Text fontSize="xs" opacity={0.8}>{user.email}</Text>
+                    <Text fontSize="xs" opacity={0.8}>
+                      {user.email}
+                    </Text>
                   </Box>
                 </Flex>
                 <Link href="/profile" passHref>
-                  <Button 
-                    w="100%" 
-                    colorScheme="blue" 
+                  <Button
+                    w="100%"
+                    colorScheme="blue"
                     variant="outline"
                     leftIcon={<FaUserCircle />}
                     onClick={onClose}
@@ -281,9 +303,9 @@ const NavbarMain = () => {
                     View Profile
                   </Button>
                 </Link>
-                <Button 
-                  w="100%" 
-                  colorScheme="red" 
+                <Button
+                  w="100%"
+                  colorScheme="red"
                   variant="solid"
                   leftIcon={<FaSignOutAlt />}
                   onClick={handleLogout}
@@ -308,29 +330,31 @@ const NavbarMain = () => {
         cursor="pointer"
         minW={0}
       >
-        <Avatar 
-          size="sm" 
+        <Avatar
+          size="sm"
           name={userData?.name || "User"}
           src={userData?.photoURL}
           bg={buttonBg}
         />
       </MenuButton>
-      <MenuList
-        bg={menuBg}
-        borderColor={borderColor}
-        boxShadow="lg"
-      >
+      <MenuList bg={menuBg} borderColor={borderColor} boxShadow="lg">
         <Box px={3} py={2} mb={2}>
           <Text fontWeight="medium">{userData?.name || "User"}</Text>
-          <Text fontSize="xs" opacity={0.8}>{user.email}</Text>
+          <Text fontSize="xs" opacity={0.8}>
+            {user.email}
+          </Text>
         </Box>
         <MenuDivider />
         <Link href="/profile" passHref>
-          <MenuItem as="a" icon={<FaUserCircle />}>Profile</MenuItem>
+          <MenuItem as="a" icon={<FaUserCircle />}>
+            Profile
+          </MenuItem>
         </Link>
-        
+
         <MenuDivider />
-        <MenuItem icon={<FaSignOutAlt />} onClick={handleLogout}>Log Out</MenuItem>
+        <MenuItem icon={<FaSignOutAlt />} onClick={handleLogout}>
+          Log Out
+        </MenuItem>
       </MenuList>
     </Menu>
   );
@@ -359,20 +383,20 @@ const NavbarMain = () => {
             display={{ base: "flex", md: "none" }}
             aria-label="Open menu"
           />
-          
+
           {/* Desktop Nav */}
           {renderDesktopNav()}
-          
+
           {/* Mobile Nav Drawer */}
           {renderMobileNav()}
-          
+
           {/* Right side - Auth buttons or User menu */}
           <HStack spacing={4}>
             {!user ? (
               <HStack spacing={2} display={{ base: "none", md: "flex" }}>
                 <Link href="/login" passHref>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     colorScheme="blue"
                     leftIcon={<FaSignInAlt />}
                     size={buttonSize}
@@ -381,8 +405,8 @@ const NavbarMain = () => {
                   </Button>
                 </Link>
                 <Link href="/signup" passHref>
-                  <Button 
-                    colorScheme="blue" 
+                  <Button
+                    colorScheme="blue"
                     leftIcon={<FaUserPlus />}
                     size={buttonSize}
                   >
@@ -391,12 +415,15 @@ const NavbarMain = () => {
                 </Link>
               </HStack>
             ) : (
-              <HStack paddingLeft={4} spacing={2} display={{ base: "none", md: "flex" }}>
-              
+              <HStack
+                paddingLeft={4}
+                spacing={2}
+                display={{ base: "none", md: "flex" }}
+              >
                 {renderUserMenu()}
               </HStack>
             )}
-            
+
             {/* Mobile auth buttons */}
             {!user ? (
               <HStack spacing={2} display={{ base: "flex", md: "none" }}>
@@ -414,8 +441,8 @@ const NavbarMain = () => {
               <IconButton
                 aria-label="User menu"
                 icon={
-                  <Avatar 
-                    size="xs" 
+                  <Avatar
+                    size="xs"
                     name={userData?.name || "User"}
                     src={userData?.photoURL}
                   />

@@ -199,21 +199,6 @@ export default function AllBankss() {
                       display="flex"
                       justifyContent="space-between"
                     >
-                      <Button
-                        onClick={() => {
-                          setSelectedBank(bank);
-                          fetchPlansByBank(bank.id);
-                          onOpen();
-                        }}
-                        bg="blue.500"
-                        _hover={{ bg: "blue.600" }}
-                        color="white"
-                        px="4"
-                        py="2"
-                        rounded="md"
-                      >
-                        View Details
-                      </Button>
                       {bank.isBanned ? (
                         <Button
                           onClick={() => handleUnbanBank(bank.id)}

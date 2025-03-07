@@ -55,16 +55,26 @@ import {
   Progress,
   Stack,
 } from "@chakra-ui/react";
-import { collection, getDocs, doc, updateDoc, getDoc, query, orderBy, where, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  getDoc,
+  query,
+  orderBy,
+  where,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db, auth } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { 
-  FiCheckCircle, 
-  FiXCircle, 
-  FiClock, 
-  FiAlertTriangle, 
-  FiFilter, 
+import {
+  FiCheckCircle,
+  FiXCircle,
+  FiClock,
+  FiAlertTriangle,
+  FiFilter,
   FiSearch,
   FiUser,
   FiDollarSign,
@@ -73,7 +83,7 @@ import {
   FiActivity,
   FiArrowRight,
   FiInfo,
-  FiRefreshCw
+  FiRefreshCw,
 } from "react-icons/fi";
 import BankHeader from "@/bankComponents/BankHeaders";
 import BankSidenav from "@/bankComponents/BankSidenav";
@@ -100,7 +110,7 @@ const LoanApplicationPage = () => {
   });
   const [bankPlans, setBankPlans] = useState([]);
   const [user, setUser] = useState(null);
-  
+
   // Hooks
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
@@ -117,14 +127,14 @@ const LoanApplicationPage = () => {
           duration: 5000,
           isClosable: true,
         });
-        router.push('/login');
+        router.push("/login");
       } else {
         setUser(currentUser); // Set the user when authenticated
       }
     });
-    
+
     return () => unsubscribe();
-  }, [router, toast]); 
+  }, [router, toast]);
 
   // Fetch applications
   const fetchApplications = async () => {
@@ -134,9 +144,12 @@ const LoanApplicationPage = () => {
     try {
       // Fetch loan plans created by this bank
       const loanPlansRef = collection(db, "loanplans");
-      const loanPlansQuery = query(loanPlansRef, where("createdBy", "==", user.uid));
+      const loanPlansQuery = query(
+        loanPlansRef,
+        where("createdBy", "==", user.uid)
+      );
       const loanPlansSnapshot = await getDocs(loanPlansQuery);
-      const bankPlanIds = loanPlansSnapshot.docs.map(doc => doc.id);
+      const bankPlanIds = loanPlansSnapshot.docs.map((doc) => doc.id);
       setBankPlans(bankPlanIds);
 
       if (bankPlanIds.length === 0) {
@@ -147,7 +160,7 @@ const LoanApplicationPage = () => {
           pending: 0,
           approved: 0,
           rejected: 0,
-          underReview: 0
+          underReview: 0,
         });
         return;
       }
@@ -160,9 +173,9 @@ const LoanApplicationPage = () => {
       );
 
       const querySnapshot = await getDocs(q);
-      let fetchedApplications = querySnapshot.docs.map(doc => ({
+      let fetchedApplications = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
 
       // Sort applications client-side
@@ -174,17 +187,24 @@ const LoanApplicationPage = () => {
 
       setApplications(fetchedApplications);
       setFilteredApplications(fetchedApplications);
-      
+
       // Calculate statistics
       const stats = {
         total: fetchedApplications.length,
-        pending: fetchedApplications.filter(app => app.applicationStatus?.status === "pending").length,
-        approved: fetchedApplications.filter(app => app.applicationStatus?.status === "approved").length,
-        rejected: fetchedApplications.filter(app => app.applicationStatus?.status === "rejected").length,
-        underReview: fetchedApplications.filter(app => app.applicationStatus?.status === "under_review").length,
+        pending: fetchedApplications.filter(
+          (app) => app.applicationStatus?.status === "pending"
+        ).length,
+        approved: fetchedApplications.filter(
+          (app) => app.applicationStatus?.status === "approved"
+        ).length,
+        rejected: fetchedApplications.filter(
+          (app) => app.applicationStatus?.status === "rejected"
+        ).length,
+        underReview: fetchedApplications.filter(
+          (app) => app.applicationStatus?.status === "under_review"
+        ).length,
       };
       setStats(stats);
-
     } catch (error) {
       console.error("Error fetching applications:", error);
       toast({
@@ -201,7 +221,7 @@ const LoanApplicationPage = () => {
         pending: 0,
         approved: 0,
         rejected: 0,
-        underReview: 0
+        underReview: 0,
       });
     } finally {
       setLoadingApplications(false);
@@ -218,23 +238,27 @@ const LoanApplicationPage = () => {
   // Filter applications when filter states change
   useEffect(() => {
     let result = [...applications];
-    
+
     // Filter by status
     if (statusFilter !== "all") {
-      result = result.filter(app => app.applicationStatus?.status === statusFilter);
+      result = result.filter(
+        (app) => app.applicationStatus?.status === statusFilter
+      );
     }
-    
+
     // Filter by loan category
     if (categoryFilter !== "all") {
-      result = result.filter(app => app.loanDetails?.loanCategory === categoryFilter);
+      result = result.filter(
+        (app) => app.loanDetails?.loanCategory === categoryFilter
+      );
     }
-    
+
     // Filter by date
     if (dateFilter !== "all") {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const dateBoundary = new Date(today);
-      
+
       switch (dateFilter) {
         case "today":
           // Keep today's applications
@@ -246,24 +270,27 @@ const LoanApplicationPage = () => {
           dateBoundary.setMonth(today.getMonth() - 1);
           break;
       }
-      
-      result = result.filter(app => {
+
+      result = result.filter((app) => {
         const appDate = app.applicationStatus?.submittedAt?.toDate?.();
         return appDate && appDate >= dateBoundary;
       });
     }
-    
+
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(app => 
-        (app.applicationId && app.applicationId.toLowerCase().includes(query)) ||
-        (app.userName && app.userName.toLowerCase().includes(query)) ||
-        (app.userEmail && app.userEmail.toLowerCase().includes(query)) ||
-        (app.contactDetails?.phone && app.contactDetails.phone.includes(query))
+      result = result.filter(
+        (app) =>
+          (app.applicationId &&
+            app.applicationId.toLowerCase().includes(query)) ||
+          (app.userName && app.userName.toLowerCase().includes(query)) ||
+          (app.userEmail && app.userEmail.toLowerCase().includes(query)) ||
+          (app.contactDetails?.phone &&
+            app.contactDetails.phone.includes(query))
       );
     }
-    
+
     setFilteredApplications(result);
   }, [applications, statusFilter, dateFilter, categoryFilter, searchQuery]);
 
@@ -278,29 +305,43 @@ const LoanApplicationPage = () => {
   // Update application status
   const handleUpdateStatus = async (newStatus) => {
     if (!selectedApplication) return;
-    
+
     setProcessingAction(true);
     try {
-      const applicationRef = doc(db, "loanApplications", selectedApplication.id);
+      const applicationRef = doc(
+        db,
+        "loanApplications",
+        selectedApplication.id
+      );
       const currentTime = new Date().toISOString();
-      
+
       await updateDoc(applicationRef, {
         "applicationStatus.status": newStatus,
-        "applicationStatus.stage": newStatus === "approved" ? "approved" : 
-                                 newStatus === "rejected" ? "rejected" : 
-                                 newStatus === "under_review" ? "under_review" : "pending",
+        "applicationStatus.stage":
+          newStatus === "approved"
+            ? "approved"
+            : newStatus === "rejected"
+            ? "rejected"
+            : newStatus === "under_review"
+            ? "under_review"
+            : "pending",
         "applicationStatus.lastUpdated": serverTimestamp(),
         "applicationStatus.statusHistory": [
           ...(selectedApplication.applicationStatus?.statusHistory || []),
           {
             status: newStatus,
-            stage: newStatus === "approved" ? "approved" : 
-                 newStatus === "rejected" ? "rejected" : 
-                 newStatus === "under_review" ? "under_review" : "pending",
+            stage:
+              newStatus === "approved"
+                ? "approved"
+                : newStatus === "rejected"
+                ? "rejected"
+                : newStatus === "under_review"
+                ? "under_review"
+                : "pending",
             timestamp: currentTime,
-            notes: reviewNote || `Application ${newStatus}`
-          }
-        ]
+            notes: reviewNote || `Application ${newStatus}`,
+          },
+        ],
       });
 
       // Also update the user's applications subcollection if we have the user ID
@@ -310,16 +351,28 @@ const LoanApplicationPage = () => {
           where("mainDocRef", "==", selectedApplication.id)
         );
         const userAppSnapshot = await getDocs(userApplicationsQuery);
-        
+
         if (!userAppSnapshot.empty) {
           const userAppDoc = userAppSnapshot.docs[0];
-          await updateDoc(doc(db, `users/${selectedApplication.userId}/applications`, userAppDoc.id), {
-            status: newStatus,
-            stage: newStatus === "approved" ? "approved" : 
-                 newStatus === "rejected" ? "rejected" : 
-                 newStatus === "under_review" ? "under_review" : "pending",
-            updatedAt: serverTimestamp()
-          });
+          await updateDoc(
+            doc(
+              db,
+              `users/${selectedApplication.userId}/applications`,
+              userAppDoc.id
+            ),
+            {
+              status: newStatus,
+              stage:
+                newStatus === "approved"
+                  ? "approved"
+                  : newStatus === "rejected"
+                  ? "rejected"
+                  : newStatus === "under_review"
+                  ? "under_review"
+                  : "pending",
+              updatedAt: serverTimestamp(),
+            }
+          );
         }
       }
 
@@ -330,34 +383,44 @@ const LoanApplicationPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       // Update local state
-      const updatedApplications = applications.map(app => 
-        app.id === selectedApplication.id 
+      const updatedApplications = applications.map((app) =>
+        app.id === selectedApplication.id
           ? {
               ...app,
               applicationStatus: {
                 ...app.applicationStatus,
                 status: newStatus,
-                stage: newStatus === "approved" ? "approved" : 
-                      newStatus === "rejected" ? "rejected" : 
-                      newStatus === "under_review" ? "under_review" : "pending",
+                stage:
+                  newStatus === "approved"
+                    ? "approved"
+                    : newStatus === "rejected"
+                    ? "rejected"
+                    : newStatus === "under_review"
+                    ? "under_review"
+                    : "pending",
                 statusHistory: [
                   ...(app.applicationStatus?.statusHistory || []),
                   {
                     status: newStatus,
-                    stage: newStatus === "approved" ? "approved" : 
-                          newStatus === "rejected" ? "rejected" : 
-                          newStatus === "under_review" ? "under_review" : "pending",
+                    stage:
+                      newStatus === "approved"
+                        ? "approved"
+                        : newStatus === "rejected"
+                        ? "rejected"
+                        : newStatus === "under_review"
+                        ? "under_review"
+                        : "pending",
                     timestamp: currentTime,
-                    notes: reviewNote || `Application ${newStatus}`
-                  }
-                ]
-              }
+                    notes: reviewNote || `Application ${newStatus}`,
+                  },
+                ],
+              },
             }
           : app
       );
-      
+
       setApplications(updatedApplications);
       // Update the selected application in the modal
       setSelectedApplication({
@@ -365,43 +428,61 @@ const LoanApplicationPage = () => {
         applicationStatus: {
           ...selectedApplication.applicationStatus,
           status: newStatus,
-          stage: newStatus === "approved" ? "approved" : 
-                newStatus === "rejected" ? "rejected" : 
-                newStatus === "under_review" ? "under_review" : "pending",
+          stage:
+            newStatus === "approved"
+              ? "approved"
+              : newStatus === "rejected"
+              ? "rejected"
+              : newStatus === "under_review"
+              ? "under_review"
+              : "pending",
           statusHistory: [
             ...(selectedApplication.applicationStatus?.statusHistory || []),
             {
               status: newStatus,
-              stage: newStatus === "approved" ? "approved" : 
-                   newStatus === "rejected" ? "rejected" : 
-                   newStatus === "under_review" ? "under_review" : "pending",
+              stage:
+                newStatus === "approved"
+                  ? "approved"
+                  : newStatus === "rejected"
+                  ? "rejected"
+                  : newStatus === "under_review"
+                  ? "under_review"
+                  : "pending",
               timestamp: currentTime,
-              notes: reviewNote || `Application ${newStatus}`
-            }
-          ]
-        }
+              notes: reviewNote || `Application ${newStatus}`,
+            },
+          ],
+        },
       });
-      
+
       // Update stats
       const updatedStats = { ...stats };
       if (newStatus === "approved") {
         updatedStats.approved += 1;
-        if (selectedApplication.applicationStatus?.status === "pending") updatedStats.pending -= 1;
-        if (selectedApplication.applicationStatus?.status === "under_review") updatedStats.underReview -= 1;
-        if (selectedApplication.applicationStatus?.status === "rejected") updatedStats.rejected -= 1;
+        if (selectedApplication.applicationStatus?.status === "pending")
+          updatedStats.pending -= 1;
+        if (selectedApplication.applicationStatus?.status === "under_review")
+          updatedStats.underReview -= 1;
+        if (selectedApplication.applicationStatus?.status === "rejected")
+          updatedStats.rejected -= 1;
       } else if (newStatus === "rejected") {
         updatedStats.rejected += 1;
-        if (selectedApplication.applicationStatus?.status === "pending") updatedStats.pending -= 1;
-        if (selectedApplication.applicationStatus?.status === "under_review") updatedStats.underReview -= 1;
-        if (selectedApplication.applicationStatus?.status === "approved") updatedStats.approved -= 1;
+        if (selectedApplication.applicationStatus?.status === "pending")
+          updatedStats.pending -= 1;
+        if (selectedApplication.applicationStatus?.status === "under_review")
+          updatedStats.underReview -= 1;
+        if (selectedApplication.applicationStatus?.status === "approved")
+          updatedStats.approved -= 1;
       } else if (newStatus === "under_review") {
         updatedStats.underReview += 1;
-        if (selectedApplication.applicationStatus?.status === "pending") updatedStats.pending -= 1;
-        if (selectedApplication.applicationStatus?.status === "approved") updatedStats.approved -= 1;
-        if (selectedApplication.applicationStatus?.status === "rejected") updatedStats.rejected -= 1;
+        if (selectedApplication.applicationStatus?.status === "pending")
+          updatedStats.pending -= 1;
+        if (selectedApplication.applicationStatus?.status === "approved")
+          updatedStats.approved -= 1;
+        if (selectedApplication.applicationStatus?.status === "rejected")
+          updatedStats.rejected -= 1;
       }
       setStats(updatedStats);
-      
     } catch (error) {
       console.error("Error updating application status:", error);
       toast({
@@ -419,48 +500,52 @@ const LoanApplicationPage = () => {
   // Format date
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
-    
+
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
 
   // Get status badge color
   const getStatusColor = (status) => {
     switch (status) {
-      case "approved": return "green";
-      case "rejected": return "red";
-      case "under_review": return "orange";
-      default: return "blue";
+      case "approved":
+        return "green";
+      case "rejected":
+        return "red";
+      case "under_review":
+        return "orange";
+      default:
+        return "blue";
     }
   };
 
   return (
     <Flex h="100vh">
       {/* Sidenav */}
-      <Box w="250px" position="fixed" h="100vh" bg="gray.800">
+      <Box w="20%" position="fixed" h="100vh" bg="gray.800">
         <BankSidenav />
       </Box>
-  
+
       {/* Main Content */}
-      <Box paddingTop="10%" paddingLeft="10%" ml="250px" flex="1" bg="gray.50">
+      <Box paddingTop="10%" width="80%" flex="1" bg="gray.50">
         {/* Header */}
-        <Box position="fixed" top={0} right={0} left="400px" zIndex={2}>
+        <Box position="fixed" top={0} right={0} left={"20%"} zIndex={2}>
           <BankHeader />
         </Box>
-  
+
         {/* Page Content */}
-        <Box pt="70px" p={6}>
+        <Box p={6} ml={"20%"}>
           {/* Heading Section */}
           <Flex justify="space-between" align="center" mb={6}>
             <Heading size="xl">Loan Applications</Heading>
-            <Button 
-              leftIcon={<FiRefreshCw />} 
+            <Button
+              leftIcon={<FiRefreshCw />}
               onClick={fetchApplications}
               isLoading={loadingApplications}
               variant="outline"
@@ -468,66 +553,137 @@ const LoanApplicationPage = () => {
               Refresh
             </Button>
           </Flex>
-  
+
           {/* Statistics Cards */}
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(5, 1fr)" }} gap={4} mb={8}>
+          <Grid
+            templateColumns={{
+              base: "1fr",
+              md: "repeat(2, 1fr)",
+              lg: "repeat(5, 1fr)",
+            }}
+            gap={4}
+            mb={8}
+          >
             <GridItem colSpan={1}>
-              <Box p={4} bg="white" shadow="md" borderRadius="md" borderTop="4px solid" borderColor="blue.500">
+              <Box
+                p={4}
+                bg="white"
+                shadow="md"
+                borderRadius="md"
+                borderTop="4px solid"
+                borderColor="blue.500"
+              >
                 <Stat>
-                  <StatLabel fontSize="sm" color="gray.500">Total Applications</StatLabel>
+                  <StatLabel fontSize="sm" color="gray.500">
+                    Total Applications
+                  </StatLabel>
                   <StatNumber fontSize="2xl">{stats.total}</StatNumber>
                 </Stat>
               </Box>
             </GridItem>
             <GridItem colSpan={1}>
-              <Box p={4} bg="white" shadow="md" borderRadius="md" borderTop="4px solid" borderColor="blue.500">
+              <Box
+                p={4}
+                bg="white"
+                shadow="md"
+                borderRadius="md"
+                borderTop="4px solid"
+                borderColor="blue.500"
+              >
                 <Stat>
-                  <StatLabel fontSize="sm" color="gray.500">Pending</StatLabel>
-                  <StatNumber fontSize="2xl" color="blue.500">{stats.pending}</StatNumber>
+                  <StatLabel fontSize="sm" color="gray.500">
+                    Pending
+                  </StatLabel>
+                  <StatNumber fontSize="2xl" color="blue.500">
+                    {stats.pending}
+                  </StatNumber>
                 </Stat>
               </Box>
             </GridItem>
             <GridItem colSpan={1}>
-              <Box p={4} bg="white" shadow="md" borderRadius="md" borderTop="4px solid" borderColor="orange.500">
+              <Box
+                p={4}
+                bg="white"
+                shadow="md"
+                borderRadius="md"
+                borderTop="4px solid"
+                borderColor="orange.500"
+              >
                 <Stat>
-                  <StatLabel fontSize="sm" color="gray.500">Under Review</StatLabel>
-                  <StatNumber fontSize="2xl" color="orange.500">{stats.underReview}</StatNumber>
+                  <StatLabel fontSize="sm" color="gray.500">
+                    Under Review
+                  </StatLabel>
+                  <StatNumber fontSize="2xl" color="orange.500">
+                    {stats.underReview}
+                  </StatNumber>
                 </Stat>
               </Box>
             </GridItem>
             <GridItem colSpan={1}>
-              <Box p={4} bg="white" shadow="md" borderRadius="md" borderTop="4px solid" borderColor="green.500">
+              <Box
+                p={4}
+                bg="white"
+                shadow="md"
+                borderRadius="md"
+                borderTop="4px solid"
+                borderColor="green.500"
+              >
                 <Stat>
-                  <StatLabel fontSize="sm" color="gray.500">Approved</StatLabel>
-                  <StatNumber fontSize="2xl" color="green.500">{stats.approved}</StatNumber>
+                  <StatLabel fontSize="sm" color="gray.500">
+                    Approved
+                  </StatLabel>
+                  <StatNumber fontSize="2xl" color="green.500">
+                    {stats.approved}
+                  </StatNumber>
                 </Stat>
               </Box>
             </GridItem>
             <GridItem colSpan={1}>
-              <Box p={4} bg="white" shadow="md" borderRadius="md" borderTop="4px solid" borderColor="red.500">
+              <Box
+                p={4}
+                bg="white"
+                shadow="md"
+                borderRadius="md"
+                borderTop="4px solid"
+                borderColor="red.500"
+              >
                 <Stat>
-                  <StatLabel fontSize="sm" color="gray.500">Rejected</StatLabel>
-                  <StatNumber fontSize="2xl" color="red.500">{stats.rejected}</StatNumber>
+                  <StatLabel fontSize="sm" color="gray.500">
+                    Rejected
+                  </StatLabel>
+                  <StatNumber fontSize="2xl" color="red.500">
+                    {stats.rejected}
+                  </StatNumber>
                 </Stat>
               </Box>
             </GridItem>
           </Grid>
-  
+
           {/* Filters */}
           <Box bg="white" p={4} shadow="md" borderRadius="md" mb={6}>
-            <Flex direction={{ base: "column", md: "row" }} gap={4} align={{ md: "center" }} mb={2}>
+            <Flex
+              direction={{ base: "column", md: "row" }}
+              gap={4}
+              align={{ md: "center" }}
+              mb={2}
+            >
               <HStack flex={{ md: 2 }}>
                 <FiSearch size={20} />
-                <Input 
-                  placeholder="Search by name, email, ID or phone..." 
+                <Input
+                  placeholder="Search by name, email, ID or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </HStack>
-              
+
               <HStack flex={1}>
-                <Text whiteSpace="nowrap" fontWeight="medium">Status:</Text>
-                <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <Text whiteSpace="nowrap" fontWeight="medium">
+                  Status:
+                </Text>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
                   <option value="under_review">Under Review</option>
@@ -535,20 +691,30 @@ const LoanApplicationPage = () => {
                   <option value="rejected">Rejected</option>
                 </Select>
               </HStack>
-              
+
               <HStack flex={1}>
-                <Text whiteSpace="nowrap" fontWeight="medium">Period:</Text>
-                <Select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+                <Text whiteSpace="nowrap" fontWeight="medium">
+                  Period:
+                </Text>
+                <Select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                >
                   <option value="all">All Time</option>
                   <option value="today">Today</option>
                   <option value="week">Last 7 Days</option>
                   <option value="month">Last 30 Days</option>
                 </Select>
               </HStack>
-              
+
               <HStack flex={1}>
-                <Text whiteSpace="nowrap" fontWeight="medium">Type:</Text>
-                <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                <Text whiteSpace="nowrap" fontWeight="medium">
+                  Type:
+                </Text>
+                <Select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                >
                   <option value="all">All Loans</option>
                   <option value="HomeLoans">Home Loans</option>
                   <option value="PersonalLoans">Personal Loans</option>
@@ -559,29 +725,34 @@ const LoanApplicationPage = () => {
               </HStack>
             </Flex>
             <Text fontSize="sm" color="gray.600" mt={2}>
-              Showing {filteredApplications.length} of {applications.length} applications
+              Showing {filteredApplications.length} of {applications.length}{" "}
+              applications
             </Text>
           </Box>
-  
+
           {/* Applications Table */}
           {loadingApplications ? (
             <Center p={10}>
               <Spinner size="xl" color="blue.500" thickness="4px" />
-              <Text mt={4} color="gray.500">Loading applications...</Text>
+              <Text mt={4} color="gray.500">
+                Loading applications...
+              </Text>
             </Center>
           ) : filteredApplications.length === 0 ? (
-            <Alert 
-              status="info" 
-              variant="subtle" 
-              flexDirection="column" 
-              alignItems="center" 
-              justifyContent="center" 
-              textAlign="center" 
-              height="200px" 
+            <Alert
+              status="info"
+              variant="subtle"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              textAlign="center"
+              height="200px"
               borderRadius="md"
             >
               <AlertIcon boxSize="40px" mr={0} />
-              <AlertTitle mt={4} mb={1} fontSize="lg">No Applications Found</AlertTitle>
+              <AlertTitle mt={4} mb={1} fontSize="lg">
+                No Applications Found
+              </AlertTitle>
               <AlertDescription maxWidth="sm">
                 No loan applications match your current filters.
               </AlertDescription>
@@ -601,51 +772,73 @@ const LoanApplicationPage = () => {
                   </Thead>
                   <Tbody>
                     {filteredApplications.map((application) => (
-                      <Tr 
-                        key={application.id} 
+                      <Tr
+                        key={application.id}
                         _hover={{ bg: "gray.50" }}
                         bg={
-                          application.applicationStatus?.status === "approved" ? "green.50" :
-                          application.applicationStatus?.status === "rejected" ? "red.50" :
-                          application.applicationStatus?.status === "under_review" ? "orange.50" :
-                          undefined
+                          application.applicationStatus?.status === "approved"
+                            ? "green.50"
+                            : application.applicationStatus?.status ===
+                              "rejected"
+                            ? "red.50"
+                            : application.applicationStatus?.status ===
+                              "under_review"
+                            ? "orange.50"
+                            : undefined
                         }
                       >
                         <Td>
                           <VStack align="start" spacing={1}>
-                            <Text fontWeight="medium">{application.userName || "Unknown"}</Text>
-                            <Text fontSize="sm" color="gray.600">{application.userEmail}</Text>
+                            <Text fontWeight="medium">
+                              {application.userName || "Unknown"}
+                            </Text>
+                            <Text fontSize="sm" color="gray.600">
+                              {application.userEmail}
+                            </Text>
                             <Text fontSize="xs" color="gray.500">
-                              ID: {application.applicationId || application.id.slice(0, 8)}
+                              ID:{" "}
+                              {application.applicationId ||
+                                application.id.slice(0, 8)}
                             </Text>
                           </VStack>
                         </Td>
                         <Td>
                           <VStack align="start" spacing={1}>
                             <Text fontWeight="medium">
-                              ₹{application.loanDetails?.loanAmount?.toLocaleString() || "0"}
+                              ₹
+                              {application.loanDetails?.loanAmount?.toLocaleString() ||
+                                "0"}
                             </Text>
-                            <Text fontSize="sm">{application.loanDetails?.loanPlanName || "Unknown Plan"}</Text>
+                            <Text fontSize="sm">
+                              {application.loanDetails?.loanPlanName ||
+                                "Unknown Plan"}
+                            </Text>
                             <Badge colorScheme="purple" fontSize="xs">
-                              {application.loanDetails?.loanCategory || "Unknown"}
+                              {application.loanDetails?.loanCategory ||
+                                "Unknown"}
                             </Badge>
                           </VStack>
                         </Td>
                         <Td>
-                          {formatDate(application.applicationStatus?.submittedAt)}
+                          {formatDate(
+                            application.applicationStatus?.submittedAt
+                          )}
                         </Td>
                         <Td>
-                          <Tag 
-                            colorScheme={getStatusColor(application.applicationStatus?.status)}
+                          <Tag
+                            colorScheme={getStatusColor(
+                              application.applicationStatus?.status
+                            )}
                             size="md"
                           >
-                            {application.applicationStatus?.status?.toUpperCase() || "PENDING"}
+                            {application.applicationStatus?.status?.toUpperCase() ||
+                              "PENDING"}
                           </Tag>
                         </Td>
                         <Td>
-                          <Button 
-                            size="sm" 
-                            colorScheme="blue" 
+                          <Button
+                            size="sm"
+                            colorScheme="blue"
                             onClick={() => handleViewDetails(application)}
                           >
                             View Details
@@ -659,201 +852,391 @@ const LoanApplicationPage = () => {
             </Box>
           )}
         </Box>
-  
+
         {/* Application Details Modal */}
         {selectedApplication && (
-          <Modal 
-            isOpen={isOpen} 
-            onClose={onClose} 
-            size="5xl" 
+          <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            size="5xl"
             scrollBehavior="inside"
           >
             <ModalOverlay />
             <ModalContent>
-              <ModalHeader 
+              <ModalHeader
                 bg={
-                  selectedApplication.applicationStatus?.status === "approved" ? "green.500" :
-                  selectedApplication.applicationStatus?.status === "rejected" ? "red.500" :
-                  selectedApplication.applicationStatus?.status === "under_review" ? "orange.500" :
-                  "blue.500"
+                  selectedApplication.applicationStatus?.status === "approved"
+                    ? "green.500"
+                    : selectedApplication.applicationStatus?.status ===
+                      "rejected"
+                    ? "red.500"
+                    : selectedApplication.applicationStatus?.status ===
+                      "under_review"
+                    ? "orange.500"
+                    : "blue.500"
                 }
                 color="white"
                 borderTopRadius="md"
               >
                 <Flex justify="space-between" align="center">
                   <Box>
-                    Loan Application #{selectedApplication.applicationId || selectedApplication.id.slice(0, 8)}
+                    Loan Application #
+                    {selectedApplication.applicationId ||
+                      selectedApplication.id.slice(0, 8)}
                     <Text fontSize="sm" fontWeight="normal" mt={1}>
-                      {selectedApplication.loanDetails?.loanPlanName} - {selectedApplication.loanDetails?.loanCategory}
+                      {selectedApplication.loanDetails?.loanPlanName} -{" "}
+                      {selectedApplication.loanDetails?.loanCategory}
                     </Text>
                   </Box>
-                  <Badge 
-                    fontSize="md" 
-                    colorScheme="white" 
-                    variant="solid" 
-                    py={1} 
+                  <Badge
+                    fontSize="md"
+                    colorScheme="white"
+                    variant="solid"
+                    py={1}
                     px={3}
                     bg="whiteAlpha.300"
                   >
-                    {selectedApplication.applicationStatus?.status?.toUpperCase() || "PENDING"}
+                    {selectedApplication.applicationStatus?.status?.toUpperCase() ||
+                      "PENDING"}
                   </Badge>
                 </Flex>
               </ModalHeader>
               <ModalCloseButton color="white" />
-              
-              <Tabs 
-                variant="enclosed" 
-                colorScheme="blue" 
-                defaultIndex={0} 
-                onChange={(index) => setCurrentTab(["details", "employment", "documents", "history"][index])}
+
+              <Tabs
+                variant="enclosed"
+                colorScheme="blue"
+                defaultIndex={0}
+                onChange={(index) =>
+                  setCurrentTab(
+                    ["details", "employment", "documents", "history"][index]
+                  )
+                }
                 p={4}
               >
                 <TabList>
-                  <Tab><FiUser style={{marginRight: '8px'}} /> Applicant Details</Tab>
-                  <Tab><FiDollarSign style={{marginRight: '8px'}} /> Financial Info</Tab>
-                  <Tab><FiFileText style={{marginRight: '8px'}} /> Documents & KYC</Tab>
-                  <Tab><FiActivity style={{marginRight: '8px'}} /> Application History</Tab>
+                  <Tab>
+                    <FiUser style={{ marginRight: "8px" }} /> Applicant Details
+                  </Tab>
+                  <Tab>
+                    <FiDollarSign style={{ marginRight: "8px" }} /> Financial
+                    Info
+                  </Tab>
+                  <Tab>
+                    <FiFileText style={{ marginRight: "8px" }} /> Documents &
+                    KYC
+                  </Tab>
+                  <Tab>
+                    <FiActivity style={{ marginRight: "8px" }} /> Application
+                    History
+                  </Tab>
                 </TabList>
-  
+
                 <TabPanels>
                   {/* Applicant Details Panel */}
                   <TabPanel>
-                    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6}>
+                    <Grid
+                      templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                      gap={6}
+                    >
                       <Box>
-                        <Heading size="md" mb={4}>Personal Information</Heading>
-                        <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+                        <Heading size="md" mb={4}>
+                          Personal Information
+                        </Heading>
+                        <VStack
+                          align="start"
+                          spacing={3}
+                          bg="gray.50"
+                          p={4}
+                          borderRadius="md"
+                        >
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Name:</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Name:
+                            </Text>
                             <Text>{selectedApplication.userName}</Text>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Email:</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Email:
+                            </Text>
                             <Text>{selectedApplication.userEmail}</Text>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Phone:</Text>
-                            <Text>{selectedApplication.contactDetails?.phone || "Not provided"}</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Phone:
+                            </Text>
+                            <Text>
+                              {selectedApplication.contactDetails?.phone ||
+                                "Not provided"}
+                            </Text>
                           </HStack>
                           <HStack w="full" alignItems="flex-start">
-                            <Text fontWeight="bold" w="150px">Address:</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Address:
+                            </Text>
                             <VStack align="start" spacing={0}>
-                              <Text>{selectedApplication.contactDetails?.address || "Not provided"}</Text>
                               <Text>
-                                {selectedApplication.contactDetails?.city || ""} {selectedApplication.contactDetails?.pincode || ""}
+                                {selectedApplication.contactDetails?.address ||
+                                  "Not provided"}
+                              </Text>
+                              <Text>
+                                {selectedApplication.contactDetails?.city || ""}{" "}
+                                {selectedApplication.contactDetails?.pincode ||
+                                  ""}
                               </Text>
                             </VStack>
                           </HStack>
                         </VStack>
-  
-                        <Heading size="md" mt={8} mb={4}>Loan Request</Heading>
-                        <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+
+                        <Heading size="md" mt={8} mb={4}>
+                          Loan Request
+                        </Heading>
+                        <VStack
+                          align="start"
+                          spacing={3}
+                          bg="gray.50"
+                          p={4}
+                          borderRadius="md"
+                        >
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Plan Name:</Text>
-                            <Text>{selectedApplication.loanDetails?.loanPlanName}</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Plan Name:
+                            </Text>
+                            <Text>
+                              {selectedApplication.loanDetails?.loanPlanName}
+                            </Text>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Loan Category:</Text>
-                            <Badge colorScheme="purple">{selectedApplication.loanDetails?.loanCategory}</Badge>
+                            <Text fontWeight="bold" w="150px">
+                              Loan Category:
+                            </Text>
+                            <Badge colorScheme="purple">
+                              {selectedApplication.loanDetails?.loanCategory}
+                            </Badge>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Purpose:</Text>
-                            <Text>{selectedApplication.loanDetails?.purpose || "Not specified"}</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Purpose:
+                            </Text>
+                            <Text>
+                              {selectedApplication.loanDetails?.purpose ||
+                                "Not specified"}
+                            </Text>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Amount Requested:</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Amount Requested:
+                            </Text>
                             <Text fontWeight="bold" color="blue.600">
-                              ₹{selectedApplication.loanDetails?.loanAmount?.toLocaleString()}
+                              ₹
+                              {selectedApplication.loanDetails?.loanAmount?.toLocaleString()}
                             </Text>
                           </HStack>
                         </VStack>
                       </Box>
-  
+
                       <Box>
-                        <Heading size="md" mb={4}>Loan Terms</Heading>
-                        <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+                        <Heading size="md" mb={4}>
+                          Loan Terms
+                        </Heading>
+                        <VStack
+                          align="start"
+                          spacing={3}
+                          bg="gray.50"
+                          p={4}
+                          borderRadius="md"
+                        >
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Interest Rate:</Text>
-                            <Text>{selectedApplication.loanDetails?.interestRate}%</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Tenure:</Text>
-                            <Text>{selectedApplication.loanDetails?.tenure} months</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Monthly EMI:</Text>
-                            <Text fontWeight="bold" color="green.600">
-                              ₹{Math.round(selectedApplication.loanDetails?.emi)?.toLocaleString()}/month
+                            <Text fontWeight="bold" w="150px">
+                              Interest Rate:
+                            </Text>
+                            <Text>
+                              {selectedApplication.loanDetails?.interestRate}%
                             </Text>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Total Interest:</Text>
-                            <Text>₹{Math.round(selectedApplication.loanDetails?.totalInterest)?.toLocaleString()}</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Tenure:
+                            </Text>
+                            <Text>
+                              {selectedApplication.loanDetails?.tenure} months
+                            </Text>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Total Repayment:</Text>
-                            <Text>₹{Math.round(selectedApplication.loanDetails?.totalPayment)?.toLocaleString()}</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Monthly EMI:
+                            </Text>
+                            <Text fontWeight="bold" color="green.600">
+                              ₹
+                              {Math.round(
+                                selectedApplication.loanDetails?.emi
+                              )?.toLocaleString()}
+                              /month
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              Total Interest:
+                            </Text>
+                            <Text>
+                              ₹
+                              {Math.round(
+                                selectedApplication.loanDetails?.totalInterest
+                              )?.toLocaleString()}
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              Total Repayment:
+                            </Text>
+                            <Text>
+                              ₹
+                              {Math.round(
+                                selectedApplication.loanDetails?.totalPayment
+                              )?.toLocaleString()}
+                            </Text>
                           </HStack>
                         </VStack>
-  
+
                         <Box mt={8}>
-                          <Heading size="md" mb={4}>Application Timeline</Heading>
+                          <Heading size="md" mb={4}>
+                            Application Timeline
+                          </Heading>
                           <VStack align="stretch" spacing={0}>
-                            <HStack 
-                              bg="blue.50" 
-                              p={3} 
+                            <HStack
+                              bg="blue.50"
+                              p={3}
                               borderTopRadius="md"
-                              borderLeft="4px solid" 
+                              borderLeft="4px solid"
                               borderColor="blue.500"
                             >
-                              <Box w="24px" h="24px" borderRadius="full" bg="blue.500" color="white" fontSize="xs" display="flex" alignItems="center" justifyContent="center">
+                              <Box
+                                w="24px"
+                                h="24px"
+                                borderRadius="full"
+                                bg="blue.500"
+                                color="white"
+                                fontSize="xs"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                              >
                                 1
                               </Box>
                               <VStack align="start" spacing={0}>
-                                <Text fontWeight="bold">Application Submitted</Text>
+                                <Text fontWeight="bold">
+                                  Application Submitted
+                                </Text>
                                 <Text fontSize="sm">
-                                  {formatDate(selectedApplication.applicationStatus?.submittedAt)}
+                                  {formatDate(
+                                    selectedApplication.applicationStatus
+                                      ?.submittedAt
+                                  )}
                                 </Text>
                               </VStack>
                             </HStack>
-                            
-                            <HStack 
-                              bg={selectedApplication.applicationStatus?.status !== "pending" ? "orange.50" : "gray.100"}
+
+                            <HStack
+                              bg={
+                                selectedApplication.applicationStatus
+                                  ?.status !== "pending"
+                                  ? "orange.50"
+                                  : "gray.100"
+                              }
                               p={3}
-                              borderLeft="4px solid" 
-                              borderColor={selectedApplication.applicationStatus?.status !== "pending" ? "orange.500" : "gray.300"}
+                              borderLeft="4px solid"
+                              borderColor={
+                                selectedApplication.applicationStatus
+                                  ?.status !== "pending"
+                                  ? "orange.500"
+                                  : "gray.300"
+                              }
                             >
-                              <Box w="24px" h="24px" borderRadius="full" bg={selectedApplication.applicationStatus?.status !== "pending" ? "orange.500" : "gray.300"} color="white" fontSize="xs" display="flex" alignItems="center" justifyContent="center">
+                              <Box
+                                w="24px"
+                                h="24px"
+                                borderRadius="full"
+                                bg={
+                                  selectedApplication.applicationStatus
+                                    ?.status !== "pending"
+                                    ? "orange.500"
+                                    : "gray.300"
+                                }
+                                color="white"
+                                fontSize="xs"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                              >
                                 2
                               </Box>
                               <VStack align="start" spacing={0}>
                                 <Text fontWeight="bold">Under Review</Text>
                                 <Text fontSize="sm">
-                                  {selectedApplication.applicationStatus?.status !== "pending" ? 
-                                    "Application is being processed" : 
-                                    "Waiting for review"}
+                                  {selectedApplication.applicationStatus
+                                    ?.status !== "pending"
+                                    ? "Application is being processed"
+                                    : "Waiting for review"}
                                 </Text>
                               </VStack>
                             </HStack>
-  
-                            <HStack 
-                              bg={selectedApplication.applicationStatus?.status === "approved" || selectedApplication.applicationStatus?.status === "rejected" ? 
-                                  selectedApplication.applicationStatus?.status === "approved" ? "green.50" : "red.50" 
-                                  : "gray.100"}
+
+                            <HStack
+                              bg={
+                                selectedApplication.applicationStatus
+                                  ?.status === "approved" ||
+                                selectedApplication.applicationStatus
+                                  ?.status === "rejected"
+                                  ? selectedApplication.applicationStatus
+                                      ?.status === "approved"
+                                    ? "green.50"
+                                    : "red.50"
+                                  : "gray.100"
+                              }
                               p={3}
-                              borderLeft="4px solid" 
-                              borderColor={selectedApplication.applicationStatus?.status === "approved" ? "green.500" : 
-                                          selectedApplication.applicationStatus?.status === "rejected" ? "red.500" : "gray.300"}
+                              borderLeft="4px solid"
+                              borderColor={
+                                selectedApplication.applicationStatus
+                                  ?.status === "approved"
+                                  ? "green.500"
+                                  : selectedApplication.applicationStatus
+                                      ?.status === "rejected"
+                                  ? "red.500"
+                                  : "gray.300"
+                              }
                             >
-                              <Box w="24px" h="24px" borderRadius="full" bg={selectedApplication.applicationStatus?.status === "approved" ? "green.500" : 
-                                  selectedApplication.applicationStatus?.status === "rejected" ? "red.500" : "gray.300"} color="white" fontSize="xs" display="flex" alignItems="center" justifyContent="center">
+                              <Box
+                                w="24px"
+                                h="24px"
+                                borderRadius="full"
+                                bg={
+                                  selectedApplication.applicationStatus
+                                    ?.status === "approved"
+                                    ? "green.500"
+                                    : selectedApplication.applicationStatus
+                                        ?.status === "rejected"
+                                    ? "red.500"
+                                    : "gray.300"
+                                }
+                                color="white"
+                                fontSize="xs"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                              >
                                 3
                               </Box>
                               <VStack align="start" spacing={0}>
                                 <Text fontWeight="bold">Final Decision</Text>
                                 <Text fontSize="sm">
-                                  {selectedApplication.applicationStatus?.status === "approved" ? "Application approved" :
-                                   selectedApplication.applicationStatus?.status === "rejected" ? "Application rejected" :
-                                   "Pending decision"}
+                                  {selectedApplication.applicationStatus
+                                    ?.status === "approved"
+                                    ? "Application approved"
+                                    : selectedApplication.applicationStatus
+                                        ?.status === "rejected"
+                                    ? "Application rejected"
+                                    : "Pending decision"}
                                 </Text>
                               </VStack>
                             </HStack>
@@ -862,174 +1245,319 @@ const LoanApplicationPage = () => {
                       </Box>
                     </Grid>
                   </TabPanel>
-  
+
                   {/* Financial Info Panel */}
                   <TabPanel>
-                    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6}>
+                    <Grid
+                      templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                      gap={6}
+                    >
                       <Box>
-                        <Heading size="md" mb={4}>Employment Details</Heading>
-                        <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+                        <Heading size="md" mb={4}>
+                          Employment Details
+                        </Heading>
+                        <VStack
+                          align="start"
+                          spacing={3}
+                          bg="gray.50"
+                          p={4}
+                          borderRadius="md"
+                        >
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Employment Type:</Text>
-                            <Text>{selectedApplication.employmentDetails?.type || "Not provided"}</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Company Name:</Text>
-                            <Text>{selectedApplication.employmentDetails?.companyName || "Not provided"}</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Designation:</Text>
-                            <Text>{selectedApplication.employmentDetails?.designation || "Not provided"}</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Duration:</Text>
-                            <Text>{selectedApplication.employmentDetails?.duration || "Not provided"}</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Income-EMI Ratio:</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Employment Type:
+                            </Text>
                             <Text>
-                              {selectedApplication.employmentDetails?.monthlyIncome && selectedApplication.loanDetails?.emi ? 
-                                (selectedApplication.loanDetails.emi / selectedApplication.employmentDetails.monthlyIncome * 100).toFixed(2) + "%" : 
-                                "Not available"}
+                              {selectedApplication.employmentDetails?.type ||
+                                "Not provided"}
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              Company Name:
+                            </Text>
+                            <Text>
+                              {selectedApplication.employmentDetails
+                                ?.companyName || "Not provided"}
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              Designation:
+                            </Text>
+                            <Text>
+                              {selectedApplication.employmentDetails
+                                ?.designation || "Not provided"}
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              Duration:
+                            </Text>
+                            <Text>
+                              {selectedApplication.employmentDetails
+                                ?.duration || "Not provided"}
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              Income-EMI Ratio:
+                            </Text>
+                            <Text>
+                              {selectedApplication.employmentDetails
+                                ?.monthlyIncome &&
+                              selectedApplication.loanDetails?.emi
+                                ? (
+                                    (selectedApplication.loanDetails.emi /
+                                      selectedApplication.employmentDetails
+                                        .monthlyIncome) *
+                                    100
+                                  ).toFixed(2) + "%"
+                                : "Not available"}
                             </Text>
                           </HStack>
                         </VStack>
                       </Box>
-                      
+
                       <Box>
-                        <Heading size="md" mb={4}>Existing Financial Obligations</Heading>
-                        <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+                        <Heading size="md" mb={4}>
+                          Existing Financial Obligations
+                        </Heading>
+                        <VStack
+                          align="start"
+                          spacing={3}
+                          bg="gray.50"
+                          p={4}
+                          borderRadius="md"
+                        >
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Existing Loans:</Text>
-                            <Text>{selectedApplication.financialDetails?.existingLoans || "No"}</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Existing Loans:
+                            </Text>
+                            <Text>
+                              {selectedApplication.financialDetails
+                                ?.existingLoans || "No"}
+                            </Text>
                           </HStack>
-                          {selectedApplication.financialDetails?.existingLoans === "Yes" && (
+                          {selectedApplication.financialDetails
+                            ?.existingLoans === "Yes" && (
                             <HStack w="full">
-                              <Text fontWeight="bold" w="150px">Existing EMI:</Text>
-                              <Text>₹{selectedApplication.financialDetails?.existingEmi?.toLocaleString() || "0"}/month</Text>
+                              <Text fontWeight="bold" w="150px">
+                                Existing EMI:
+                              </Text>
+                              <Text>
+                                ₹
+                                {selectedApplication.financialDetails?.existingEmi?.toLocaleString() ||
+                                  "0"}
+                                /month
+                              </Text>
                             </HStack>
                           )}
                         </VStack>
-  
-                        <Heading size="md" mt={8} mb={4}>Banking Details</Heading>
-                        <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+
+                        <Heading size="md" mt={8} mb={4}>
+                          Banking Details
+                        </Heading>
+                        <VStack
+                          align="start"
+                          spacing={3}
+                          bg="gray.50"
+                          p={4}
+                          borderRadius="md"
+                        >
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Bank Name:</Text>
-                            <Text>{selectedApplication.financialDetails?.bankName || "Not provided"}</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Account Number:</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Bank Name:
+                            </Text>
                             <Text>
-                              {selectedApplication.financialDetails?.bankAccountNumber ? 
-                                "XXXX" + selectedApplication.financialDetails.bankAccountNumber.slice(-4) : 
+                              {selectedApplication.financialDetails?.bankName ||
                                 "Not provided"}
                             </Text>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">IFSC Code:</Text>
-                            <Text>{selectedApplication.financialDetails?.ifscCode || "Not provided"}</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Account Number:
+                            </Text>
+                            <Text>
+                              {selectedApplication.financialDetails
+                                ?.bankAccountNumber
+                                ? "XXXX" +
+                                  selectedApplication.financialDetails.bankAccountNumber.slice(
+                                    -4
+                                  )
+                                : "Not provided"}
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              IFSC Code:
+                            </Text>
+                            <Text>
+                              {selectedApplication.financialDetails?.ifscCode ||
+                                "Not provided"}
+                            </Text>
                           </HStack>
                         </VStack>
                       </Box>
                     </Grid>
                   </TabPanel>
-  
+
                   {/* Documents & KYC Panel */}
                   <TabPanel>
-                    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6}>
+                    <Grid
+                      templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                      gap={6}
+                    >
                       <Box>
-                        <Heading size="md" mb={4}>Identity Verification</Heading>
-                        <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+                        <Heading size="md" mb={4}>
+                          Identity Verification
+                        </Heading>
+                        <VStack
+                          align="start"
+                          spacing={3}
+                          bg="gray.50"
+                          p={4}
+                          borderRadius="md"
+                        >
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">PAN Card:</Text>
-                            <Text>{selectedApplication.kycDetails?.panCard || "Not provided"}</Text>
+                            <Text fontWeight="bold" w="150px">
+                              PAN Card:
+                            </Text>
+                            <Text>
+                              {selectedApplication.kycDetails?.panCard ||
+                                "Not provided"}
+                            </Text>
                           </HStack>
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Aadhaar Card:</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Aadhaar Card:
+                            </Text>
                             <Text>
-                              {selectedApplication.kycDetails?.aadhaarNumber ? 
-                                "XXXX-XXXX-" + selectedApplication.kycDetails.aadhaarNumber : 
-                                "Not provided"}
+                              {selectedApplication.kycDetails?.aadhaarNumber
+                                ? "XXXX-XXXX-" +
+                                  selectedApplication.kycDetails.aadhaarNumber
+                                : "Not provided"}
                             </Text>
                           </HStack>
                         </VStack>
                       </Box>
-              
+
                       <Box>
-                        <Heading size="md" mb={4}>Consent Details</Heading>
-                        <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+                        <Heading size="md" mb={4}>
+                          Consent Details
+                        </Heading>
+                        <VStack
+                          align="start"
+                          spacing={3}
+                          bg="gray.50"
+                          p={4}
+                          borderRadius="md"
+                        >
                           <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Terms Accepted:</Text>
-                            <Text>{selectedApplication.consentDetails?.termsAccepted ? "Yes" : "No"}</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Data Sharing:</Text>
-                            <Text>{selectedApplication.consentDetails?.dataSharingAccepted ? "Yes" : "No"}</Text>
-                          </HStack>
-                          <HStack w="full">
-                            <Text fontWeight="bold" w="150px">Accepted On:</Text>
+                            <Text fontWeight="bold" w="150px">
+                              Terms Accepted:
+                            </Text>
                             <Text>
-                              {selectedApplication.consentDetails?.acceptedAt ? 
-                                new Date(selectedApplication.consentDetails.acceptedAt).toLocaleString() : 
-                                "Not available"}
+                              {selectedApplication.consentDetails?.termsAccepted
+                                ? "Yes"
+                                : "No"}
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              Data Sharing:
+                            </Text>
+                            <Text>
+                              {selectedApplication.consentDetails
+                                ?.dataSharingAccepted
+                                ? "Yes"
+                                : "No"}
+                            </Text>
+                          </HStack>
+                          <HStack w="full">
+                            <Text fontWeight="bold" w="150px">
+                              Accepted On:
+                            </Text>
+                            <Text>
+                              {selectedApplication.consentDetails?.acceptedAt
+                                ? new Date(
+                                    selectedApplication.consentDetails.acceptedAt
+                                  ).toLocaleString()
+                                : "Not available"}
                             </Text>
                           </HStack>
                         </VStack>
                       </Box>
                     </Grid>
                   </TabPanel>
-  
+
                   {/* Application History Panel */}
                   <TabPanel>
                     <Box>
-                      <Heading size="md" mb={4}>Status History</Heading>
-                      {selectedApplication.applicationStatus?.statusHistory?.length > 0 ? (
+                      <Heading size="md" mb={4}>
+                        Status History
+                      </Heading>
+                      {selectedApplication.applicationStatus?.statusHistory
+                        ?.length > 0 ? (
                         <VStack spacing={0} align="stretch">
-                          {selectedApplication.applicationStatus.statusHistory.map((historyItem, index) => (
-                            <Box 
-                              key={index}
-                              p={4}
-                              borderLeftWidth="2px"
-                              borderLeftColor={
-                                historyItem.status === "approved" ? "green.500" :
-                                historyItem.status === "rejected" ? "red.500" :
-                                historyItem.status === "under_review" ? "orange.500" : "blue.500"
-                              }
-                              _notLast={{ borderLeftStyle: "solid" }}
-                              _last={{ borderLeftStyle: "dashed" }}
-                              position="relative"
-                            >
-                              <Box 
-                                position="absolute"
-                                left="-10px"
-                                top="4"
-                                w="18px"
-                                h="18px"
-                                borderRadius="full"
-                                bg={
-                                  historyItem.status === "approved" ? "green.500" :
-                                  historyItem.status === "rejected" ? "red.500" :
-                                  historyItem.status === "under_review" ? "orange.500" : "blue.500"
+                          {selectedApplication.applicationStatus.statusHistory.map(
+                            (historyItem, index) => (
+                              <Box
+                                key={index}
+                                p={4}
+                                borderLeftWidth="2px"
+                                borderLeftColor={
+                                  historyItem.status === "approved"
+                                    ? "green.500"
+                                    : historyItem.status === "rejected"
+                                    ? "red.500"
+                                    : historyItem.status === "under_review"
+                                    ? "orange.500"
+                                    : "blue.500"
                                 }
-                              />
-                              
-                              <Box ml={4}>
-                                <Flex justify="space-between" align="center">
-                                  <Text fontWeight="bold">
-                                    Status: {historyItem.status.toUpperCase()}
+                                _notLast={{ borderLeftStyle: "solid" }}
+                                _last={{ borderLeftStyle: "dashed" }}
+                                position="relative"
+                              >
+                                <Box
+                                  position="absolute"
+                                  left="-10px"
+                                  top="4"
+                                  w="18px"
+                                  h="18px"
+                                  borderRadius="full"
+                                  bg={
+                                    historyItem.status === "approved"
+                                      ? "green.500"
+                                      : historyItem.status === "rejected"
+                                      ? "red.500"
+                                      : historyItem.status === "under_review"
+                                      ? "orange.500"
+                                      : "blue.500"
+                                  }
+                                />
+
+                                <Box ml={4}>
+                                  <Flex justify="space-between" align="center">
+                                    <Text fontWeight="bold">
+                                      Status: {historyItem.status.toUpperCase()}
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.500">
+                                      {historyItem.timestamp
+                                        ? new Date(
+                                            historyItem.timestamp
+                                          ).toLocaleString()
+                                        : "Date not available"}
+                                    </Text>
+                                  </Flex>
+                                  <Text mt={1} color="gray.700">
+                                    {historyItem.notes ||
+                                      `Application ${historyItem.status}`}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.500">
-                                    {historyItem.timestamp ? 
-                                      new Date(historyItem.timestamp).toLocaleString() : 
-                                      "Date not available"}
-                                  </Text>
-                                </Flex>
-                                <Text mt={1} color="gray.700">
-                                  {historyItem.notes || `Application ${historyItem.status}`}
-                                </Text>
+                                </Box>
                               </Box>
-                            </Box>
-                          ))}
+                            )
+                          )}
                         </VStack>
                       ) : (
                         <Alert status="info">
@@ -1041,7 +1569,7 @@ const LoanApplicationPage = () => {
                   </TabPanel>
                 </TabPanels>
               </Tabs>
-  
+
               <ModalFooter bg="gray.50">
                 <FormControl>
                   <Textarea
@@ -1052,11 +1580,12 @@ const LoanApplicationPage = () => {
                     mb={4}
                   />
                 </FormControl>
-                
+
                 <HStack spacing={4} width="100%" justify="space-between">
                   <Button onClick={onClose}>Close</Button>
                   <HStack>
-                    {selectedApplication.applicationStatus?.status === "pending" && (
+                    {selectedApplication.applicationStatus?.status ===
+                      "pending" && (
                       <Button
                         colorScheme="orange"
                         leftIcon={<FiClock />}
@@ -1067,28 +1596,36 @@ const LoanApplicationPage = () => {
                         Mark Under Review
                       </Button>
                     )}
-                    
-                    {selectedApplication.applicationStatus?.status !== "rejected" && (
+
+                    {selectedApplication.applicationStatus?.status !==
+                      "rejected" && (
                       <Button
                         colorScheme="green"
                         leftIcon={<FiCheckCircle />}
                         isLoading={processingAction}
                         loadingText="Approving"
                         onClick={() => handleUpdateStatus("approved")}
-                        isDisabled={selectedApplication.applicationStatus?.status === "approved"}
+                        isDisabled={
+                          selectedApplication.applicationStatus?.status ===
+                          "approved"
+                        }
                       >
                         Approve
                       </Button>
-                    )} 
-                    
-                    {selectedApplication.applicationStatus?.status !== "approved" && (
+                    )}
+
+                    {selectedApplication.applicationStatus?.status !==
+                      "approved" && (
                       <Button
                         colorScheme="red"
                         leftIcon={<FiXCircle />}
                         isLoading={processingAction}
                         loadingText="Rejecting"
                         onClick={() => handleUpdateStatus("rejected")}
-                        isDisabled={selectedApplication.applicationStatus?.status === "rejected"}
+                        isDisabled={
+                          selectedApplication.applicationStatus?.status ===
+                          "rejected"
+                        }
                       >
                         Reject
                       </Button>
@@ -1105,4 +1642,3 @@ const LoanApplicationPage = () => {
 };
 
 export default LoanApplicationPage;
-

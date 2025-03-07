@@ -1,5 +1,34 @@
 "use client";
-import { Box, Button, Input, Text, Flex, useToast, VStack, HStack, Wrap, WrapItem, Tag, TagLabel, TagCloseButton, Avatar, Tabs, TabList, Tab, TabPanels, TabPanel, Table, Thead, Tbody, Tr, Th, Td, Badge, Center, Spinner } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Input,
+  Text,
+  Flex,
+  useToast,
+  VStack,
+  HStack,
+  Wrap,
+  WrapItem,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+  Avatar,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Badge,
+  Center,
+  Spinner,
+} from "@chakra-ui/react";
 import React, { useState, useEffect, useRef } from "react";
 import {
   doc,
@@ -15,9 +44,23 @@ import { db, auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, 
-  ModalBody, ModalFooter, ModalCloseButton,Heading,
-  Grid, GridItem, Divider, Stat, StatLabel, StatNumber } from "@chakra-ui/react";
+import {
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Heading,
+  Grid,
+  GridItem,
+  Divider,
+  Stat,
+  StatLabel,
+  StatNumber,
+} from "@chakra-ui/react";
 
 const ProfilePage = () => {
   const [email, setEmail] = useState("");
@@ -47,7 +90,6 @@ const ProfilePage = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -71,22 +113,27 @@ const ProfilePage = () => {
             setFundsHistory(
               userData.fundsHistory || ["No transaction history"]
             );
-            setProfilePhoto(userData.profilePhoto || "/images/photo-placeholder.jpg");
-            
+            setProfilePhoto(
+              userData.profilePhoto || "/images/photo-placeholder.jpg"
+            );
+
             // Safely handle investments and receipts
             const userInvestments = userData.investments || [];
             setInvestments(userInvestments);
             setAge(userData.age || "");
             setCibilScore(userData.cibilScore || "");
-            
+
             // Safely log receipt if it exists, using optional chaining
-            if (userInvestments.length > 0 && userInvestments[0]?.receipts?.length > 0) {
+            if (
+              userInvestments.length > 0 &&
+              userInvestments[0]?.receipts?.length > 0
+            ) {
               console.log(userInvestments[0].receipts[0]);
             }
-            
+
             // Safely set receipts
             const allReceipts = [];
-            userInvestments.forEach(investment => {
+            userInvestments.forEach((investment) => {
               if (investment.receipts && investment.receipts.length > 0) {
                 allReceipts.push(...investment.receipts);
               }
@@ -144,12 +191,12 @@ const ProfilePage = () => {
           const applicationsRef = collection(db, "loanApplications");
           const q = query(applicationsRef, where("userId", "==", user.uid));
           const querySnapshot = await getDocs(q);
-          
-          const applications = querySnapshot.docs.map(doc => ({
+
+          const applications = querySnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           }));
-          
+
           setLoanApplications(applications);
         } catch (error) {
           console.error("Error fetching loan applications:", error);
@@ -309,23 +356,23 @@ const ProfilePage = () => {
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
-    
+
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
 
   return (
     <Box pb={8} px={16} maxWidth="1200px" margin="auto">
       <Text fontSize="3xl" fontWeight="bold" mb={2}>
-      YOUR PROFILE
+        YOUR PROFILE
       </Text>
-      
+
       <Text fontSize="sm" mb={8}>
         This information will be used to personalize your experience.
       </Text>
@@ -340,33 +387,18 @@ const ProfilePage = () => {
         <TabPanels>
           <TabPanel>
             {/* User Info Section */}
-            <Box mb={6} display={"flex"}>
-              <Avatar size="2xl" src={profilePhoto} mb={4} />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                ref={fileInputRef}
-                style={{ display: "none" }}
-              />
-              <Button
-                onClick={() => fileInputRef.current.click()}
-                size="sm"
-                colorScheme="blue"
-                mt={12}
-                ml={5}
-              >
-                Change Profile Photo
-              </Button>
-            </Box>
 
             {renderHorizontalInput("Email", email, setEmail, "email")}
-            {renderHorizontalInput("Mobile Number", mobileNumber, setmobileNumber, "number")}
+            {renderHorizontalInput(
+              "Mobile Number",
+              mobileNumber,
+              setmobileNumber,
+              "number"
+            )}
             {renderHorizontalInput("Salary", salary, setSalary)}
             {renderHorizontalInput("Name", name, setName)}
             {renderHorizontalInput("Age", age, setAge)}
             {renderHorizontalInput("CIBIL Score", cibilScore, setCibilScore)}
-
 
             {/* Interest Tags Section */}
             <Box w="100%">
@@ -489,7 +521,11 @@ const ProfilePage = () => {
                               <Text>No receipt</Text>
                             )}
                           </Td>
-                          <Td>{new Date(investment.timestamp.seconds * 1000).toLocaleString()}</Td>
+                          <Td>
+                            {new Date(
+                              investment.timestamp.seconds * 1000
+                            ).toLocaleString()}
+                          </Td>
                         </Tr>
                       ))
                     ) : (
@@ -510,20 +546,37 @@ const ProfilePage = () => {
                 <Text fontSize="xl" fontWeight="bold" mb={4}>
                   Your Loan Applications
                 </Text>
-                
+
                 {loadingApplications ? (
                   <Center p={10}>
                     <Spinner size="xl" color="blue.500" thickness="4px" />
                   </Center>
                 ) : loanApplications.length === 0 ? (
-                  <Box p={10} textAlign="center" borderWidth="1px" borderRadius="lg">
-                    <Text color="gray.500">You haven't applied for any loans yet.</Text>
-                    <Button mt={4} colorScheme="blue" onClick={() => router.push('/loans')}>
+                  <Box
+                    p={10}
+                    textAlign="center"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                  >
+                    <Text color="gray.500">
+                      You haven't applied for any loans yet.
+                    </Text>
+                    <Button
+                      mt={4}
+                      colorScheme="blue"
+                      onClick={() => router.push("/loans")}
+                    >
                       Browse Loan Options
                     </Button>
                   </Box>
                 ) : (
-                  <Table variant="simple" bg="white" shadow="sm" borderRadius="md" overflow="hidden">
+                  <Table
+                    variant="simple"
+                    bg="white"
+                    shadow="sm"
+                    borderRadius="md"
+                    overflow="hidden"
+                  >
                     <Thead bg="gray.50">
                       <Tr>
                         <Th>Loan Details</Th>
@@ -535,50 +588,73 @@ const ProfilePage = () => {
                     </Thead>
                     <Tbody>
                       {loanApplications.map((application) => (
-                        <Tr key={application.id} 
+                        <Tr
+                          key={application.id}
                           _hover={{ bg: "gray.50" }}
                           bg={
-                            application.applicationStatus?.status === "approved" ? "green.50" :
-                            application.applicationStatus?.status === "rejected" ? "red.50" :
-                            application.applicationStatus?.status === "under_review" ? "orange.50" :
-                            undefined
+                            application.applicationStatus?.status === "approved"
+                              ? "green.50"
+                              : application.applicationStatus?.status ===
+                                "rejected"
+                              ? "red.50"
+                              : application.applicationStatus?.status ===
+                                "under_review"
+                              ? "orange.50"
+                              : undefined
                           }
                         >
                           <Td>
                             <VStack align="start" spacing={1}>
                               <Text fontWeight="medium">
-                                {application.loanDetails?.loanPlanName || "Loan Application"}
+                                {application.loanDetails?.loanPlanName ||
+                                  "Loan Application"}
                               </Text>
                               <Badge colorScheme="purple" fontSize="xs">
-                                {application.loanDetails?.loanCategory || "Unknown"}
+                                {application.loanDetails?.loanCategory ||
+                                  "Unknown"}
                               </Badge>
                             </VStack>
                           </Td>
                           <Td>
-                            <Text fontWeight="medium">₹{application.loanDetails?.loanAmount?.toLocaleString() || "0"}</Text>
+                            <Text fontWeight="medium">
+                              ₹
+                              {application.loanDetails?.loanAmount?.toLocaleString() ||
+                                "0"}
+                            </Text>
                           </Td>
                           <Td>
-                            {application.applicationStatus?.submittedAt?.toDate()?.toLocaleDateString() || "N/A"}
+                            {application.applicationStatus?.submittedAt
+                              ?.toDate()
+                              ?.toLocaleDateString() || "N/A"}
                           </Td>
                           <Td>
                             <Badge
                               colorScheme={
-                                application.applicationStatus?.status === "approved" ? "green" :
-                                application.applicationStatus?.status === "rejected" ? "red" :
-                                application.applicationStatus?.status === "under_review" ? "orange" :
-                                "blue"
+                                application.applicationStatus?.status ===
+                                "approved"
+                                  ? "green"
+                                  : application.applicationStatus?.status ===
+                                    "rejected"
+                                  ? "red"
+                                  : application.applicationStatus?.status ===
+                                    "under_review"
+                                  ? "orange"
+                                  : "blue"
                               }
                               p={1}
                               borderRadius="md"
                             >
-                              {application.applicationStatus?.status?.toUpperCase() || "PENDING"}
+                              {application.applicationStatus?.status?.toUpperCase() ||
+                                "PENDING"}
                             </Badge>
                           </Td>
                           <Td>
                             <Button
                               size="sm"
                               colorScheme="blue"
-                              onClick={() => handleViewApplicationDetails(application)}
+                              onClick={() =>
+                                handleViewApplicationDetails(application)
+                              }
                             >
                               View Details
                             </Button>
@@ -596,145 +672,277 @@ const ProfilePage = () => {
 
       {/* Application Details Modal */}
       {selectedApplication && (
-        <Modal isOpen={isOpen} onClose={onClose} size="xl" scrollBehavior="inside">
+        <Modal
+          isOpen={isOpen}
+          onClose={onClose}
+          size="xl"
+          scrollBehavior="inside"
+        >
           <ModalOverlay />
           <ModalContent>
-            <ModalHeader 
+            <ModalHeader
               bg={
-                selectedApplication.applicationStatus?.status === "approved" ? "green.500" :
-                selectedApplication.applicationStatus?.status === "rejected" ? "red.500" :
-                selectedApplication.applicationStatus?.status === "under_review" ? "orange.500" :
-                "blue.500"
+                selectedApplication.applicationStatus?.status === "approved"
+                  ? "green.500"
+                  : selectedApplication.applicationStatus?.status === "rejected"
+                  ? "red.500"
+                  : selectedApplication.applicationStatus?.status ===
+                    "under_review"
+                  ? "orange.500"
+                  : "blue.500"
               }
               color="white"
               borderTopRadius="md"
             >
               <Flex justify="space-between" align="center">
                 <Box>
-                  Loan Application #{selectedApplication.applicationId || selectedApplication.id.slice(0, 8)}
+                  Loan Application #
+                  {selectedApplication.applicationId ||
+                    selectedApplication.id.slice(0, 8)}
                 </Box>
-                <Badge 
-                  fontSize="md" 
-                  colorScheme="white" 
-                  variant="solid" 
-                  py={1} 
+                <Badge
+                  fontSize="md"
+                  colorScheme="white"
+                  variant="solid"
+                  py={1}
                   px={3}
                   bg="whiteAlpha.300"
                 >
-                  {selectedApplication.applicationStatus?.status?.toUpperCase() || "PENDING"}
+                  {selectedApplication.applicationStatus?.status?.toUpperCase() ||
+                    "PENDING"}
                 </Badge>
               </Flex>
             </ModalHeader>
             <ModalCloseButton color="white" />
-            
+
             <ModalBody py={6}>
               <Grid templateColumns="1fr" gap={6}>
                 {/* Application Summary */}
                 <Box>
-                  <Heading size="md" mb={4}>Loan Summary</Heading>
-                  <VStack align="start" spacing={3} bg="gray.50" p={4} borderRadius="md">
+                  <Heading size="md" mb={4}>
+                    Loan Summary
+                  </Heading>
+                  <VStack
+                    align="start"
+                    spacing={3}
+                    bg="gray.50"
+                    p={4}
+                    borderRadius="md"
+                  >
                     <HStack w="full">
-                      <Text fontWeight="bold" w="180px">Plan Name:</Text>
-                      <Text>{selectedApplication.loanDetails?.loanPlanName}</Text>
+                      <Text fontWeight="bold" w="180px">
+                        Plan Name:
+                      </Text>
+                      <Text>
+                        {selectedApplication.loanDetails?.loanPlanName}
+                      </Text>
                     </HStack>
                     <HStack w="full">
-                      <Text fontWeight="bold" w="180px">Loan Category:</Text>
-                      <Badge colorScheme="purple">{selectedApplication.loanDetails?.loanCategory}</Badge>
+                      <Text fontWeight="bold" w="180px">
+                        Loan Category:
+                      </Text>
+                      <Badge colorScheme="purple">
+                        {selectedApplication.loanDetails?.loanCategory}
+                      </Badge>
                     </HStack>
                     <HStack w="full">
-                      <Text fontWeight="bold" w="180px">Amount Requested:</Text>
+                      <Text fontWeight="bold" w="180px">
+                        Amount Requested:
+                      </Text>
                       <Text fontWeight="bold" color="blue.600">
-                        ₹{selectedApplication.loanDetails?.loanAmount?.toLocaleString()}
+                        ₹
+                        {selectedApplication.loanDetails?.loanAmount?.toLocaleString()}
                       </Text>
                     </HStack>
                     <HStack w="full">
-                      <Text fontWeight="bold" w="180px">Interest Rate:</Text>
-                      <Text>{selectedApplication.loanDetails?.interestRate}%</Text>
+                      <Text fontWeight="bold" w="180px">
+                        Interest Rate:
+                      </Text>
+                      <Text>
+                        {selectedApplication.loanDetails?.interestRate}%
+                      </Text>
                     </HStack>
                     <HStack w="full">
-                      <Text fontWeight="bold" w="180px">Tenure:</Text>
-                      <Text>{selectedApplication.loanDetails?.tenure} months</Text>
+                      <Text fontWeight="bold" w="180px">
+                        Tenure:
+                      </Text>
+                      <Text>
+                        {selectedApplication.loanDetails?.tenure} months
+                      </Text>
                     </HStack>
                     <HStack w="full">
-                      <Text fontWeight="bold" w="180px">Monthly EMI:</Text>
+                      <Text fontWeight="bold" w="180px">
+                        Monthly EMI:
+                      </Text>
                       <Text fontWeight="bold" color="green.600">
-                        ₹{Math.round(selectedApplication.loanDetails?.emi)?.toLocaleString()}/month
+                        ₹
+                        {Math.round(
+                          selectedApplication.loanDetails?.emi
+                        )?.toLocaleString()}
+                        /month
                       </Text>
                     </HStack>
                     <HStack w="full">
-                      <Text fontWeight="bold" w="180px">Purpose:</Text>
-                      <Text>{selectedApplication.loanDetails?.purpose || "Not specified"}</Text>
+                      <Text fontWeight="bold" w="180px">
+                        Purpose:
+                      </Text>
+                      <Text>
+                        {selectedApplication.loanDetails?.purpose ||
+                          "Not specified"}
+                      </Text>
                     </HStack>
                     <HStack w="full">
-                      <Text fontWeight="bold" w="180px">Applied On:</Text>
-                      <Text>{formatDate(selectedApplication.applicationStatus?.submittedAt)}</Text>
+                      <Text fontWeight="bold" w="180px">
+                        Applied On:
+                      </Text>
+                      <Text>
+                        {formatDate(
+                          selectedApplication.applicationStatus?.submittedAt
+                        )}
+                      </Text>
                     </HStack>
                   </VStack>
                 </Box>
-                
+
                 {/* Status History Section */}
                 <Box>
-                  <Heading size="md" mb={4}>Application Status</Heading>
+                  <Heading size="md" mb={4}>
+                    Application Status
+                  </Heading>
                   <VStack align="start" spacing={0}>
-                    <HStack 
-                      bg="blue.50" 
-                      p={3} 
+                    <HStack
+                      bg="blue.50"
+                      p={3}
                       borderTopRadius="md"
-                      borderLeft="4px solid" 
+                      borderLeft="4px solid"
                       borderColor="blue.500"
                       w="full"
                     >
-                      <Box w="24px" h="24px" borderRadius="full" bg="blue.500" color="white" fontSize="xs" display="flex" alignItems="center" justifyContent="center">
+                      <Box
+                        w="24px"
+                        h="24px"
+                        borderRadius="full"
+                        bg="blue.500"
+                        color="white"
+                        fontSize="xs"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
                         1
                       </Box>
                       <VStack align="start" spacing={0}>
                         <Text fontWeight="bold">Application Submitted</Text>
                         <Text fontSize="sm">
-                          {formatDate(selectedApplication.applicationStatus?.submittedAt)}
+                          {formatDate(
+                            selectedApplication.applicationStatus?.submittedAt
+                          )}
                         </Text>
                       </VStack>
                     </HStack>
-                    
-                    <HStack 
-                      bg={selectedApplication.applicationStatus?.status !== "pending" ? "orange.50" : "gray.100"}
+
+                    <HStack
+                      bg={
+                        selectedApplication.applicationStatus?.status !==
+                        "pending"
+                          ? "orange.50"
+                          : "gray.100"
+                      }
                       p={3}
-                      borderLeft="4px solid" 
-                      borderColor={selectedApplication.applicationStatus?.status !== "pending" ? "orange.500" : "gray.300"}
+                      borderLeft="4px solid"
+                      borderColor={
+                        selectedApplication.applicationStatus?.status !==
+                        "pending"
+                          ? "orange.500"
+                          : "gray.300"
+                      }
                       w="full"
                     >
-                      <Box w="24px" h="24px" borderRadius="full" bg={selectedApplication.applicationStatus?.status !== "pending" ? "orange.500" : "gray.300"} color="white" fontSize="xs" display="flex" alignItems="center" justifyContent="center">
+                      <Box
+                        w="24px"
+                        h="24px"
+                        borderRadius="full"
+                        bg={
+                          selectedApplication.applicationStatus?.status !==
+                          "pending"
+                            ? "orange.500"
+                            : "gray.300"
+                        }
+                        color="white"
+                        fontSize="xs"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
                         2
                       </Box>
                       <VStack align="start" spacing={0}>
                         <Text fontWeight="bold">Under Review</Text>
                         <Text fontSize="sm">
-                          {selectedApplication.applicationStatus?.status !== "pending" ? 
-                            "Application is being processed" : 
-                            "Waiting for review"}
+                          {selectedApplication.applicationStatus?.status !==
+                          "pending"
+                            ? "Application is being processed"
+                            : "Waiting for review"}
                         </Text>
                       </VStack>
                     </HStack>
 
-                    <HStack 
-                      bg={selectedApplication.applicationStatus?.status === "approved" || selectedApplication.applicationStatus?.status === "rejected" ? 
-                          selectedApplication.applicationStatus?.status === "approved" ? "green.50" : "red.50" 
-                          : "gray.100"}
+                    <HStack
+                      bg={
+                        selectedApplication.applicationStatus?.status ===
+                          "approved" ||
+                        selectedApplication.applicationStatus?.status ===
+                          "rejected"
+                          ? selectedApplication.applicationStatus?.status ===
+                            "approved"
+                            ? "green.50"
+                            : "red.50"
+                          : "gray.100"
+                      }
                       p={3}
-                      borderLeft="4px solid" 
-                      borderColor={selectedApplication.applicationStatus?.status === "approved" ? "green.500" : 
-                                  selectedApplication.applicationStatus?.status === "rejected" ? "red.500" : "gray.300"}
+                      borderLeft="4px solid"
+                      borderColor={
+                        selectedApplication.applicationStatus?.status ===
+                        "approved"
+                          ? "green.500"
+                          : selectedApplication.applicationStatus?.status ===
+                            "rejected"
+                          ? "red.500"
+                          : "gray.300"
+                      }
                       w="full"
                     >
-                      <Box w="24px" h="24px" borderRadius="full" bg={selectedApplication.applicationStatus?.status === "approved" ? "green.500" : 
-                          selectedApplication.applicationStatus?.status === "rejected" ? "red.500" : "gray.300"} color="white" fontSize="xs" display="flex" alignItems="center" justifyContent="center">
+                      <Box
+                        w="24px"
+                        h="24px"
+                        borderRadius="full"
+                        bg={
+                          selectedApplication.applicationStatus?.status ===
+                          "approved"
+                            ? "green.500"
+                            : selectedApplication.applicationStatus?.status ===
+                              "rejected"
+                            ? "red.500"
+                            : "gray.300"
+                        }
+                        color="white"
+                        fontSize="xs"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
                         3
                       </Box>
                       <VStack align="start" spacing={0}>
                         <Text fontWeight="bold">Final Decision</Text>
                         <Text fontSize="sm">
-                          {selectedApplication.applicationStatus?.status === "approved" ? "Application approved" :
-                           selectedApplication.applicationStatus?.status === "rejected" ? "Application rejected" :
-                           "Pending decision"}
+                          {selectedApplication.applicationStatus?.status ===
+                          "approved"
+                            ? "Application approved"
+                            : selectedApplication.applicationStatus?.status ===
+                              "rejected"
+                            ? "Application rejected"
+                            : "Pending decision"}
                         </Text>
                       </VStack>
                     </HStack>
@@ -742,7 +950,7 @@ const ProfilePage = () => {
                 </Box>
               </Grid>
             </ModalBody>
-            
+
             <ModalFooter>
               <Button onClick={onClose}>Close</Button>
             </ModalFooter>
@@ -752,6 +960,5 @@ const ProfilePage = () => {
     </Box>
   );
 };
-
 
 export default ProfilePage;

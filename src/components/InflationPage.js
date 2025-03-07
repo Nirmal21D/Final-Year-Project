@@ -59,13 +59,13 @@ import {
   Divider,
   useToast,
 } from "@chakra-ui/react";
-import { 
-  FaDollarSign, 
-  FaPercentage, 
-  FaChartLine, 
-  FaCalendarAlt, 
-  FaInfoCircle, 
-  FaChartBar 
+import {
+  FaDollarSign,
+  FaPercentage,
+  FaChartLine,
+  FaCalendarAlt,
+  FaInfoCircle,
+  FaChartBar,
 } from "react-icons/fa";
 
 // Register Chart.js components
@@ -119,11 +119,15 @@ const InflationPage = () => {
   const [roiValues, setRoiValues] = useState([]);
   const [realRoiValues, setRealRoiValues] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState("India");
-  const [selectedInvestment, setSelectedInvestment] = useState("Balanced Mutual Fund");
-  const [currencySymbol, setCurrencySymbol] = useState(countryOptions["India"].symbol);
+  const [selectedInvestment, setSelectedInvestment] = useState(
+    "Balanced Mutual Fund"
+  );
+  const [currencySymbol, setCurrencySymbol] = useState(
+    countryOptions["India"].symbol
+  );
   const [showResults, setShowResults] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
-  
+
   const toast = useToast();
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
@@ -138,7 +142,9 @@ const InflationPage = () => {
 
   useEffect(() => {
     // Update return rate when investment type changes
-    const selectedOption = investmentOptions.find(option => option.name === selectedInvestment);
+    const selectedOption = investmentOptions.find(
+      (option) => option.name === selectedInvestment
+    );
     if (selectedOption) {
       setReturnRate(selectedOption.avgReturn);
     }
@@ -146,15 +152,20 @@ const InflationPage = () => {
 
   const summary = useMemo(() => {
     if (predictedValues.length === 0) return null;
-    
+
     const initialInvestment = investmentAmount;
-    const finalNominalValue = parseFloat(predictedValues[predictedValues.length - 1]);
-    const finalRealValue = parseFloat(inflationAdjustedValues[inflationAdjustedValues.length - 1]);
+    const finalNominalValue = parseFloat(
+      predictedValues[predictedValues.length - 1]
+    );
+    const finalRealValue = parseFloat(
+      inflationAdjustedValues[inflationAdjustedValues.length - 1]
+    );
     const nominalGain = finalNominalValue - initialInvestment;
     const realGain = finalRealValue - initialInvestment;
     const lossToInflation = finalNominalValue - finalRealValue;
-    const inflationImpactPercentage = (lossToInflation / finalNominalValue) * 100;
-    
+    const inflationImpactPercentage =
+      (lossToInflation / finalNominalValue) * 100;
+
     return {
       initialInvestment,
       finalNominalValue,
@@ -162,7 +173,7 @@ const InflationPage = () => {
       nominalGain,
       realGain,
       lossToInflation,
-      inflationImpactPercentage
+      inflationImpactPercentage,
     };
   }, [predictedValues, inflationAdjustedValues, investmentAmount]);
 
@@ -211,14 +222,14 @@ const InflationPage = () => {
               {label}
             </Text>
           </HStack>
-          
+
           {tooltip && (
             <Tooltip label={tooltip} hasArrow placement="top">
               <Box as={FaInfoCircle} color="gray.500" cursor="help" />
             </Tooltip>
           )}
         </Flex>
-        
+
         <Flex alignItems="center">
           <Slider
             flex="1"
@@ -247,13 +258,21 @@ const InflationPage = () => {
               <SliderThumb bg={sliderThumbColor} />
             </Tooltip>
           </Slider>
-          
+
           <InputGroup width="120px">
             {unit === "%" && (
-              <InputRightElement pointerEvents="none" children="%" color="gray.500" />
+              <InputRightElement
+                pointerEvents="none"
+                children="%"
+                color="gray.500"
+              />
             )}
             {unit === currencySymbol && (
-              <InputLeftElement pointerEvents="none" children={currencySymbol} color="gray.500" />
+              <InputLeftElement
+                pointerEvents="none"
+                children={currencySymbol}
+                color="gray.500"
+              />
             )}
             <Input
               value={localValue}
@@ -298,14 +317,15 @@ const InflationPage = () => {
     let adjustedValues = [];
     let roiValues = [];
     let realRoiValues = [];
-    
+
     // Nominal return rate
     const returnRateDecimal = returnRate / 100;
     // Inflation rate
     const inflationRateDecimal = inflationRate / 100;
     // Real return rate (using Fisher equation)
-    const realReturnRate = ((1 + returnRateDecimal) / (1 + inflationRateDecimal) - 1) * 100;
-    
+    const realReturnRate =
+      ((1 + returnRateDecimal) / (1 + inflationRateDecimal) - 1) * 100;
+
     // Initial values
     let nominalValue = investmentAmount;
     let realValue = investmentAmount;
@@ -320,15 +340,16 @@ const InflationPage = () => {
       // Calculate nominal value with compound interest
       nominalValue = nominalValue * (1 + returnRateDecimal);
       predictions.push(nominalValue.toFixed(2));
-      
+
       // Calculate inflation-adjusted (real) value
       realValue = nominalValue / Math.pow(1 + inflationRateDecimal, year);
       adjustedValues.push(realValue.toFixed(2));
-      
+
       // Calculate ROI
-      const nominalRoi = ((nominalValue - investmentAmount) / investmentAmount) * 100;
+      const nominalRoi =
+        ((nominalValue - investmentAmount) / investmentAmount) * 100;
       roiValues.push(nominalRoi.toFixed(2));
-      
+
       // Calculate real ROI
       const realRoi = ((realValue - investmentAmount) / investmentAmount) * 100;
       realRoiValues.push(realRoi.toFixed(2));
@@ -339,7 +360,7 @@ const InflationPage = () => {
     setRoiValues(roiValues);
     setRealRoiValues(realRoiValues);
     setShowResults(true);
-    
+
     toast({
       title: "Calculation complete",
       description: "Your inflation-adjusted returns have been calculated",
@@ -380,10 +401,7 @@ const InflationPage = () => {
           borderColor={borderColor}
         >
           {Object.keys(countryOptions).map((country) => (
-            <option
-              key={country}
-              value={country}
-            >
+            <option key={country} value={country}>
               {country} ({countryOptions[country].symbol})
             </option>
           ))}
@@ -401,10 +419,7 @@ const InflationPage = () => {
           borderColor={borderColor}
         >
           {investmentOptions.map((option) => (
-            <option
-              key={option.name}
-              value={option.name}
-            >
+            <option key={option.name} value={option.name}>
               {option.name} (avg. {option.avgReturn}% return)
             </option>
           ))}
@@ -422,7 +437,7 @@ const InflationPage = () => {
         currencySymbol,
         "The initial amount you plan to invest"
       )}
-      
+
       {renderSliderWithTextbox(
         "Expected Return Rate",
         returnRate,
@@ -434,7 +449,7 @@ const InflationPage = () => {
         "%",
         "Average annual return on your investment before inflation"
       )}
-      
+
       {renderSliderWithTextbox(
         "Inflation Rate",
         inflationRate,
@@ -446,7 +461,7 @@ const InflationPage = () => {
         "%",
         "Expected average annual inflation rate"
       )}
-      
+
       {renderSliderWithTextbox(
         "Investment Period",
         years,
@@ -487,8 +502,8 @@ const InflationPage = () => {
         title: {
           display: true,
           text: "Year",
-          color: textColor
-        }
+          color: textColor,
+        },
       },
       y: {
         type: "linear",
@@ -509,22 +524,22 @@ const InflationPage = () => {
       },
       tooltip: {
         callbacks: {
-          label: function(context) {
-            let label = context.dataset.label || '';
+          label: function (context) {
+            let label = context.dataset.label || "";
             if (label) {
-              label += ': ';
+              label += ": ";
             }
             if (context.parsed.y !== null) {
-              if (context.dataset.yAxisID === 'percentage') {
-                label += context.parsed.y.toFixed(2) + '%';
+              if (context.dataset.yAxisID === "percentage") {
+                label += context.parsed.y.toFixed(2) + "%";
               } else {
                 label += currencySymbol + context.parsed.y.toLocaleString();
               }
             }
             return label;
-          }
-        }
-      }
+          },
+        },
+      },
     },
   };
 
@@ -562,8 +577,8 @@ const InflationPage = () => {
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 2,
         fill: {
-          target: 'origin',
-          above: 'rgba(54, 162, 235, 0.2)',
+          target: "origin",
+          above: "rgba(54, 162, 235, 0.2)",
         },
         tension: 0.4,
       },
@@ -574,8 +589,8 @@ const InflationPage = () => {
         borderColor: "rgba(255, 159, 64, 1)",
         borderWidth: 2,
         fill: {
-          target: 'origin',
-          above: 'rgba(255, 159, 64, 0.2)',
+          target: "origin",
+          above: "rgba(255, 159, 64, 0.2)",
         },
         tension: 0.4,
       },
@@ -586,7 +601,7 @@ const InflationPage = () => {
     <Box minH="100vh" p={{ base: 4, md: 8 }} pb={16}>
       <Container maxW="container.xl">
         <VStack spacing={8} mb={8}>
-          <Heading 
+          <Heading
             as="h1"
             size="xl"
             textAlign="center"
@@ -595,9 +610,17 @@ const InflationPage = () => {
           >
             Inflation Impact Calculator
           </Heading>
-          
-          <Text textAlign="center" fontSize="lg" color={textColor} maxW="2xl">
-            Understand how inflation erodes your investment returns over time. Calculate the real value of your money after accounting for inflation.
+
+          <Text
+            textAlign="center"
+            fontSize="lg"
+            color={textColor}
+            maxW="2xl"
+            marginTop={10}
+          >
+            Understand how inflation erodes your investment returns over time.
+            Calculate the real value of your money after accounting for
+            inflation.
           </Text>
         </VStack>
 
@@ -608,16 +631,17 @@ const InflationPage = () => {
             </Box>
           </Center>
         ) : (
-          <Grid
-            templateColumns={{ base: "1fr", lg: "300px 1fr" }}
-            gap={8}
-          >
+          <Grid templateColumns={{ base: "1fr", lg: "300px 1fr" }} gap={8}>
             <GridItem>
               <InputSection />
             </GridItem>
 
             <GridItem>
-              <Tabs colorScheme="teal" onChange={setActiveTab} variant="enclosed">
+              <Tabs
+                colorScheme="teal"
+                onChange={setActiveTab}
+                variant="enclosed"
+              >
                 <TabList>
                   <Tab>Summary</Tab>
                   <Tab>Charts</Tab>
@@ -634,65 +658,125 @@ const InflationPage = () => {
                         </Heading>
                       </CardHeader>
                       <CardBody>
-                        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={6}>
+                        <Grid
+                          templateColumns={{
+                            base: "1fr",
+                            md: "repeat(2, 1fr)",
+                          }}
+                          gap={6}
+                        >
                           <GridItem>
                             <Stat>
                               <StatLabel>Initial Investment</StatLabel>
-                              <StatNumber>{currencySymbol}{summary?.initialInvestment.toLocaleString()}</StatNumber>
+                              <StatNumber>
+                                {currencySymbol}
+                                {summary?.initialInvestment.toLocaleString()}
+                              </StatNumber>
                             </Stat>
                           </GridItem>
-                          
+
                           <GridItem>
                             <Stat>
                               <StatLabel>Investment Period</StatLabel>
                               <StatNumber>{years} Years</StatNumber>
                             </Stat>
                           </GridItem>
-                          
+
                           <GridItem>
                             <Stat>
                               <StatLabel>Nominal Final Value</StatLabel>
-                              <StatNumber>{currencySymbol}{summary?.finalNominalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</StatNumber>
+                              <StatNumber>
+                                {currencySymbol}
+                                {summary?.finalNominalValue.toLocaleString(
+                                  undefined,
+                                  { maximumFractionDigits: 0 }
+                                )}
+                              </StatNumber>
                               <StatHelpText>
-                                +{currencySymbol}{summary?.nominalGain.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({roiValues[years]}%)
+                                +{currencySymbol}
+                                {summary?.nominalGain.toLocaleString(
+                                  undefined,
+                                  { maximumFractionDigits: 0 }
+                                )}{" "}
+                                ({roiValues[years]}%)
                               </StatHelpText>
                             </Stat>
                           </GridItem>
-                          
+
                           <GridItem>
                             <Stat>
                               <StatLabel>Real Final Value</StatLabel>
-                              <StatNumber>{currencySymbol}{summary?.finalRealValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</StatNumber>
+                              <StatNumber>
+                                {currencySymbol}
+                                {summary?.finalRealValue.toLocaleString(
+                                  undefined,
+                                  { maximumFractionDigits: 0 }
+                                )}
+                              </StatNumber>
                               <StatHelpText>
-                                +{currencySymbol}{summary?.realGain.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({realRoiValues[years]}%)
+                                +{currencySymbol}
+                                {summary?.realGain.toLocaleString(undefined, {
+                                  maximumFractionDigits: 0,
+                                })}{" "}
+                                ({realRoiValues[years]}%)
                               </StatHelpText>
                             </Stat>
                           </GridItem>
                         </Grid>
-                        
+
                         <Divider my={4} />
-                        
+
                         <Stat mb={4}>
                           <StatLabel>Inflation Impact</StatLabel>
-                          <StatNumber>{currencySymbol}{summary?.lossToInflation.toLocaleString(undefined, { maximumFractionDigits: 0 })}</StatNumber>
+                          <StatNumber>
+                            {currencySymbol}
+                            {summary?.lossToInflation.toLocaleString(
+                              undefined,
+                              { maximumFractionDigits: 0 }
+                            )}
+                          </StatNumber>
                           <StatHelpText>
                             <Badge colorScheme="orange" fontSize="md">
-                              {summary?.inflationImpactPercentage.toFixed(2)}% of nominal returns lost to inflation
+                              {summary?.inflationImpactPercentage.toFixed(2)}%
+                              of nominal returns lost to inflation
                             </Badge>
                           </StatHelpText>
                         </Stat>
-                        
-                        <Box p={4} bg="orange.50" borderRadius="md" _dark={{ bg: "orange.900" }}>
+
+                        <Box
+                          p={4}
+                          bg="orange.50"
+                          borderRadius="md"
+                          _dark={{ bg: "orange.900" }}
+                        >
                           <Text color={textColor} fontSize="sm">
-                            <b>Insight:</b> While your investment appears to grow to {currencySymbol}{summary?.finalNominalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })} in {years} years, 
-                            its purchasing power will actually be equivalent to {currencySymbol}{summary?.finalRealValue.toLocaleString(undefined, { maximumFractionDigits: 0 })} in today's money. 
-                            That's a difference of {currencySymbol}{summary?.lossToInflation.toLocaleString(undefined, { maximumFractionDigits: 0 })} due to inflation.
+                            <b>Insight:</b> While your investment appears to
+                            grow to {currencySymbol}
+                            {summary?.finalNominalValue.toLocaleString(
+                              undefined,
+                              { maximumFractionDigits: 0 }
+                            )}{" "}
+                            in {years} years, its purchasing power will actually
+                            be equivalent to {currencySymbol}
+                            {summary?.finalRealValue.toLocaleString(undefined, {
+                              maximumFractionDigits: 0,
+                            })}{" "}
+                            in today's money. That's a difference of{" "}
+                            {currencySymbol}
+                            {summary?.lossToInflation.toLocaleString(
+                              undefined,
+                              { maximumFractionDigits: 0 }
+                            )}{" "}
+                            due to inflation.
                           </Text>
                         </Box>
                       </CardBody>
                     </Card>
-                    
-                    <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={6}>
+
+                    <Grid
+                      templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+                      gap={6}
+                    >
                       <Card bg={cardBg} boxShadow="md">
                         <CardHeader pb={0}>
                           <Heading size="md" color={textColor}>
@@ -722,10 +806,32 @@ const InflationPage = () => {
                                 <Tr>
                                   <Td fontWeight="bold">Real Return Rate</Td>
                                   <Td>
-                                    {((1 + returnRate/100)/(1 + inflationRate/100) - 1) * 100 > 0 ? 
-                                      <Tag colorScheme="green">+{(((1 + returnRate/100)/(1 + inflationRate/100) - 1) * 100).toFixed(2)}%</Tag> :
-                                      <Tag colorScheme="red">{(((1 + returnRate/100)/(1 + inflationRate/100) - 1) * 100).toFixed(2)}%</Tag>
-                                    }
+                                    {((1 + returnRate / 100) /
+                                      (1 + inflationRate / 100) -
+                                      1) *
+                                      100 >
+                                    0 ? (
+                                      <Tag colorScheme="green">
+                                        +
+                                        {(
+                                          ((1 + returnRate / 100) /
+                                            (1 + inflationRate / 100) -
+                                            1) *
+                                          100
+                                        ).toFixed(2)}
+                                        %
+                                      </Tag>
+                                    ) : (
+                                      <Tag colorScheme="red">
+                                        {(
+                                          ((1 + returnRate / 100) /
+                                            (1 + inflationRate / 100) -
+                                            1) *
+                                          100
+                                        ).toFixed(2)}
+                                        %
+                                      </Tag>
+                                    )}
                                   </Td>
                                 </Tr>
                               </Tbody>
@@ -733,7 +839,7 @@ const InflationPage = () => {
                           </TableContainer>
                         </CardBody>
                       </Card>
-                      
+
                       <Card bg={cardBg} boxShadow="md">
                         <CardHeader pb={0}>
                           <Heading size="md" color={textColor}>
@@ -743,29 +849,36 @@ const InflationPage = () => {
                         <CardBody>
                           {inflationRate >= returnRate ? (
                             <Text color="red.500" fontWeight="bold">
-                              Warning: Your investment return rate ({returnRate}%) is less than or equal to inflation ({inflationRate}%). 
-                              Your investment is losing purchasing power over time.
+                              Warning: Your investment return rate ({returnRate}
+                              %) is less than or equal to inflation (
+                              {inflationRate}%). Your investment is losing
+                              purchasing power over time.
                             </Text>
                           ) : (
                             <Text color={textColor}>
-                              Your investment has a positive real return rate of {(((1 + returnRate/100)/(1 + inflationRate/100) - 1) * 100).toFixed(2)}% 
-                              after accounting for inflation.
+                              Your investment has a positive real return rate of{" "}
+                              {(
+                                ((1 + returnRate / 100) /
+                                  (1 + inflationRate / 100) -
+                                  1) *
+                                100
+                              ).toFixed(2)}
+                              % after accounting for inflation.
                             </Text>
                           )}
-                          
+
                           <Text mt={4} color={textColor}>
-                            {returnRate < 6 ? 
-                              "Consider exploring higher-yield investment options to better outpace inflation." :
-                              returnRate > 15 ? 
-                                "Your expected return is quite high. Make sure your risk assessment is realistic." :
-                                "Your investment strategy has a balanced return profile relative to typical inflation rates."
-                            }
+                            {returnRate < 6
+                              ? "Consider exploring higher-yield investment options to better outpace inflation."
+                              : returnRate > 15
+                              ? "Your expected return is quite high. Make sure your risk assessment is realistic."
+                              : "Your investment strategy has a balanced return profile relative to typical inflation rates."}
                           </Text>
                         </CardBody>
                       </Card>
                     </Grid>
                   </TabPanel>
-                  
+
                   {/* Charts Tab */}
                   <TabPanel>
                     <Card bg={cardBg} boxShadow="md" mb={6}>
@@ -775,8 +888,14 @@ const InflationPage = () => {
                         </Heading>
                       </CardHeader>
                       <CardBody>
-                        <Text fontSize="sm" mb={4} color="gray.600" _dark={{ color: "gray.400" }}>
-                          Shows how your investment grows in both nominal terms and when adjusted for inflation
+                        <Text
+                          fontSize="sm"
+                          mb={4}
+                          color="gray.600"
+                          _dark={{ color: "gray.400" }}
+                        >
+                          Shows how your investment grows in both nominal terms
+                          and when adjusted for inflation
                         </Text>
                         <Box height="400px">
                           <Line
@@ -790,11 +909,12 @@ const InflationPage = () => {
                                   title: {
                                     display: true,
                                     text: `Value (${currencySymbol})`,
-                                    color: textColor
+                                    color: textColor,
                                   },
                                   ticks: {
                                     ...chartOptions.scales.y.ticks,
-                                    callback: (value) => `${currencySymbol}${value.toLocaleString()}`,
+                                    callback: (value) =>
+                                      `${currencySymbol}${value.toLocaleString()}`,
                                   },
                                 },
                               },
@@ -803,7 +923,7 @@ const InflationPage = () => {
                         </Box>
                       </CardBody>
                     </Card>
-                    
+
                     <Card bg={cardBg} boxShadow="md">
                       <CardHeader pb={0}>
                         <Heading size="md" color={textColor}>
@@ -811,8 +931,14 @@ const InflationPage = () => {
                         </Heading>
                       </CardHeader>
                       <CardBody>
-                        <Text fontSize="sm" mb={4} color="gray.600" _dark={{ color: "gray.400" }}>
-                          Compare nominal returns with inflation-adjusted real returns
+                        <Text
+                          fontSize="sm"
+                          mb={4}
+                          color="gray.600"
+                          _dark={{ color: "gray.400" }}
+                        >
+                          Compare nominal returns with inflation-adjusted real
+                          returns
                         </Text>
                         <Box height="400px">
                           <Line
@@ -826,7 +952,7 @@ const InflationPage = () => {
                                   title: {
                                     display: true,
                                     text: "Return (%)",
-                                    color: textColor
+                                    color: textColor,
                                   },
                                   ticks: {
                                     ...chartOptions.scales.y.ticks,
@@ -840,7 +966,7 @@ const InflationPage = () => {
                       </CardBody>
                     </Card>
                   </TabPanel>
-                  
+
                   {/* Data Table Tab */}
                   <TabPanel>
                     <Card bg={cardBg} boxShadow="md">
@@ -866,11 +992,27 @@ const InflationPage = () => {
                               {Array.from({ length: years + 1 }, (_, i) => (
                                 <Tr key={i}>
                                   <Td>{i}</Td>
-                                  <Td isNumeric>{currencySymbol}{parseFloat(predictedValues[i]).toLocaleString()}</Td>
-                                  <Td isNumeric>{currencySymbol}{parseFloat(inflationAdjustedValues[i]).toLocaleString()}</Td>
+                                  <Td isNumeric>
+                                    {currencySymbol}
+                                    {parseFloat(
+                                      predictedValues[i]
+                                    ).toLocaleString()}
+                                  </Td>
+                                  <Td isNumeric>
+                                    {currencySymbol}
+                                    {parseFloat(
+                                      inflationAdjustedValues[i]
+                                    ).toLocaleString()}
+                                  </Td>
                                   <Td isNumeric>{roiValues[i]}%</Td>
                                   <Td isNumeric>{realRoiValues[i]}%</Td>
-                                  <Td isNumeric>{currencySymbol}{(parseFloat(predictedValues[i]) - parseFloat(inflationAdjustedValues[i])).toLocaleString()}</Td>
+                                  <Td isNumeric>
+                                    {currencySymbol}
+                                    {(
+                                      parseFloat(predictedValues[i]) -
+                                      parseFloat(inflationAdjustedValues[i])
+                                    ).toLocaleString()}
+                                  </Td>
                                 </Tr>
                               ))}
                             </Tbody>
