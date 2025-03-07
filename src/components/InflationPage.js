@@ -598,8 +598,8 @@ const InflationPage = () => {
   };
 
   return (
-    <Box minH="100vh" p={{ base: 4, md: 8 }} pb={16}>
-      <Container maxW="container.xl">
+    <Box paddingTop="10%" minH="100vh" p={{ base: 4, md: 8 }} pb={16}>
+      <Container paddingTop={100} maxW="container.xl">
         <VStack spacing={8} mb={8}>
           <Heading
             as="h1"
@@ -608,7 +608,7 @@ const InflationPage = () => {
             bgGradient="linear(to-r, teal.500, blue.500)"
             bgClip="text"
           >
-            Inflation Impact Calculator
+       
           </Heading>
 
           <Text
@@ -616,11 +616,9 @@ const InflationPage = () => {
             fontSize="lg"
             color={textColor}
             maxW="2xl"
-            marginTop={10}
+            marginTop={2}
           >
-            Understand how inflation erodes your investment returns over time.
-            Calculate the real value of your money after accounting for
-            inflation.
+           
           </Text>
         </VStack>
 

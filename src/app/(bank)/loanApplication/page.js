@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
+  Icon,
   Box,
   Heading,
   Text,
@@ -54,7 +55,15 @@ import {
   StatGroup,
   Progress,
   Stack,
+  Image, 
+  Modal as ImageModal, 
+  ModalBody as ImageModalBody,
+  ModalContent as ImageModalContent, 
+  ModalOverlay as ImageModalOverlay, 
+  ModalCloseButton as ImageModalCloseButton,
+  useDisclosure as useImageDisclosure
 } from "@chakra-ui/react";
+
 import {
   collection,
   getDocs,
@@ -84,6 +93,9 @@ import {
   FiArrowRight,
   FiInfo,
   FiRefreshCw,
+  FiEye ,
+  FiDownload,  
+  FiMaximize, 
 } from "react-icons/fi";
 import BankHeader from "@/bankComponents/BankHeaders";
 import BankSidenav from "@/bankComponents/BankSidenav";
@@ -110,6 +122,12 @@ const LoanApplicationPage = () => {
   });
   const [bankPlans, setBankPlans] = useState([]);
   const [user, setUser] = useState(null);
+  const [documents, setDocuments] = useState({});
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [loadingDocument, setLoadingDocument] = useState(false);
+  const { isOpen: isDocumentOpen, onOpen: onDocumentOpen, onClose: onDocumentClose } = useImageDisclosure();
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
 
   // Hooks
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -524,6 +542,216 @@ const LoanApplicationPage = () => {
         return "blue";
     }
   };
+
+  // Add this function to fetch document content
+  const fetchDocumentContent = async (applicationId, documentType) => {
+    if (!applicationId || !documentType) return;
+    
+    setLoadingDocument(true);
+    try {
+      // Check if we already have this document cached
+      if (documents[`${applicationId}_${documentType}`]) {
+        setSelectedDocument(documents[`${applicationId}_${documentType}`]);
+        onDocumentOpen();
+        setLoadingDocument(false);
+        return;
+      }
+      
+      // Query the loanDocuments collection for the specific document
+      const docsRef = collection(db, "loanDocuments");
+      const q = query(
+        docsRef, 
+        where("applicationId", "==", applicationId),
+        where("documentType", "==", documentType)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        toast({
+          title: "Document Not Found",
+          description: "The requested document could not be found.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      // Get the first matching document
+      const docData = querySnapshot.docs[0].data();
+      const documentContent = docData.content;
+      
+      // Cache the document
+      setDocuments(prev => ({
+        ...prev,
+        [`${applicationId}_${documentType}`]: documentContent
+      }));
+      
+      // Set as selected document and open the modal
+      setSelectedDocument(documentContent);
+      onDocumentOpen();
+    } catch (error) {
+      console.error("Error fetching document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load document",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoadingDocument(false);
+    }
+  };
+
+  // Enhanced rejection reason handling
+const handleRejectionWithReason = async () => {
+  if (!rejectionReason.trim()) {
+    toast({
+      title: "Rejection Reason Required",
+      description: "Please provide a reason for rejecting this application.",
+      status: "warning",
+      duration: 3000,
+      isClosable: true,
+    });
+    return;
+  }
+  
+  setProcessingAction(true);
+  
+  try {
+    const applicationRef = doc(db, "loanApplications", selectedApplication.id);
+    const currentTime = new Date().toISOString();
+    
+    // Create a rejection record with detailed information
+    const rejectionRecord = {
+      status: "rejected",
+      stage: "rejected",
+      timestamp: currentTime,
+      notes: rejectionReason,
+      rejectionReason: {
+        reason: rejectionReason,
+        rejectedBy: user.displayName || user.email,
+        rejectedAt: currentTime,
+      }
+    };
+
+    // Update the application with rejection information
+    await updateDoc(applicationRef, {
+      "applicationStatus.status": "rejected",
+      "applicationStatus.stage": "rejected",
+      "applicationStatus.lastUpdated": serverTimestamp(),
+      "applicationStatus.rejectionReason": rejectionReason,
+      "applicationStatus.rejectedBy": user.uid,
+      "applicationStatus.rejectedAt": serverTimestamp(),
+      "applicationStatus.statusHistory": [
+        ...(selectedApplication.applicationStatus?.statusHistory || []),
+        rejectionRecord
+      ],
+    });
+
+    // Also update the user's applications subcollection if we have the user ID
+    if (selectedApplication.userId) {
+      const userApplicationsQuery = query(
+        collection(db, `users/${selectedApplication.userId}/applications`),
+        where("mainDocRef", "==", selectedApplication.id)
+      );
+      const userAppSnapshot = await getDocs(userApplicationsQuery);
+
+      if (!userAppSnapshot.empty) {
+        const userAppDoc = userAppSnapshot.docs[0];
+        await updateDoc(
+          doc(db, `users/${selectedApplication.userId}/applications`, userAppDoc.id),
+          {
+            status: "rejected",
+            stage: "rejected",
+            updatedAt: serverTimestamp(),
+            rejectionReason: rejectionReason,
+            rejectedAt: serverTimestamp(),
+          }
+        );
+      }
+    }
+
+    toast({
+      title: "Application Rejected",
+      description: "The application has been rejected with the provided reason.",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+
+    // Update local state
+    const updatedApplications = applications.map((app) =>
+      app.id === selectedApplication.id
+        ? {
+            ...app,
+            applicationStatus: {
+              ...app.applicationStatus,
+              status: "rejected",
+              stage: "rejected",
+              rejectionReason: rejectionReason,
+              rejectedBy: user.uid,
+              rejectedAt: new Date().toISOString(),
+              statusHistory: [
+                ...(app.applicationStatus?.statusHistory || []),
+                rejectionRecord
+              ],
+            },
+          }
+        : app
+    );
+
+    setApplications(updatedApplications);
+    
+    // Update the selected application in the modal
+    setSelectedApplication({
+      ...selectedApplication,
+      applicationStatus: {
+        ...selectedApplication.applicationStatus,
+        status: "rejected",
+        stage: "rejected",
+        rejectionReason: rejectionReason,
+        rejectedBy: user.uid,
+        rejectedAt: new Date().toISOString(),
+        statusHistory: [
+          ...(selectedApplication.applicationStatus?.statusHistory || []),
+          rejectionRecord
+        ],
+      },
+    });
+
+    // Update stats
+    const updatedStats = { ...stats };
+    updatedStats.rejected += 1;
+    if (selectedApplication.applicationStatus?.status === "pending")
+      updatedStats.pending -= 1;
+    if (selectedApplication.applicationStatus?.status === "under_review")
+      updatedStats.underReview -= 1;
+    if (selectedApplication.applicationStatus?.status === "approved")
+      updatedStats.approved -= 1;
+    
+    setStats(updatedStats);
+    
+    // Close the rejection modal
+    setShowRejectionModal(false);
+    // Clear the rejection reason for next use
+    setRejectionReason("");
+    
+  } catch (error) {
+    console.error("Error rejecting application:", error);
+    toast({
+      title: "Error",
+      description: "Failed to reject the application. Please try again.",
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+    });
+  } finally {
+    setProcessingAction(false);
+  }
+};
 
   return (
     <Flex h="100vh">
@@ -1244,6 +1472,37 @@ const LoanApplicationPage = () => {
                         </Box>
                       </Box>
                     </Grid>
+                    {/* Add this section to the Details tab when application is rejected */}
+                    {selectedApplication.applicationStatus?.status === "rejected" && (
+                      <Alert 
+                        status="error" 
+                        variant="subtle" 
+                        borderRadius="md" 
+                        mt={4}
+                        flexDirection="column"
+                        alignItems="flex-start"
+                      >
+                        <Flex w="100%">
+                          <AlertIcon alignSelf="flex-start" mt={1} />
+                          <Box flex="1">
+                            <AlertTitle mb={2} fontSize="lg">Application Rejected</AlertTitle>
+                            <AlertDescription>
+                              <Box fontWeight="medium" mb={2}>Reason for rejection:</Box>
+                              <Box bg="red.50" p={3} borderRadius="md" fontStyle="italic">
+                                {selectedApplication.applicationStatus?.rejectionReason || 
+                                 "No specific reason provided."}
+                              </Box>
+                              
+                              {selectedApplication.applicationStatus?.rejectedAt && (
+                                <Text fontSize="sm" mt={3}>
+                                  Rejected on: {formatDate(selectedApplication.applicationStatus.rejectedAt)}
+                                </Text>
+                              )}
+                            </AlertDescription>
+                          </Box>
+                        </Flex>
+                      </Alert>
+                    )}
                   </TabPanel>
 
                   {/* Financial Info Panel */}
@@ -1440,6 +1699,109 @@ const LoanApplicationPage = () => {
                             </Text>
                           </HStack>
                         </VStack>
+
+                        <Heading size="md" mt={8} mb={4}>Document Files</Heading>
+                        <VStack align="stretch" spacing={4} bg="gray.50" p={4} borderRadius="md">
+                          {/* ID Proof Document */}
+                          <Flex justify="space-between" align="center">
+                            <HStack>
+                              <Icon as={FiFileText} color="blue.500" boxSize={5} />
+                              <VStack align="start" spacing={0}>
+                                <Text fontWeight="bold">Identity Proof</Text>
+                                <Text fontSize="xs" color="gray.600">
+                                  {selectedApplication.documents?.idProof?.name || "Not uploaded"}
+                                </Text>
+                              </VStack>
+                            </HStack>
+                            
+                            {selectedApplication.documents?.idProof?.name && (
+                              <Button 
+                                size="sm" 
+                                colorScheme="blue" 
+                                leftIcon={<Icon as={FiEye} />}
+                                isLoading={loadingDocument}
+                                onClick={() => fetchDocumentContent(selectedApplication.applicationId, "idProof")}
+                              >
+                                View
+                              </Button>
+                            )}
+                          </Flex>
+                          
+                          {/* Address Proof Document */}
+                          <Flex justify="space-between" align="center">
+                            <HStack>
+                              <Icon as={FiFileText} color="green.500" boxSize={5} />
+                              <VStack align="start" spacing={0}>
+                                <Text fontWeight="bold">Address Proof</Text>
+                                <Text fontSize="xs" color="gray.600">
+                                  {selectedApplication.documents?.addressProof?.name || "Not uploaded"}
+                                </Text>
+                              </VStack>
+                            </HStack>
+                            
+                            {selectedApplication.documents?.addressProof?.name && (
+                              <Button 
+                                size="sm" 
+                                colorScheme="green" 
+                                leftIcon={<Icon as={FiEye} />}
+                                isLoading={loadingDocument}
+                                onClick={() => fetchDocumentContent(selectedApplication.applicationId, "addressProof")}
+                              >
+                                View
+                              </Button>
+                            )}
+                          </Flex>
+                          
+                          {/* Income Proof Document */}
+                          <Flex justify="space-between" align="center">
+                            <HStack>
+                              <Icon as={FiFileText} color="purple.500" boxSize={5} />
+                              <VStack align="start" spacing={0}>
+                                <Text fontWeight="bold">Income Proof</Text>
+                                <Text fontSize="xs" color="gray.600">
+                                  {selectedApplication.documents?.incomeProof?.name || "Not uploaded"}
+                                </Text>
+                              </VStack>
+                            </HStack>
+                            
+                            {selectedApplication.documents?.incomeProof?.name && (
+                              <Button 
+                                size="sm" 
+                                colorScheme="purple" 
+                                leftIcon={<Icon as={FiEye} />}
+                                isLoading={loadingDocument}
+                                onClick={() => fetchDocumentContent(selectedApplication.applicationId, "incomeProof")}
+                              >
+                                View
+                              </Button>
+                            )}
+                          </Flex>
+                          
+                          {/* Bank Statement Document */}
+                          <Flex justify="space-between" align="center">
+                            <HStack>
+                              <Icon as={FiFileText} color="orange.500" boxSize={5} />
+                              <VStack align="start" spacing={0}>
+                                <Text fontWeight="bold">Bank Statement</Text>
+                                <Text fontSize="xs" color="gray.600">
+                                  {selectedApplication.documents?.bankStatement?.name || "Not uploaded"}
+                                </Text>
+                              </VStack>
+                            </HStack>
+                            
+                            {selectedApplication.documents?.bankStatement?.name && (
+                              <Button 
+                                size="sm" 
+                                colorScheme="orange" 
+                                leftIcon={<Icon as={FiEye} />}
+                                isLoading={loadingDocument}
+                                onClick={() => fetchDocumentContent(selectedApplication.applicationId, "bankStatement")}
+                              >
+                                View
+                              </Button>
+                            )}
+                          </Flex>
+                        </VStack>
                       </Box>
 
                       <Box>
@@ -1487,6 +1849,31 @@ const LoanApplicationPage = () => {
                             </Text>
                           </HStack>
                         </VStack>
+                        
+                        {/* Document Summary */}
+                        <Box mt={8} p={4} bg="blue.50" borderRadius="md">
+                          <Heading size="sm" mb={3}>Document Summary</Heading>
+                          <Stack spacing={3}>
+                            <HStack justify="space-between">
+                              <Text fontWeight="medium">Document Count:</Text>
+                              <Badge colorScheme="blue" fontSize="md" px={2}>
+                                {Object.values(selectedApplication.documents || {}).filter(doc => doc !== null).length}
+                              </Badge>
+                            </HStack>
+                            <HStack justify="space-between">
+                              <Text fontWeight="medium">Uploaded Date:</Text>
+                              <Text fontSize="sm">
+                                {selectedApplication.documents?.idProof?.uploadedAt
+                                  ? new Date(selectedApplication.documents.idProof.uploadedAt).toLocaleDateString()
+                                  : "N/A"}
+                              </Text>
+                            </HStack>
+                            <Alert status="info" size="sm" fontSize="sm" variant="left-accent">
+                              <AlertIcon />
+                              Verify document authenticity carefully before making loan decisions
+                            </Alert>
+                          </Stack>
+                        </Box>
                       </Box>
                     </Grid>
                   </TabPanel>
@@ -1621,7 +2008,7 @@ const LoanApplicationPage = () => {
                         leftIcon={<FiXCircle />}
                         isLoading={processingAction}
                         loadingText="Rejecting"
-                        onClick={() => handleUpdateStatus("rejected")}
+                        onClick={() => setShowRejectionModal(true)}
                         isDisabled={
                           selectedApplication.applicationStatus?.status ===
                           "rejected"
@@ -1637,6 +2024,179 @@ const LoanApplicationPage = () => {
           </Modal>
         )}
       </Box>
+
+      {/* Document Viewer Modal */}
+      <ImageModal 
+        isOpen={isDocumentOpen} 
+        onClose={onDocumentClose} 
+        size="full" // Changed from "4xl" to "full" for full-screen viewing
+        isCentered
+        motionPreset="scale" // Added animation effect
+      >
+        <ImageModalOverlay backdropFilter="blur(5px)" /> {/* Added backdrop blur for better focus */}
+        <ImageModalContent maxW="90vw" maxH="95vh" margin="auto"> {/* Set maximum width and height */}
+          <Flex justify="space-between" align="center" p={3} bg="blue.700" color="white">
+            <Heading size="md">
+              Document Viewer
+              {selectedApplication && (
+                <Text fontSize="sm" mt={1} fontWeight="normal">
+                  Application #{selectedApplication.applicationId} - 
+                  {documents[`${selectedApplication.applicationId}_idProof`] === selectedDocument && "Identity Proof"}
+                  {documents[`${selectedApplication.applicationId}_addressProof`] === selectedDocument && "Address Proof"}
+                  {documents[`${selectedApplication.applicationId}_incomeProof`] === selectedDocument && "Income Proof"}
+                  {documents[`${selectedApplication.applicationId}_bankStatement`] === selectedDocument && "Bank Statement"}
+                </Text>
+              )}
+            </Heading>
+            <HStack>
+              <Button 
+                variant="outline" 
+                colorScheme="whiteAlpha" 
+                size="sm" 
+                leftIcon={<FiMaximize />} 
+                onClick={() => {
+                  // If browser supports fullscreen API
+                  const container = document.querySelector(".document-container");
+                  if (container && document.fullscreenEnabled) {
+                    if (!document.fullscreenElement) {
+                      container.requestFullscreen().catch(err => {
+                        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+                      });
+                    } else {
+                      document.exitFullscreen();
+                    }
+                  }
+                }}
+              >
+                Fullscreen
+              </Button>
+              <ImageModalCloseButton position="relative" top={0} right={0} />
+            </HStack>
+          </Flex>
+          
+          <ImageModalBody p={0} bg="gray.900"> {/* Dark background for better document contrast */}
+            {loadingDocument ? (
+              <Center h="80vh">
+                <VStack spacing={4}>
+                  <Spinner size="xl" color="blue.500" thickness="4px" speed="0.8s" />
+                  <Text color="white">Loading document...</Text>
+                </VStack>
+              </Center>
+            ) : selectedDocument ? (
+              <Box 
+                className="document-container" 
+                overflow="auto" 
+                h="85vh" 
+                display="flex" 
+                justifyContent="center" 
+                alignItems="flex-start"
+                p={4}
+              >
+                {selectedDocument.startsWith('data:image') ? (
+                  <Box>
+                    <Image 
+                      src={selectedDocument} 
+                      alt="Document" 
+                      objectFit="contain"
+                      maxH="100%"
+                      borderRadius="md"
+                      boxShadow="lg"
+                    />
+                  </Box>
+                ) : selectedDocument.startsWith('data:application/pdf') ? (
+                  <iframe
+                    src={selectedDocument}
+                    width="100%"
+                    height="100%"
+                    style={{ border: "none", borderRadius: "4px" }}
+                    title="PDF Document"
+                  />
+                ) : (
+                  <Alert status="error" variant="solid">
+                    <AlertIcon />
+                    <Box>
+                      <AlertTitle>Unsupported file format</AlertTitle>
+                      <AlertDescription>This document format cannot be displayed.</AlertDescription>
+                    </Box>
+                  </Alert>
+                )}
+              </Box>
+            ) : (
+              <Center h="80vh">
+                <Text color="white">No document selected</Text>
+              </Center>
+            )}
+          </ImageModalBody>
+          
+          <Flex justify="space-between" bg="gray.100" p={3}>
+            <Button 
+              size="sm" 
+              leftIcon={<FiDownload />}
+              isDisabled={!selectedDocument}
+              onClick={() => {
+                if (selectedDocument) {
+                  // Create an anchor element and set the href to the document
+                  const a = document.createElement('a');
+                  a.href = selectedDocument;
+                  a.download = `document-${Date.now()}.${selectedDocument.startsWith('data:image') ? 'jpg' : 'pdf'}`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }
+              }}
+            >
+              Download
+            </Button>
+            <Button colorScheme="blue" onClick={onDocumentClose}>Close</Button>
+          </Flex>
+        </ImageModalContent>
+      </ImageModal>
+
+      {/* Rejection Reason Modal */}
+      <Modal 
+        isOpen={showRejectionModal} 
+        onClose={() => setShowRejectionModal(false)}
+        isCentered
+        size="md"
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader bg="red.500" color="white">
+            Rejection Reason
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody py={5}>
+            <Text mb={4}>
+              Please provide a reason for rejecting this loan application. This information will be stored in the application history.
+            </Text>
+            <FormControl isRequired>
+              <FormLabel>Rejection Reason</FormLabel>
+              <Textarea 
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter the reason for rejection (required)"
+                rows={4}
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button 
+              variant="outline" 
+              mr={3} 
+              onClick={() => setShowRejectionModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              colorScheme="red" 
+              onClick={handleRejectionWithReason}
+              isDisabled={!rejectionReason.trim()}
+            >
+              Confirm Rejection
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 };

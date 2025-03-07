@@ -151,6 +151,7 @@ const MainPage = () => {
       const percentage = Math.round((completedFields / requiredFields.length) * 100);
       setProfileCompleteness(percentage);
     }
+    
   }, [user, userProfile]);
 
   // Fetch all investment plans
@@ -205,6 +206,9 @@ const MainPage = () => {
           
           if (userDocSnapshot.exists()) {
             const userData = userDocSnapshot.data();
+            if(!userData.userType){
+              router.push("/bankdashboard");
+            }
             setUserProfile(userData);
             setUserInterests(userData.interests || []);
             
@@ -241,6 +245,7 @@ const MainPage = () => {
               });
               onOpen();
             }
+            
           }
         } catch (error) {
           console.error("Error fetching user data:", error);

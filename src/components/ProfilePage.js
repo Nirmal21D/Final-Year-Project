@@ -93,6 +93,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+     
     });
 
     return () => unsubscribe();
@@ -804,6 +805,88 @@ const ProfilePage = () => {
                   </VStack>
                 </Box>
 
+                {/* Add Rejection Reason Section if application is rejected */}
+                {selectedApplication.applicationStatus?.status === "rejected" && (
+                  <Box
+                    bg="red.50"
+                    borderRadius="md"
+                    p={4}
+                    borderLeft="4px solid"
+                    borderColor="red.500"
+                  >
+                    <Heading size="md" mb={4} color="red.700">
+                      Reason for Rejection
+                    </Heading>
+                    <Text fontStyle="italic" color="red.800" mb={2}>
+                      {selectedApplication.applicationStatus?.rejectionReason || 
+                      "The bank has declined your loan application. No specific reason provided."}
+                    </Text>
+                    {selectedApplication.applicationStatus?.rejectedAt && (
+                      <Text fontSize="sm" color="red.600" mt={2}>
+                        Rejected on: {formatDate(selectedApplication.applicationStatus.rejectedAt)}
+                      </Text>
+                    )}
+
+                    <Box mt={4} p={3} bg="white" borderRadius="md">
+                      <Heading size="sm" mb={2} color="gray.700">
+                        What can you do next?
+                      </Heading>
+                      <VStack align="start" spacing={2}>
+                        <Text fontSize="sm">• Review your application details and financial information</Text>
+                        <Text fontSize="sm">• Improve your credit score before reapplying</Text>
+                        <Text fontSize="sm">• Consider applying for a smaller loan amount</Text>
+                        <Text fontSize="sm">• Explore other loan options that might better suit your profile</Text>
+                      </VStack>
+
+                      <Button 
+                        mt={4} 
+                        colorScheme="blue" 
+                        size="sm"
+                        onClick={() => router.push('/loanplans')}
+                      >
+                        Explore Other Loan Options
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Approval Details if application is approved */}
+                {selectedApplication.applicationStatus?.status === "approved" && (
+                  <Box
+                    bg="green.50"
+                    borderRadius="md"
+                    p={4}
+                    borderLeft="4px solid"
+                    borderColor="green.500"
+                  >
+                    <Heading size="md" mb={4} color="green.700">
+                      Loan Approved
+                    </Heading>
+                    <VStack align="start" spacing={3}>
+                      <HStack w="full">
+                        <Text fontWeight="bold" w="180px">
+                          Approved On:
+                        </Text>
+                        <Text>
+                          {formatDate(selectedApplication.applicationStatus?.approvedAt || 
+                                    selectedApplication.applicationStatus?.lastUpdated)}
+                        </Text>
+                      </HStack>
+                      <HStack w="full">
+                        <Text fontWeight="bold" w="180px">
+                          Disbursement Status:
+                        </Text>
+                        <Badge colorScheme="blue">
+                          {selectedApplication.disbursementStatus || "Pending"}
+                        </Badge>
+                      </HStack>
+                      <Text fontSize="sm" mt={2}>
+                        Our team will contact you shortly with further instructions regarding the loan disbursement process.
+                      </Text>
+                    </VStack>
+                  </Box>
+                )}
+
                 {/* Status History Section */}
                 <Box>
                   <Heading size="md" mb={4}>
@@ -948,6 +1031,97 @@ const ProfilePage = () => {
                     </HStack>
                   </VStack>
                 </Box>
+
+                {/* Application History Section */}
+                {selectedApplication.applicationStatus?.statusHistory?.length > 0 && (
+                  <Box mt={3}>
+                    <Heading size="md" mb={4}>
+                      Application History
+                    </Heading>
+                    <VStack spacing={0} align="stretch">
+                      {selectedApplication.applicationStatus.statusHistory.map(
+                        (historyItem, index) => (
+                          <Box
+                            key={index}
+                            p={4}
+                            borderLeftWidth="2px"
+                            borderLeftColor={
+                              historyItem.status === "approved"
+                                ? "green.500"
+                                : historyItem.status === "rejected"
+                                ? "red.500"
+                                : historyItem.status === "under_review"
+                                ? "orange.500"
+                                : "blue.500"
+                            }
+                            _notLast={{ borderLeftStyle: "solid" }}
+                            _last={{ borderLeftStyle: "dashed" }}
+                            position="relative"
+                            bg={historyItem.status === "rejected" ? "red.50" : undefined}
+                          >
+                            <Box
+                              position="absolute"
+                              left="-10px"
+                              top="4"
+                              w="18px"
+                              h="18px"
+                              borderRadius="full"
+                              bg={
+                                historyItem.status === "approved"
+                                  ? "green.500"
+                                  : historyItem.status === "rejected"
+                                  ? "red.500"
+                                  : historyItem.status === "under_review"
+                                  ? "orange.500"
+                                  : "blue.500"
+                              }
+                            />
+
+                            <Box ml={4}>
+                              <Flex justify="space-between" align="center">
+                                <Text fontWeight="bold">
+                                  Status: {historyItem.status.toUpperCase()}
+                                </Text>
+                                <Text fontSize="sm" color="gray.500">
+                                  {historyItem.timestamp
+                                    ? new Date(
+                                        historyItem.timestamp
+                                      ).toLocaleString()
+                                    : "Date not available"}
+                                </Text>
+                              </Flex>
+                              
+                              {/* Show rejection reason more prominently */}
+                              {historyItem.status === "rejected" && historyItem.rejectionReason && (
+                                <Box mt={2} mb={2} p={3} bg="red.100" borderRadius="md">
+                                  <Text fontWeight="bold" fontSize="sm" color="red.700">
+                                    Rejection Reason:
+                                  </Text>
+                                  <Text color="red.900">
+                                    {historyItem.rejectionReason.reason || historyItem.notes || "No reason provided"}
+                                  </Text>
+                                  
+                                  {historyItem.rejectionReason?.rejectedBy && (
+                                    <Text fontSize="xs" color="red.700" mt={1}>
+                                      Rejected by: Bank Officer
+                                    </Text>
+                                  )}
+                                </Box>
+                              )}
+                              
+                              {/* Show regular notes for non-rejection events */}
+                              {(!historyItem.status === "rejected" || !historyItem.rejectionReason) && (
+                                <Text mt={1} color="gray.700">
+                                  {historyItem.notes || `Application ${historyItem.status}`}
+                                </Text>
+                              )}
+                            </Box>
+                          </Box>
+                        )
+                      )}
+                    </VStack>
+                  </Box>
+                )}
               </Grid>
             </ModalBody>
 

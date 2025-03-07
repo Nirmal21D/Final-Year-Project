@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import {
   Box,
@@ -60,6 +60,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { FiClock, FiDollarSign, FiPercent, FiTrendingUp, FiArrowLeft, FiCheck, FiShield, FiSend, FiArrowRight } from "react-icons/fi";
 import Headers from "@/components/Headers";
+import { ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
+import { storage } from "@/firebase";
 
 const LoanPlanDetails = () => {
   const { planId } = useParams();
@@ -102,6 +104,22 @@ const LoanPlanDetails = () => {
   // Add this to your state declarations
   const [applicationStep, setApplicationStep] = useState(1);
   const [formErrors, setFormErrors] = useState({});
+  const [documents, setDocuments] = useState({
+    idProof: null,
+    addressProof: null,
+    incomeProof: null,
+    bankStatement: null,
+  });
+  
+  const [documentBase64, setDocumentBase64] = useState({
+    idProof: null,
+    addressProof: null,
+    incomeProof: null,
+    bankStatement: null,
+  });
+  
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef({});
 
   // Calculate EMI function
   const calculateEMI = (principal, interestRate, tenureMonths) => {
@@ -158,6 +176,26 @@ const LoanPlanDetails = () => {
     if (!applicationData.agreeDataSharing)
       errors.agreeDataSharing = "You must agree to data sharing for processing your application";
       
+    // Add document validation
+    if (applicationStep === 4) {
+      // PAN Card validation (already present)
+      if (!applicationData.panCard) errors.panCard = "PAN card number is required";
+      else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(applicationData.panCard))
+        errors.panCard = "Please enter a valid PAN card format";
+      
+      // Document validation
+      if (!documentBase64.idProof) errors.idProof = "ID proof document is required";
+      if (!documentBase64.addressProof) errors.addressProof = "Address proof document is required";
+      if (!documentBase64.incomeProof) errors.incomeProof = "Income proof document is required";
+      
+      // Agreement checks
+      if (!applicationData.agreeTerms) 
+        errors.agreeTerms = "You must agree to the terms and conditions";
+      
+      if (!applicationData.agreeDataSharing)
+        errors.agreeDataSharing = "You must agree to data sharing for processing your application";
+    }
+        
     return errors;
   };
 
@@ -200,7 +238,106 @@ const handleApplyForLoan = async () => {
     // Get current time as string for array elements (can't use serverTimestamp in arrays)
     const currentTimeISO = new Date().toISOString();
     
-    // Create loan application document with enhanced fields
+    // Create document references to store separately if needed
+    const documentReferences = {
+      idProof: documentBase64.idProof ? `${user.uid}_${applicationId}_idProof` : null,
+      addressProof: documentBase64.addressProof ? `${user.uid}_${applicationId}_addressProof` : null,
+      incomeProof: documentBase64.incomeProof ? `${user.uid}_${applicationId}_incomeProof` : null,
+      bankStatement: documentBase64.bankStatement ? `${user.uid}_${applicationId}_bankStatement` : null,
+    };
+    
+    // Create a more lightweight document metadata to store in the main application
+    const documentMetadata = {
+      idProof: documents.idProof ? {
+        name: documents.idProof.name,
+        size: documents.idProof.size,
+        type: documents.idProof.type,
+        lastModified: documents.idProof.lastModified,
+        uploadedAt: currentTimeISO
+      } : null,
+      addressProof: documents.addressProof ? {
+        name: documents.addressProof.name,
+        size: documents.addressProof.size,
+        type: documents.addressProof.type,
+        lastModified: documents.addressProof.lastModified,
+        uploadedAt: currentTimeISO
+      } : null,
+      incomeProof: documents.incomeProof ? {
+        name: documents.incomeProof.name,
+        size: documents.incomeProof.size,
+        type: documents.incomeProof.type,
+        lastModified: documents.incomeProof.lastModified,
+        uploadedAt: currentTimeISO
+      } : null,
+      bankStatement: documents.bankStatement ? {
+        name: documents.bankStatement.name,
+        size: documents.bankStatement.size,
+        type: documents.bankStatement.type,
+        lastModified: documents.bankStatement.lastModified,
+        uploadedAt: currentTimeISO
+      } : null
+    };
+    
+    // First, store the document content in separate document collection
+    // This avoids the nested entity size limit
+    const storeDocuments = async () => {
+      const promises = [];
+      
+      if (documentBase64.idProof) {
+        promises.push(
+          addDoc(collection(db, "loanDocuments"), {
+            userId: user.uid,
+            applicationId: applicationId,
+            documentType: "idProof",
+            content: documentBase64.idProof,
+            createdAt: serverTimestamp()
+          })
+        );
+      }
+      
+      if (documentBase64.addressProof) {
+        promises.push(
+          addDoc(collection(db, "loanDocuments"), {
+            userId: user.uid,
+            applicationId: applicationId,
+            documentType: "addressProof",
+            content: documentBase64.addressProof,
+            createdAt: serverTimestamp()
+          })
+        );
+      }
+      
+      if (documentBase64.incomeProof) {
+        promises.push(
+          addDoc(collection(db, "loanDocuments"), {
+            userId: user.uid,
+            applicationId: applicationId,
+            documentType: "incomeProof",
+            content: documentBase64.incomeProof,
+            createdAt: serverTimestamp()
+          })
+        );
+      }
+      
+      if (documentBase64.bankStatement) {
+        promises.push(
+          addDoc(collection(db, "loanDocuments"), {
+            userId: user.uid,
+            applicationId: applicationId,
+            documentType: "bankStatement",
+            content: documentBase64.bankStatement,
+            createdAt: serverTimestamp()
+          })
+        );
+      }
+      
+      await Promise.all(promises);
+    };
+    
+    // Store documents separately first
+    await storeDocuments();
+    
+    // Create loan application document with document metadata instead of Base64 content
     const applicationRef = await addDoc(collection(db, "loanApplications"), {
       applicationId: applicationId,
       userId: user.uid,
@@ -243,6 +380,9 @@ const handleApplyForLoan = async () => {
         panCard: applicationData.panCard,
         aadhaarNumber: applicationData.aadhaarNumber
       },
+      // Only store document metadata, not the actual content
+      documents: documentMetadata,
+      documentReferences: documentReferences,
       consentDetails: {
         termsAccepted: applicationData.agreeTerms,
         dataSharingAccepted: applicationData.agreeDataSharing,
@@ -271,7 +411,8 @@ const handleApplyForLoan = async () => {
       status: "pending",
       stage: "initial_review",
       createdAt: serverTimestamp(),
-      mainDocRef: applicationRef.id
+      mainDocRef: applicationRef.id,
+      documentCount: Object.values(documentMetadata).filter(doc => doc !== null).length
     });
 
     toast({
@@ -297,6 +438,222 @@ const handleApplyForLoan = async () => {
     });
   } finally {
     setIsApplying(false);
+  }
+};
+
+  // Add this function to handle file conversion to Base64
+const convertToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      reject("No file provided");
+      return;
+    }
+    
+    // Check file size (limit to 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      reject(`File size should be less than 2MB. Current size is ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = () => {
+      resolve(reader.result);
+    };
+    
+    reader.onerror = (error) => {
+      reject(error);
+    };
+  });
+};
+
+// Add these helper functions to resize and compress images
+const resizeAndCompressImage = (base64Image, maxWidth = 800, maxHeight = 800, quality = 0.6) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxWidth) {
+        height = Math.round(height * (maxWidth / width));
+        width = maxWidth;
+      }
+      
+      if (height > maxHeight) {
+        width = Math.round(width * (maxHeight / height));
+        height = maxHeight;
+      }
+      
+      // Create canvas for resizing
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Get compressed data URL
+      const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressedBase64);
+    };
+    
+    img.onerror = (error) => {
+      reject(error);
+    };
+    
+    img.src = base64Image;
+  });
+};
+
+const processDocument = async (base64Data, documentType) => {
+  if (!base64Data) return null;
+  
+  try {
+    // For images, compress them
+    if (base64Data.startsWith('data:image')) {
+      const compressedBase64 = await resizeAndCompressImage(base64Data);
+      return compressedBase64;
+    }
+    
+    // For PDFs, limit size
+    if (base64Data.startsWith('data:application/pdf')) {
+      // We can't easily compress PDFs in browser
+      // Check size as a workaround (size is roughly 4/3 of the base64 string length)
+      const estimatedByteSize = Math.ceil((base64Data.length * 3) / 4);
+      if (estimatedByteSize > 500000) { // 500KB limit
+        throw new Error(`PDF document is too large. Please upload a smaller file (max 500KB).`);
+      }
+      return base64Data;
+    }
+    
+    return base64Data;
+  } catch (error) {
+    console.error(`Error processing ${documentType}:`, error);
+    throw error;
+  }
+};
+
+// Modified document upload function with compression
+const handleDocumentUpload = async (e, documentType) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const fileType = file.type;
+  const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+  
+  if (!validTypes.includes(fileType)) {
+    toast({
+      title: "Invalid file type",
+      description: "Please upload PDF, JPEG, or PNG files only",
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+    });
+    return;
+  }
+  
+  try {
+    setIsUploading(true);
+    
+    // Check file size before processing
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: `File size should be less than 2MB. Current size is ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      setIsUploading(false);
+      return;
+    }
+    
+    // Update documents state for UI display
+    setDocuments(prev => ({
+      ...prev,
+      [documentType]: file
+    }));
+
+    // Convert to Base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = async () => {
+      try {
+        const base64 = reader.result;
+        // Process the document (resize/compress)
+        const processedDoc = await processDocument(base64, documentType);
+        
+        // Update Base64 documents state with the processed (smaller) version
+        setDocumentBase64(prev => ({
+          ...prev,
+          [documentType]: processedDoc
+        }));
+        
+        toast({
+          title: "File uploaded",
+          description: `${file.name} processed successfully`,
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      } catch (error) {
+        toast({
+          title: "Processing failed",
+          description: error.toString(),
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        clearDocument(documentType);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    
+    reader.onerror = (error) => {
+      toast({
+        title: "Upload failed",
+        description: "Failed to read the file",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      setIsUploading(false);
+    };
+  } catch (error) {
+    toast({
+      title: "Upload failed",
+      description: error.toString(),
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+    });
+    setIsUploading(false);
+  }
+};
+
+// Function to clear a document
+const clearDocument = (documentType) => {
+  setDocuments(prev => ({
+    ...prev,
+    [documentType]: null
+  }));
+  
+  setDocumentBase64(prev => ({
+    ...prev,
+    [documentType]: null
+  }));
+  
+  // Also reset the file input
+  if (fileInputRef.current[documentType]) {
+    fileInputRef.current[documentType].value = "";
   }
 };
 
@@ -1130,105 +1487,201 @@ const handleApplyForLoan = async () => {
               </VStack>
             )}
 
-            {/* Step 4: Financial Details & Verification */}
-            {applicationStep === 4 && (
-              <VStack spacing={5} align="stretch">
-                <Heading size="sm" mb={2}>Financial & KYC Details</Heading>
-                
-                <Grid templateColumns="1fr 1fr" gap={4}>
-                  <FormControl>
-                    <FormLabel>Bank Name</FormLabel>
-                    <Input
-                      name="bankName"
-                      value={applicationData.bankName}
-                      onChange={handleInputChange}
-                      placeholder="Enter your bank name"
-                    />
-                  </FormControl>
+            {/* Step 4: Financial Details, KYC & Documents */}
+{applicationStep === 4 && (
+  <VStack spacing={5} align="stretch">
+    <Heading size="sm" mb={2}>Financial & KYC Details</Heading>
+    
+    <Grid templateColumns="1fr 1fr" gap={4}>
+      <FormControl>
+        <FormLabel>Bank Name</FormLabel>
+        <Input
+          name="bankName"
+          value={applicationData.bankName}
+          onChange={handleInputChange}
+          placeholder="Enter your bank name"
+        />
+      </FormControl>
 
-                  <FormControl>
-                    <FormLabel>Account Number</FormLabel>
-                    <Input
-                      name="bankAccountNumber"
-                      value={applicationData.bankAccountNumber}
-                      onChange={handleInputChange}
-                      placeholder="Enter account number"
-                    />
-                  </FormControl>
-                </Grid>
+      <FormControl>
+        <FormLabel>Account Number</FormLabel>
+        <Input
+          name="bankAccountNumber"
+          value={applicationData.bankAccountNumber}
+          onChange={handleInputChange}
+          placeholder="Enter account number"
+        />
+      </FormControl>
+    </Grid>
 
-                <FormControl>
-                  <FormLabel>IFSC Code</FormLabel>
-                  <Input
-                    name="ifscCode"
-                    value={applicationData.ifscCode}
-                    onChange={handleInputChange}
-                    placeholder="Enter IFSC code"
-                  />
-                </FormControl>
+    <FormControl>
+      <FormLabel>IFSC Code</FormLabel>
+      <Input
+        name="ifscCode"
+        value={applicationData.ifscCode}
+        onChange={handleInputChange}
+        placeholder="Enter IFSC code"
+      />
+    </FormControl>
 
-                <FormControl isRequired isInvalid={!!formErrors.panCard}>
-                  <FormLabel>PAN Card Number</FormLabel>
-                  <Input
-                    name="panCard"
-                    value={applicationData.panCard}
-                    onChange={handleInputChange}
-                    placeholder="ABCDE1234F"
-                    maxLength={10}
-                    textTransform="uppercase"
-                  />
-                  {formErrors.panCard && <FormErrorMessage>{formErrors.panCard}</FormErrorMessage>}
-                </FormControl>
+    <FormControl isRequired isInvalid={!!formErrors.panCard}>
+      <FormLabel>PAN Card Number</FormLabel>
+      <Input
+        name="panCard"
+        value={applicationData.panCard}
+        onChange={handleInputChange}
+        placeholder="ABCDE1234F"
+        maxLength={10}
+        textTransform="uppercase"
+      />
+      {formErrors.panCard && <FormErrorMessage>{formErrors.panCard}</FormErrorMessage>}
+    </FormControl>
 
-                <FormControl>
-                  <FormLabel>Aadhaar Number (last 4 digits)</FormLabel>
-                  <Input
-                    name="aadhaarNumber"
-                    value={applicationData.aadhaarNumber}
-                    onChange={handleInputChange}
-                    placeholder="Enter last 4 digits of Aadhaar"
-                    maxLength={4}
-                  />
-                </FormControl>
+    <FormControl>
+      <FormLabel>Aadhaar Number (last 4 digits)</FormLabel>
+      <Input
+        name="aadhaarNumber"
+        value={applicationData.aadhaarNumber}
+        onChange={handleInputChange}
+        placeholder="Enter last 4 digits of Aadhaar"
+        maxLength={4}
+      />
+    </FormControl>
+    
+    <Divider my={2} />
+    
+    {/* Document Upload Section */}
+    <Heading size="sm" mb={2}>Document Upload</Heading>
+    
+    <FormControl isRequired isInvalid={!!formErrors.idProof}>
+      <FormLabel>Identity Proof (PAN, Aadhaar, Passport)</FormLabel>
+      <Input
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        onChange={(e) => handleDocumentUpload(e, "idProof")}
+        ref={(el) => fileInputRef.current.idProof = el}
+        isDisabled={isUploading}
+      />
+      {documents.idProof && (
+        <Flex mt={1} alignItems="center">
+          <Text fontSize="sm" color="green.500" mr={2}>
+            {documents.idProof.name} ({(documents.idProof.size / 1024).toFixed(0)} KB)
+          </Text>
+          <Button size="xs" colorScheme="red" onClick={() => clearDocument("idProof")}>
+            Remove
+          </Button>
+        </Flex>
+      )}
+      {formErrors.idProof && <FormErrorMessage>{formErrors.idProof}</FormErrorMessage>}
+      <FormHelperText>PDF, JPEG or PNG format (max 2MB)</FormHelperText>
+    </FormControl>
+    
+    <FormControl isRequired isInvalid={!!formErrors.addressProof}>
+      <FormLabel>Address Proof (Utility bill, Rental agreement)</FormLabel>
+      <Input
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        onChange={(e) => handleDocumentUpload(e, "addressProof")}
+        ref={(el) => fileInputRef.current.addressProof = el}
+        isDisabled={isUploading}
+      />
+      {documents.addressProof && (
+        <Flex mt={1} alignItems="center">
+          <Text fontSize="sm" color="green.500" mr={2}>
+            {documents.addressProof.name} ({(documents.addressProof.size / 1024).toFixed(0)} KB)
+          </Text>
+          <Button size="xs" colorScheme="red" onClick={() => clearDocument("addressProof")}>
+            Remove
+          </Button>
+        </Flex>
+      )}
+      {formErrors.addressProof && <FormErrorMessage>{formErrors.addressProof}</FormErrorMessage>}
+      <FormHelperText>PDF, JPEG or PNG format (max 2MB)</FormHelperText>
+    </FormControl>
+    
+    <FormControl isRequired isInvalid={!!formErrors.incomeProof}>
+      <FormLabel>Income Proof (Salary slip, Form 16, ITR)</FormLabel>
+      <Input
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        onChange={(e) => handleDocumentUpload(e, "incomeProof")}
+        ref={(el) => fileInputRef.current.incomeProof = el}
+        isDisabled={isUploading}
+      />
+      {documents.incomeProof && (
+        <Flex mt={1} alignItems="center">
+          <Text fontSize="sm" color="green.500" mr={2}>
+            {documents.incomeProof.name} ({(documents.incomeProof.size / 1024).toFixed(0)} KB)
+          </Text>
+          <Button size="xs" colorScheme="red" onClick={() => clearDocument("incomeProof")}>
+            Remove
+          </Button>
+        </Flex>
+      )}
+      {formErrors.incomeProof && <FormErrorMessage>{formErrors.incomeProof}</FormErrorMessage>}
+      <FormHelperText>PDF, JPEG or PNG format (max 2MB)</FormHelperText>
+    </FormControl>
+    
+    <FormControl>
+      <FormLabel>Bank Statement (Last 6 months)</FormLabel>
+      <Input
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        onChange={(e) => handleDocumentUpload(e, "bankStatement")}
+        ref={(el) => fileInputRef.current.bankStatement = el}
+        isDisabled={isUploading}
+      />
+      {documents.bankStatement && (
+        <Flex mt={1} alignItems="center">
+          <Text fontSize="sm" color="green.500" mr={2}>
+            {documents.bankStatement.name} ({(documents.bankStatement.size / 1024).toFixed(0)} KB)
+          </Text>
+          <Button size="xs" colorScheme="red" onClick={() => clearDocument("bankStatement")}>
+            Remove
+          </Button>
+        </Flex>
+      )}
+      <FormHelperText>PDF, JPEG or PNG format (max 2MB)</FormHelperText>
+    </FormControl>
 
-                <Divider my={2} />
+    <Divider my={2} />
 
-                <FormControl isRequired isInvalid={!!formErrors.agreeTerms}>
-                  <Checkbox 
-                    name="agreeTerms"
-                    isChecked={applicationData.agreeTerms}
-                    onChange={handleInputChange}
-                    colorScheme="blue"
-                  >
-                    I agree to the <Link color="blue.500">terms and conditions</Link>, and confirm that all provided information is accurate.
-                  </Checkbox>
-                  {formErrors.agreeTerms && <FormErrorMessage>{formErrors.agreeTerms}</FormErrorMessage>}
-                </FormControl>
+    <FormControl isRequired isInvalid={!!formErrors.agreeTerms}>
+      <Checkbox 
+        name="agreeTerms"
+        isChecked={applicationData.agreeTerms}
+        onChange={handleInputChange}
+        colorScheme="blue"
+      >
+        I agree to the <Link color="blue.500">terms and conditions</Link>, and confirm that all provided information is accurate.
+      </Checkbox>
+      {formErrors.agreeTerms && <FormErrorMessage>{formErrors.agreeTerms}</FormErrorMessage>}
+    </FormControl>
 
-                <FormControl isRequired isInvalid={!!formErrors.agreeDataSharing}>
-                  <Checkbox 
-                    name="agreeDataSharing"
-                    isChecked={applicationData.agreeDataSharing}
-                    onChange={handleInputChange}
-                    colorScheme="blue"
-                    mt={3}
-                  >
-                    I consent to sharing my information for credit verification and processing my loan application.
-                  </Checkbox>
-                  {formErrors.agreeDataSharing && <FormErrorMessage>{formErrors.agreeDataSharing}</FormErrorMessage>}
-                </FormControl>
+    <FormControl isRequired isInvalid={!!formErrors.agreeDataSharing}>
+      <Checkbox 
+        name="agreeDataSharing"
+        isChecked={applicationData.agreeDataSharing}
+        onChange={handleInputChange}
+        colorScheme="blue"
+        mt={3}
+      >
+        I consent to sharing my information for credit verification and processing my loan application.
+      </Checkbox>
+      {formErrors.agreeDataSharing && <FormErrorMessage>{formErrors.agreeDataSharing}</FormErrorMessage>}
+    </FormControl>
 
-                <Alert status="info" borderRadius="md" mt={3}>
-                  <AlertIcon />
-                  <Box>
-                    <AlertTitle fontSize="sm">Application Process</AlertTitle>
-                    <AlertDescription fontSize="sm">
-                      Your application will be reviewed within 2-3 business days. We may contact you for additional documentation through email or phone.
-                    </AlertDescription>
-                  </Box>
-                </Alert>
-              </VStack>
-            )}
+    <Alert status="info" borderRadius="md" mt={3}>
+      <AlertIcon />
+      <Box>
+        <AlertTitle fontSize="sm">Application Process</AlertTitle>
+        <AlertDescription fontSize="sm">
+          Your application will be reviewed within 2-3 business days. We may contact you for additional documentation through email or phone.
+        </AlertDescription>
+      </Box>
+    </Alert>
+  </VStack>
+)}
           </ModalBody>
 
           <ModalFooter bg="gray.50" borderBottomRadius="md">

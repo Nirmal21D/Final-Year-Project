@@ -3,10 +3,12 @@ import { Box, Text, Heading, Spinner } from "@chakra-ui/react";
 import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 const Welcome = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -18,6 +20,9 @@ const Welcome = () => {
 
           if (userSnap.exists()) {
             setUserData(userSnap.data());
+            if(!userData.userType) {
+             router.push("/bankdashboard");
+            }
           } else {
             console.error("No such document!");
           }
