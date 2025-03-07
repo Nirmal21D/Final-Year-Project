@@ -531,6 +531,7 @@ const FDCalculator = () => {
     }, 500);
   };
 
+  // Download PDF
   const downloadPDF = async () => {
     if (!resultsRef.current) return;
     
@@ -544,16 +545,17 @@ const FDCalculator = () => {
     });
     
     try {
-      const content = resultsRef.current;
+      await new Promise(resolve => setTimeout(resolve, 100));
       
+      const content = resultsRef.current;
       const canvas = await html2canvas(content, {
         scale: 2,
         logging: false,
         useCORS: true,
-        allowTaint: true,
-        backgroundColor: useColorModeValue("white", "#1A202C")
+        backgroundColor: bgColor // Use the variable here instead of the hook
       });
       
+      // Rest of your function remains the same
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -567,22 +569,12 @@ const FDCalculator = () => {
       const imgHeight = canvas.height;
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      pdf.addImage(
-        imgData, 
-        'PNG', 
-        0, 
-        0, 
-        pdfWidth, 
-        imgHeight * ratio,
-        '', 
-        'FAST'
-      );
-      
-      pdf.save(`FD_Calculator_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight * ratio);
+      pdf.save(`FixedDeposit_Report_${new Date().toISOString().slice(0,10)}.pdf`);
       
       toast({
         title: "PDF Downloaded",
-        description: "Your report has been saved successfully",
+        description: "Your report has been saved",
         status: "success",
         duration: 3000,
       });
@@ -590,7 +582,7 @@ const FDCalculator = () => {
       console.error('Error generating PDF:', error);
       toast({
         title: "Download Failed",
-        description: "There was an error generating your PDF",
+        description: "Could not generate your PDF report",
         status: "error",
         duration: 3000,
       });

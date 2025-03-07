@@ -47,13 +47,13 @@ import {
 
 // Calculator config data
 const calculatorOptions = [
-  { id: "CI", name: "Compound Interest", icon: FaPercent, description: "Calculate how your investments grow over time with compound interest" },
-  { id: "SIP", name: "SIP Calculator", icon: FaChartLine, description: "Plan your systematic investment plan and see potential returns" },
-  { id: "EMI", name: "EMI Calculator", icon: FaMoneyBillWave, description: "Calculate your equated monthly installments for loans" },
-  { id: "FD", name: "Fixed Deposit", icon: FaPiggyBank, description: "Estimate returns on your fixed deposit investments" },
-  { id: "IT", name: "Income Tax", icon: FaFileInvoiceDollar, description: "Calculate your income tax liability" },
-  { id: "SI", name: "Simple Interest", icon: FaCalculator, description: "Calculate basic interest on principal amount" },
-  { id: "SAL", name: "Salary Calculator", icon: FaCoins, description: "Calculate take-home salary after deductions" },
+  { id: "CI", name: "Compound Interest", icon: FaPercent, description: "" },
+  { id: "SIP", name: "SIP Calculator", icon: FaChartLine, description: "" },
+  { id: "EMI", name: "EMI Calculator", icon: FaMoneyBillWave, description: "" },
+  { id: "FD", name: "Fixed Deposit", icon: FaPiggyBank, description: "" },
+  { id: "IT", name: "Income Tax", icon: FaFileInvoiceDollar, description: "" },
+  { id: "SI", name: "Simple Interest", icon: FaCalculator, description: "" },
+  { id: "SAL", name: "Salary Calculator", icon: FaCoins, description: "" },
 ];
 
 const Calc2 = () => {

@@ -499,9 +499,8 @@ const SIPCalculator = () => {
     }, 500);
   };
   
-  // Download PDF report
   const downloadPDF = async () => {
-    if (!resultsRef.current || !sipResults) return;
+    if (!resultsRef.current) return;
     
     setIsExporting(true);
     
@@ -510,107 +509,55 @@ const SIPCalculator = () => {
       description: "Your report is being generated",
       status: "info",
       duration: 3000,
-      isClosable: true,
     });
     
     try {
-      // Create PDF document
-      const doc = new jsPDF();
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Add title
-      doc.setFontSize(22);
-      doc.setTextColor(0, 51, 153);
-      doc.text('SIP Investment Report', 105, 20, { align: 'center' });
-      
-      // Add summary section
-      doc.setFontSize(16);
-      doc.setTextColor(0, 102, 204);
-      doc.text('Investment Summary', 20, 40);
-      
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      
-      let y = 50;
-      const lineHeight = 8;
-      
-      doc.text(`Monthly Investment: ₹${installment.toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-      doc.text(`Expected Return Rate: ${rate}% per year`, 20, y); y += lineHeight;
-      doc.text(`Investment Duration: ${Math.floor(months/12)} years ${months%12} months`, 20, y); y += lineHeight;
-      
-      if (inflationRate > 0) {
-        doc.text(`Inflation Rate: ${inflationRate}% per year`, 20, y);
-        y += lineHeight;
-      }
-      
-      y += lineHeight;
-      doc.text(`Total Amount Invested: ₹${Math.round(sipResults.totalInvestment).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-      doc.text(`Future Value: ₹${Math.round(sipResults.futureValue).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-      doc.text(`Wealth Gained: ₹${Math.round(sipResults.wealthGained).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-      doc.text(`Absolute Return: ${sipResults.absoluteReturn.toFixed(2)}%`, 20, y); y += lineHeight;
-      
-      if (inflationRate > 0) {
-        doc.text(`Inflation-Adjusted Value: ₹${Math.round(sipResults.inflationAdjustedValue).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-        doc.text(`Real Returns (Inflation Adjusted): ${sipResults.realReturns.toFixed(2)}%`, 20, y); y += lineHeight;
-      }
-      
-      // Add yearly breakdown table
-      y += lineHeight * 2;
-      doc.setFontSize(16);
-      doc.setTextColor(0, 102, 204);
-      doc.text('Yearly Breakdown', 20, y);
-      y += 10;
-      
-      // Create table
-      const tableData = sipResults.yearlyData.map(data => [
-        Math.floor(data.month / 12),
-        `₹${Math.round(data.invested).toLocaleString('en-IN')}`,
-        `₹${Math.round(data.value).toLocaleString('en-IN')}`,
-        `₹${Math.round(data.returns).toLocaleString('en-IN')}`,
-        `${((data.returns / data.invested) * 100).toFixed(2)}%`
-      ]);
-      
-      doc.autoTable({
-        startY: y,
-        head: [['Year', 'Amount Invested', 'Future Value', 'Returns', 'Return %']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [0, 102, 204], textColor: 255 },
-        styles: { fontSize: 10 }
+      const content = resultsRef.current;
+      const canvas = await html2canvas(content, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        backgroundColor: bgColor // Use the variable here instead of the hook
       });
       
-      // Add a footer
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        const today = new Date().toLocaleDateString();
-        doc.text(`Generated on ${today} | Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
-      }
+      // Rest of your function remains the same
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
       
-      // Save PDF
-      doc.save(`SIP_Report_${installment}_${rate}pct_${months}months.pdf`);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight * ratio);
+      pdf.save(`SIP_Report_${new Date().toISOString().slice(0,10)}.pdf`);
       
       toast({
         title: "PDF Downloaded",
-        description: "Your SIP report has been saved successfully",
+        description: "Your report has been saved",
         status: "success",
         duration: 3000,
-        isClosable: true,
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast({
         title: "Download Failed",
-        description: "There was an error generating your PDF",
+        description: "Could not generate your PDF report",
         status: "error",
         duration: 3000,
-        isClosable: true,
       });
     } finally {
       setIsExporting(false);
     }
   };
+  
   
   // Chart data
   const chartData = sipResults ? {

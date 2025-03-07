@@ -54,8 +54,9 @@ import {
 import { FaRupeeSign, FaPercentage, FaCalendarAlt, FaCalculator, FaChartPie, FaInfoCircle, FaDownload, FaUndo } from "react-icons/fa";
 import { Doughnut, Bar, Line } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from "chart.js";
-import jsPDF from "jspdf";
-import 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { toPng } from 'html-to-image';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, ChartTooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
@@ -547,151 +548,30 @@ const EMICalculatorPage = () => {
     
     setIsExporting(true);
     
-    toast({
-      title: "Preparing PDF",
-      description: "Your report is being generated",
-      status: "info",
-      duration: 3000,
-      isClosable: true,
-    });
-    
     try {
-      // Create PDF document
-      const doc = new jsPDF();
+      // Use html-to-image instead of html2canvas
+      const dataUrl = await toPng(resultsRef.current);
       
-      // Add title
-      doc.setFontSize(22);
-      doc.setTextColor(41, 98, 255); // Blue color
-      doc.text('Loan EMI Report', 105, 20, { align: 'center' });
-      
-      // Add summary section
-      doc.setFontSize(16);
-      doc.setTextColor(41, 98, 255);
-      doc.text('Loan Summary', 20, 40);
-      
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      
-      let y = 50;
-      const lineHeight = 8;
-      
-      const loanTypes = [
-        { id: 'home', name: 'Home Loan' },
-        { id: 'car', name: 'Car Loan' },
-        { id: 'personal', name: 'Personal Loan' },
-        { id: 'education', name: 'Education Loan' },
-        { id: 'business', name: 'Business Loan' },
-      ];
-      
-      const loanTypeName = loanTypes.find(loan => loan.id === loanType)?.name || 'Loan';
-      doc.text(`Loan Type: ${loanTypeName}`, 20, y); y += lineHeight;
-      doc.text(`Principal Amount: ₹${principal.toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-      doc.text(`Interest Rate: ${rate}% per annum`, 20, y); y += lineHeight;
-      doc.text(`Loan Tenure: ${Math.floor(tenure/12)} years ${tenure%12} months (${tenure} months)`, 20, y); y += lineHeight;
-      doc.text(`Monthly EMI: ₹${emi.toFixed(2).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-      doc.text(`Total Interest: ₹${Math.round(interest).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-      doc.text(`Total Amount: ₹${Math.round(totalAmount).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-      doc.text(`Interest to Principal Ratio: ${(interest / principal * 100).toFixed(2)}%`, 20, y); y += lineHeight;
-      
-      // Add yearly breakdown
-      y += lineHeight * 2;
-      doc.setFontSize(16);
-      doc.setTextColor(41, 98, 255);
-      doc.text('Yearly Breakdown', 20, y);
-      y += 10;
-      
-      // Create table
-      const yearlyTableData = yearlyBreakdown.map(data => [
-        data.year,
-        `₹${Math.round(data.principalPaid).toLocaleString('en-IN')}`,
-        `₹${Math.round(data.interestPaid).toLocaleString('en-IN')}`,
-        `₹${Math.round(data.totalPaid).toLocaleString('en-IN')}`,
-        `₹${Math.round(data.remainingBalance).toLocaleString('en-IN')}`
-      ]);
-      
-      doc.autoTable({
-        startY: y,
-        head: [['Year', 'Principal Paid', 'Interest Paid', 'Total Paid', 'Balance']],
-        body: yearlyTableData,
-        theme: 'striped',
-        headStyles: { fillColor: [41, 98, 255], textColor: 255 },
-        styles: { fontSize: 10 }
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
       
-      // Add amortization schedule (partial, as it could be very long)
-      const currentY = doc.previousAutoTable.finalY + 15;
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = imgProps.width;
+      const imgHeight = imgProps.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      doc.setFontSize(16);
-      doc.setTextColor(41, 98, 255);
-      doc.text('Amortization Schedule', 20, currentY);
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight * ratio);
+      pdf.save(`EMI_Report_${new Date().toISOString().slice(0,10)}.pdf`);
       
-      // Take only first year and last year for demonstration
-      const firstYearData = amortizationSchedule.filter(item => item.month <= 12);
-      const lastYearData = amortizationSchedule.filter(item => item.year === Math.ceil(tenure / 12));
-      const scheduleData = [...firstYearData];
-      
-      if (tenure > 12) {
-        scheduleData.push({
-          month: '...',
-          emi: '...',
-          principal: '...',
-          interest: '...',
-          balance: '...'
-        });
-        scheduleData.push(...lastYearData);
-      }
-      
-      const tableData = scheduleData.map(data => {
-        if (data.month === '...') {
-          return ['...', '...', '...', '...', '...'];
-        }
-        return [
-          data.month,
-          `₹${Math.round(data.principal).toLocaleString('en-IN')}`,
-          `₹${Math.round(data.interest).toLocaleString('en-IN')}`,
-          `₹${Math.round(data.emi).toLocaleString('en-IN')}`,
-          `₹${Math.round(data.balance).toLocaleString('en-IN')}`
-        ];
-      });
-      
-      doc.autoTable({
-        startY: currentY + 10,
-        head: [['Month', 'Principal Paid', 'Interest Paid', 'EMI', 'Balance']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [41, 98, 255], textColor: 255 },
-        styles: { fontSize: 9 }
-      });
-      
-      // Add a footer
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        const today = new Date().toLocaleDateString();
-        doc.text(`Generated on ${today} | Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
-      }
-      
-      // Save PDF
-      doc.save(`EMI_Report_${loanType}_${principal}_${rate}pct.pdf`);
-      
-      toast({
-        title: "PDF Downloaded",
-        description: "Your EMI report has been saved successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
+      // Success toast...
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast({
-        title: "Download Failed",
-        description: "There was an error generating your PDF",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+      // Error toast...
     } finally {
       setIsExporting(false);
     }

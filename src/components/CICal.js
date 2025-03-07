@@ -84,6 +84,7 @@ import {
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { autoTable } from 'jspdf-autotable'
+import { toPng } from 'html-to-image';
 
 ChartJS.register(
   CategoryScale,
@@ -660,245 +661,35 @@ const CompoundInterestCalculator = () => {
     
     setIsExporting(true);
     
-    toast({
-      title: "Preparing PDF",
-      description: "Your report is being generated",
-      status: "info",
-      duration: 3000,
-    });
-    
     try {
-      // Ensure the content is fully rendered before capturing
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Use html-to-image instead of html2canvas
+      const dataUrl = await toPng(resultsRef.current);
       
-      const content = resultsRef.current;
-      
-      // Create a clone of the content to avoid modifying the actual DOM
-      const contentClone = content.cloneNode(true);
-      
-      // Apply some styling fixes to avoid CSS parsing issues
-      const tempDiv = document.createElement('div');
-      tempDiv.appendChild(contentClone);
-      tempDiv.style.width = '800px';
-      tempDiv.style.padding = '20px';
-      tempDiv.style.backgroundColor = bgColor;
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.top = '-9999px';
-      tempDiv.style.left = '-9999px';
-      document.body.appendChild(tempDiv);
-      
-      // Fix CSS issues in the clone that might cause problems
-      const problematicElements = tempDiv.querySelectorAll('[style*="var("]');
-      problematicElements.forEach(el => {
-        // Replace CSS variables with direct values
-        el.style.cssText = '';
-      });
-      
-      const canvas = await html2canvas(tempDiv, {
-        scale: 2, // Higher resolution
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: bgColor,
-        // Explicitly set dimensions
-        width: 800,
-        height: tempDiv.offsetHeight
-      });
-      
-      // Clean up the temporary element
-      document.body.removeChild(tempDiv);
-      
-      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
       
+      const imgProps = pdf.getImageProperties(dataUrl);
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
+      const imgWidth = imgProps.width;
+      const imgHeight = imgProps.height;
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      // Calculate total pages needed
-      const totalPages = Math.ceil((imgHeight * ratio) / (pdfHeight - 20));
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight * ratio);
+      pdf.save(`Compound_Report_${new Date().toISOString().slice(0,10)}.pdf`);
       
-      // Add multiple pages if content is too long
-      for (let page = 0; page < totalPages; page++) {
-        if (page > 0) {
-          pdf.addPage();
-        }
-        
-        // Calculate which portion of the image to use for this page
-        const sourceY = page * (pdfHeight - 20) / ratio;
-        const sourceHeight = Math.min((pdfHeight - 20) / ratio, imgHeight - sourceY);
-        
-        // Add the image portion to the PDF
-        pdf.addImage(
-          imgData, 
-          'PNG', 
-          0, 
-          10, // Add top margin
-          pdfWidth, 
-          sourceHeight * ratio,
-          '', // No alias
-          'FAST',
-          0,
-          sourceY
-        );
-        
-        // Add a footer with date and title
-        const today = new Date().toLocaleDateString();
-        pdf.setFontSize(10);
-        pdf.setTextColor(100, 100, 100);
-        pdf.text(`Compound Interest Report | ${today} | Page ${page+1}/${totalPages}`, 10, pdfHeight - 10);
-      }
-      
-      // Add a header to the first page
-      pdf.setPage(1);
-      pdf.setFontSize(16);
-      pdf.setTextColor(0, 0, 150);
-      pdf.text('Compound Interest Investment Report', pdfWidth/2, 20, { align: 'center' });
-      
-      pdf.save(`Compound_Interest_Report_${principal}_${rate}pct_${time}yrs_${new Date().toISOString().slice(0,10)}.pdf`);
-      
-      toast({
-        title: "PDF Downloaded",
-        description: "Your report has been saved successfully",
-        status: "success",
-        duration: 3000,
-      });
+      // Success toast...
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast({
-        title: "Download Failed",
-        description: "There was an error generating your PDF. Please try the alternate download method.",
-        status: "error",
-        duration: 3000,
-      });
-      
-      // Provide an alternative simpler PDF generation as backup
-      try {
-        const doc = new jsPDF();
-        
-        // Add title
-        doc.setFontSize(22);
-        doc.setTextColor(0, 51, 153);
-        doc.text('Compound Interest Investment Report', 105, 20, { align: 'center' });
-        
-        // Add summary section
-        doc.setFontSize(16);
-        doc.setTextColor(0, 102, 204);
-        doc.text('Investment Summary', 20, 40);
-        
-        doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0);
-        
-        let y = 50;
-        const lineHeight = 8;
-        
-        doc.text(`Principal Amount: ₹${principal.toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-        doc.text(`Interest Rate: ${rate}% per year`, 20, y); y += lineHeight;
-        doc.text(`Time Period: ${time} years`, 20, y); y += lineHeight;
-        doc.text(`Compound Frequency: ${compoundFrequency === "1" ? "Annually" : 
-                 compoundFrequency === "2" ? "Semi-Annually" :
-                 compoundFrequency === "4" ? "Quarterly" :
-                 compoundFrequency === "12" ? "Monthly" : "Daily"}`, 20, y); y += lineHeight;
-        
-        if (additionalDeposit > 0) {
-          doc.text(`Regular Deposit: ₹${additionalDeposit.toLocaleString('en-IN')} ${
-            depositFrequency === "1" ? "annually" : "monthly"
-          }`, 20, y);
-          y += lineHeight;
-        }
-        
-        y += lineHeight;
-        doc.text(`Total Final Amount: ₹${Math.round(summary.totalAmount).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-        doc.text(`Total Interest Earned: ₹${Math.round(summary.totalInterest).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-        doc.text(`Total Deposits: ₹${Math.round(summary.totalDeposits).toLocaleString('en-IN')}`, 20, y); y += lineHeight;
-        doc.text(`Return on Investment: ${((summary.totalInterest / summary.totalDeposits) * 100).toFixed(1)}%`, 20, y); y += lineHeight;
-        
-        // Add year by year data
-        y += lineHeight * 2;
-        doc.setFontSize(16);
-        doc.setTextColor(0, 102, 204);
-        doc.text('Yearly Breakdown', 20, y);
-        y += lineHeight;
-        
-        // Table headers
-        doc.setFontSize(11);
-        doc.setTextColor(0, 0, 0);
-        doc.text('Year', 20, y);
-        doc.text('Starting Balance', 45, y);
-        doc.text('Deposits', 95, y);
-        doc.text('Interest', 135, y);
-        doc.text('Ending Balance', 170, y);
-        y += lineHeight;
-        
-        // Add horizontal line
-        doc.line(20, y - 2, 190, y - 2);
-        
-        // Table data
-        doc.setFontSize(10);
-        yearlyData.forEach((data, index) => {
-          if (y > 270) { // Check if we need a new page
-            doc.addPage();
-            y = 20; // Reset y position on new page
-            
-            // Add headers again on new page
-            doc.setFontSize(11);
-            doc.text('Year', 20, y);
-            doc.text('Starting Balance', 45, y);
-            doc.text('Deposits', 95, y);
-            doc.text('Interest', 135, y);
-            doc.text('Ending Balance', 170, y);
-            y += lineHeight;
-            
-            // Add horizontal line
-            doc.line(20, y - 2, 190, y - 2);
-            doc.setFontSize(10);
-          }
-          
-          doc.text(`${data.year}`, 20, y);
-          doc.text(`₹${Math.round(data.startBalance).toLocaleString('en-IN')}`, 45, y);
-          doc.text(`₹${Math.round(data.deposits).toLocaleString('en-IN')}`, 95, y);
-          doc.text(`₹${Math.round(data.interest).toLocaleString('en-IN')}`, 135, y);
-          doc.text(`₹${Math.round(data.endBalance).toLocaleString('en-IN')}`, 170, y);
-          y += lineHeight;
-        });
-        
-        // Add footer
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i);
-          doc.setFontSize(10);
-          doc.setTextColor(100, 100, 100);
-          const today = new Date().toLocaleDateString();
-          doc.text(`Generated on ${today} | Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
-        }
-        
-        doc.save(`Compound_Interest_Report_${principal}_${rate}pct_${time}yrs_Simple.pdf`);
-        
-        toast({
-          title: "Simple PDF Generated",
-          description: "A simplified version of your report has been created instead",
-          status: "success",
-          duration: 3000,
-        });
-      } catch (backupError) {
-        console.error('Backup PDF generation failed:', backupError);
-        toast({
-          title: "PDF Generation Failed",
-          description: "All PDF generation methods failed. Please try again later.",
-          status: "error",
-          duration: 3000,
-        });
-      }
+      // Error toast...
     } finally {
       setIsExporting(false);
     }
   };
+  
 
   // Calculate effective annual rate
   const effectiveAnnualRate = (
