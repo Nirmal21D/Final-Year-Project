@@ -1,43 +1,90 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
   Box,
-  Drawer,
-  DrawerBody,
-  DrawerHeader,
-  DrawerOverlay,
-  DrawerContent,
-  useDisclosure,
+  IconButton,
   Menu,
   MenuButton,
   MenuList,
   MenuItem,
-  Wrap,
-  WrapItem,
+  MenuDivider,
   Avatar,
   Text,
-  Divider,
   Flex,
+  Spacer,
+  HStack,
+  VStack,
+  Container,
+  useColorModeValue,
+  useDisclosure,
+  Collapse,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
+  PopoverArrow,
+  Badge,
+  useBreakpointValue,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  CloseButton,
 } from "@chakra-ui/react";
-import { HamburgerIcon } from "@chakra-ui/icons";
+import {
+  HamburgerIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  MoonIcon,
+  SunIcon,
+  BellIcon,
+} from "@chakra-ui/icons";
+import {
+  FaHome,
+  FaChartLine,
+  FaCalculator,
+  FaMoneyBillWave,
+  FaNewspaper,
+  FaUserCircle,
+  FaSignInAlt,
+  FaUserPlus,
+  FaSignOutAlt,
+  FaCoins,
+  FaBriefcase,
+} from "react-icons/fa";
 import Link from "next/link";
-import { auth, db } from "../firebase"; // Added db import
+import { auth, db } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports
-import { investmentPlans } from "./PlanData";
+import { doc, getDoc } from "firebase/firestore";
+
 const NavbarMain = () => {
   const router = useRouter();
+  const { isOpen, onOpen, onClose } = useDisclosure(); // For mobile menu
   const [activeType, setActiveType] = useState(null);
-
-  const togglePlans = (type) => {
-    setActiveType((prevType) => (prevType === type ? null : type));
-  };
-
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [notificationCount, setNotificationCount] = useState(2); // Example notification count
+  
+  // Use a ref for the hamburger button
+  const btnRef = useRef();
+  
+  // Color scheme
+  const navBg = useColorModeValue("white", "gray.800");
+  const menuBg = useColorModeValue("white", "gray.800");
+  const buttonBg = useColorModeValue("#567C8D", "#3F5B68");
+  const buttonHover = useColorModeValue("blue.100", "blue.700");
+  const textColor = useColorModeValue("#e9ecef", "#e9ecef");
+  const hoverTextColor = useColorModeValue("#11212d", "#ffffff");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  
+  // Responsive design
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  const buttonSize = useBreakpointValue({ base: "sm", md: "md" });
 
+  // Fetch user data
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -69,206 +116,319 @@ const NavbarMain = () => {
       setUser(null);
       setUserData(null);
       router.push("/");
+      onClose(); // Close mobile menu if open
     } catch (error) {
       console.error("Error signing out: ", error);
     }
   };
 
-  const buttonStyles = {
-    bg: "#567C8D",
-    color: "#e9ecef",
-    width: "100px",
-    height: "40px",
-    _hover: { bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" },
+  // Button styles
+  const navButtonStyles = {
+    bg: "transparent",
+    color: textColor,
+    fontWeight: "medium",
+    rounded: "md",
+    _hover: { bg: buttonHover, color: hoverTextColor, transform: "translateY(-2px)" },
+    transition: "all 0.2s",
+    p: 2,
+    minW: "auto",
+    w: "100%", // Make buttons take full width
+    justifyContent: "flex-start", // Left align text
   };
 
-  return (
-    <>
-      <Flex
-        direction="row"
-        align="center"
-        gap={5}
-        justify="space-evenly"
-        w="full"
-      >
-        {/* <Divider orientation="vertical" height="35px" /> */}
-        <Link href="/">
-          <Menu>
-            <MenuButton
-              as={Button}
-              bg="#567C8D"
-              color="#e9ecef"
-              width="full"
-              _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-            >
-              Home
-            </MenuButton>
-          </Menu>
+  // Nav items configuration
+  const navItems = [
+    {
+      label: "Home",
+      href: "/",
+      icon: <FaHome />,
+    },
+    {
+      label: "Investments",
+      href: "/plan1",
+      icon: <FaChartLine />,
+    },
+    {
+      label: "Loan Plans",
+      href: "/loanplans",
+      icon: <FaMoneyBillWave />,
+    },
+    {
+      label: "Calculators",
+      href: "/calculator",
+      icon: <FaCalculator />,
+    },
+    {
+      label: "Budget Planner",
+      href: "/budget",
+      icon: <FaBriefcase />,
+    },
+    {
+      label: "Inflation",
+      href: "/inflation",
+      icon: <FaCoins />,
+    },
+    {
+      label: "News",
+      href: "/news",
+      icon: <FaNewspaper />,
+    }
+  ];
+
+  // Desktop navigation rendering
+  const renderDesktopNav = () => (
+    <HStack spacing={2} display={{ base: "none", md: "flex" }} w="100%" justifyContent="space-around">
+      {navItems.map((item) => (
+        <Link href={item.href} key={item.label} passHref style={{ width: "100%" }}>
+          <Button {...navButtonStyles} variant="ghost" justifyContent="center">
+            <HStack spacing={2}>
+              <Box>{item.icon}</Box>
+              <Text>{item.label}</Text>
+            </HStack>
+          </Button>
         </Link>
-        <Divider orientation="vertical" height="35px" />
+      ))}
+    </HStack>
+  );
 
-        {/* __________________________________________________________________________________________ */}
-
-        <Menu >
-          {" "}
-          {/* Keep menu open when selecting sub-items */}
-          <Link href="/plan1">
-          <MenuButton
-            as={Button}
-            bg="#567C8D"
-            _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-            color="#e9ecef"
-          >
-            Investment Plans
-          </MenuButton>
-          </Link>
-        </Menu>
-        <Divider orientation="vertical" height="35px" />
-        {/* __________________________________________________________________________________________ */}
-        <Menu>
-          <Link href="/loanplans">
-          <MenuButton
-            as={Button}
-            bg="#567C8D"
-            color="#e9ecef"
-            _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-          >
-            Loan Plans
-          </MenuButton>
-         </Link>
-        </Menu>
-        <Divider orientation="vertical" height="35px" />
-        <Menu>
-          <Link href=" /calculator">
-            <MenuButton
-              as={Button}
-              bg="#567C8D"
-              color="#e9ecef"
-              width="full"
-              _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-            >
-              Calculator
-            </MenuButton>
-          </Link>
-        </Menu>
-        <Divider orientation="vertical" height="35px" />
-        <Menu>
-          <Link href=" /budget">
-            <MenuButton
-              as={Button}
-              bg="#567C8D"
-              color="#e9ecef"
-              width="full"
-              _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-            >
-              Budget Planner
-            </MenuButton>
-          </Link>
-        </Menu>
-        <Divider orientation="vertical" height="35px" />
-        <Menu>
-          <Link href=" /inflation">
-            <MenuButton
-              as={Button}
-              bg="#567C8D"
-              color="#e9ecef"
-              width="full"
-              _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-            >
-              Inflation
-            </MenuButton>
-          </Link>
-        </Menu>
-        <Divider orientation="vertical" height="35px" />
-        <Menu>
-          <Link href=" /news">
-            <MenuButton
-              as={Button}
-              bg="#567C8D"
-              color="#e9ecef"
-              width="full"
-              _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
-            >
-              News
-            </MenuButton>
-          </Link>
-        </Menu>
-        <Divider orientation="vertical" height="35px" />
-        {!user ? (
-          <>
-            <Menu>
-              <Link href=" /signup">
-                <MenuButton
-                  as={Button}
-                  bg="#567C8D"
-                  color="#e9ecef"
-                  width="full"
-                  _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
+  // Mobile drawer rendering
+  const renderMobileNav = () => (
+    <Drawer
+      isOpen={isOpen}
+      placement="left"
+      onClose={onClose}
+      finalFocusRef={btnRef}
+    >
+      <DrawerOverlay />
+      <DrawerContent>
+        <DrawerHeader borderBottomWidth="1px" display="flex" alignItems="center">
+          <Text fontWeight="bold" fontSize="lg">Navigation</Text>
+          <Spacer />
+          <CloseButton onClick={onClose} />
+        </DrawerHeader>
+        <DrawerBody p={0}>
+          <VStack align="stretch" spacing={0}>
+            {navItems.map((item) => (
+              <Link href={item.href} key={item.label} passHref>
+                <Button
+                  variant="ghost"
+                  w="100%"
+                  justifyContent="flex-start"
+                  onClick={onClose}
+                  py={3}
+                  px={4}
+                  borderRadius={0}
+                  borderBottomWidth="1px" 
+                  borderColor={borderColor}
                 >
-                  SignUp
-                </MenuButton>
+                  <HStack spacing={3}>
+                    <Box>{item.icon}</Box>
+                    <Text>{item.label}</Text>
+                  </HStack>
+                </Button>
               </Link>
-            </Menu>
-            <Divider orientation="vertical" height="35px" />
-            <Menu>
-              <Link href=" /login">
-                <MenuButton
-                  as={Button}
-                  bg="#567C8D"
-                  color="#e9ecef"
-                  width="full"
-                  _hover={{ bg: "rgba(229, 229, 229, 0.5)", color: "#11212d" }}
+            ))}
+          </VStack>
+          
+          {/* Mobile Auth */}
+          <Box p={4} mt={4}>
+            {!user ? (
+              <VStack spacing={3} align="stretch">
+                <Link href="/login" passHref>
+                  <Button 
+                    w="100%" 
+                    colorScheme="blue" 
+                    leftIcon={<FaSignInAlt />}
+                    onClick={onClose}
+                  >
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/signup" passHref>
+                  <Button 
+                    w="100%" 
+                    variant="outline" 
+                    colorScheme="blue"
+                    leftIcon={<FaUserPlus />}
+                    onClick={onClose}
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
+              </VStack>
+            ) : (
+              <VStack spacing={3} align="stretch">
+                <Flex align="center" p={2} borderWidth="1px" borderRadius="md">
+                  <Avatar 
+                    size="sm" 
+                    name={userData?.name || "User"}
+                    src={userData?.photoURL}
+                    mr={3}
+                  />
+                  <Box>
+                    <Text fontWeight="medium">{userData?.name || "User"}</Text>
+                    <Text fontSize="xs" opacity={0.8}>{user.email}</Text>
+                  </Box>
+                </Flex>
+                <Link href="/profile" passHref>
+                  <Button 
+                    w="100%" 
+                    colorScheme="blue" 
+                    variant="outline"
+                    leftIcon={<FaUserCircle />}
+                    onClick={onClose}
+                  >
+                    View Profile
+                  </Button>
+                </Link>
+                <Button 
+                  w="100%" 
+                  colorScheme="red" 
+                  variant="solid"
+                  leftIcon={<FaSignOutAlt />}
+                  onClick={handleLogout}
                 >
-                  Login
-                </MenuButton>
-              </Link>
-            </Menu>
-            <Divider orientation="vertical" height="35px" />
-          </>
-        ) : (
-          <>
-            <Button {...buttonStyles} onClick={handleLogout}>
-              Log Out
-            </Button>
-
-            <Divider orientation="vertical" height="35px" />
-            {user && userData && (
-              <Box>
-                <Wrap>
-                  <WrapItem>
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      gap={4}
-                    >
-                      <Box display="flex" alignItems="center">
-                        <Avatar
-                          name={userData.name || "User"}
-                          src={userData.photoURL}
-                          h={4}
-                          w={4}
-                          p={4}
-                        />
-                      </Box>
-                      <Box>
-                        {/* <Text color="white" fontWeight="bold">
-                    {userData.name || "User"}
-                  </Text> */}
-
-                        <Link href="/profile">
-                          <Text color="white">View Profile</Text>
-                        </Link>
-                      </Box>
-                    </Box>
-                  </WrapItem>
-                </Wrap>
-              </Box>
+                  Log Out
+                </Button>
+              </VStack>
             )}
-          </>
-        )}
-      </Flex>
-    </>
+          </Box>
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
+  );
+
+  // User menu for desktop
+  const renderUserMenu = () => (
+    <Menu>
+      <MenuButton
+        as={Button}
+        rounded="full"
+        variant="link"
+        cursor="pointer"
+        minW={0}
+      >
+        <Avatar 
+          size="sm" 
+          name={userData?.name || "User"}
+          src={userData?.photoURL}
+          bg={buttonBg}
+        />
+      </MenuButton>
+      <MenuList
+        bg={menuBg}
+        borderColor={borderColor}
+        boxShadow="lg"
+      >
+        <Box px={3} py={2} mb={2}>
+          <Text fontWeight="medium">{userData?.name || "User"}</Text>
+          <Text fontSize="xs" opacity={0.8}>{user.email}</Text>
+        </Box>
+        <MenuDivider />
+        <Link href="/profile" passHref>
+          <MenuItem as="a" icon={<FaUserCircle />}>Profile</MenuItem>
+        </Link>
+        
+        <MenuDivider />
+        <MenuItem icon={<FaSignOutAlt />} onClick={handleLogout}>Log Out</MenuItem>
+      </MenuList>
+    </Menu>
+  );
+
+  return (
+    <Box
+      as="nav"
+      position="sticky"
+      top="0"
+      zIndex="1000"
+      bg={navBg}
+      px={4}
+      py={2}
+      boxShadow="sm"
+      borderBottomWidth="1px"
+      borderColor={borderColor}
+    >
+      <Container maxW="7xl">
+        <Flex align="center" justify="space-between">
+          {/* Mobile Menu Button */}
+          <IconButton
+            ref={btnRef}
+            icon={<HamburgerIcon />}
+            variant="ghost"
+            onClick={onOpen}
+            display={{ base: "flex", md: "none" }}
+            aria-label="Open menu"
+          />
+          
+          {/* Desktop Nav */}
+          {renderDesktopNav()}
+          
+          {/* Mobile Nav Drawer */}
+          {renderMobileNav()}
+          
+          {/* Right side - Auth buttons or User menu */}
+          <HStack spacing={4}>
+            {!user ? (
+              <HStack spacing={2} display={{ base: "none", md: "flex" }}>
+                <Link href="/login" passHref>
+                  <Button 
+                    variant="ghost" 
+                    colorScheme="blue"
+                    leftIcon={<FaSignInAlt />}
+                    size={buttonSize}
+                  >
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/signup" passHref>
+                  <Button 
+                    colorScheme="blue" 
+                    leftIcon={<FaUserPlus />}
+                    size={buttonSize}
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
+              </HStack>
+            ) : (
+              <HStack paddingLeft={4} spacing={2} display={{ base: "none", md: "flex" }}>
+              
+                {renderUserMenu()}
+              </HStack>
+            )}
+            
+            {/* Mobile auth buttons */}
+            {!user ? (
+              <HStack spacing={2} display={{ base: "flex", md: "none" }}>
+                <Link href="/login" passHref>
+                  <IconButton
+                    aria-label="Login"
+                    icon={<FaSignInAlt />}
+                    colorScheme="blue"
+                    variant="ghost"
+                    size="sm"
+                  />
+                </Link>
+              </HStack>
+            ) : (
+              <IconButton
+                aria-label="User menu"
+                icon={
+                  <Avatar 
+                    size="xs" 
+                    name={userData?.name || "User"}
+                    src={userData?.photoURL}
+                  />
+                }
+                variant="ghost"
+                display={{ base: "flex", md: "none" }}
+                onClick={onOpen}
+              />
+            )}
+          </HStack>
+        </Flex>
+      </Container>
+    </Box>
   );
 };
 
