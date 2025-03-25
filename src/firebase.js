@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { getFirestore, collection, addDoc, setDoc, doc } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -21,9 +22,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Authentication and Firestore
+// Initialize Firebase Authentication, Firestore, and Storage
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Function to add user data
@@ -95,6 +97,7 @@ const createNewUser = async (email, password, firstName, lastName, username) => 
 export {
   auth,
   db,
+  storage,
   googleProvider,
   signInWithPopup,
   createUserWithEmailAndPassword,
