@@ -367,12 +367,7 @@ const BankDashboard = () => {
                 setTimelineData(formattedTimelineData);
                 setLoanDistribution(formattedDistribution);
 
-                const analytics = processAnalytics(
-                  banks,
-                  [...investmentPlansSnapshot.docs, ...loanPlansSnapshot.docs],
-                  customersSnapshot.docs,
-                  querySnapshot.docs
-                );
+               
               } catch (error) {
                 handleError(error, "Failed to fetch analytics data");
               } finally {
@@ -502,19 +497,6 @@ const BankDashboard = () => {
     return metrics;
   };
 
-  // Update the processAnalytics function to use processBankMetrics
-  const processAnalytics = (banks, plans, users, loanApps) => {
-    return {
-      dailyRegistrations: processDailyData(users),
-      planCategories: processPlansData(plans),
-      bankLocations: processBankLocations(banks),
-      investmentTrends: processInvestmentTrends(loanApps),
-      userActivity: processUserActivity(users, loanApps),
-      planPerformance: processPlanPerformance(plans, loanApps),
-      bankMetrics: processBankMetrics(banks, loanApps),
-      revenueStats: processRevenueStats(loanApps),
-    };
-  };
 
   // Add this function after processBankMetrics
   const processRevenueStats = (loanApps) => {

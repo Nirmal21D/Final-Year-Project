@@ -160,14 +160,7 @@ const AdminDashboard = () => {
         setVerifiedBanks(banksData.filter((bank) => bank.isVerified).length);
         setRejectedBanks(banksData.filter((bank) => bank.isRejected).length);
 
-        // Process analytics data
-        const analytics = processAnalytics(
-          banksData,
-          plansData,
-          usersSnap.docs,
-          loanAppsSnap.docs
-        );
-        setAnalyticsData(analytics);
+       
       } catch (error) {
         console.error("Error fetching data:", error);
         toast({
@@ -198,49 +191,10 @@ const AdminDashboard = () => {
     }
   }, [banks]);
 
-  const processAnalytics = (banks, plans, users, loanApps) => {
-    return {
-      dailyRegistrations: processDailyData(users),
-      planCategories: processPlansData(plans),
-      bankLocations: processBankLocations(banks),
-      investmentTrends: processInvestmentTrends(loanApps),
-      userActivity: processUserActivity(users, loanApps),
-      planPerformance: processPlanPerformance(plans, loanApps),
-      bankMetrics: processBankMetrics(banks, loanApps),
-      revenueStats: processRevenueStats(loanApps),
-    };
-  };
+ 
 
-  // Add these data processing functions after the existing processAnalytics function
-  const processDailyData = (users) => {
-    const dailyData = {};
-    users.forEach((doc) => {
-      const data = doc.data();
-      // Handle both Firestore Timestamp and regular date objects
-      const timestamp = data.createdAt;
-      let date;
 
-      if (timestamp?.seconds) {
-        // Handle Firestore Timestamp
-        date = new Date(timestamp.seconds * 1000);
-      } else if (timestamp instanceof Date) {
-        date = timestamp;
-      }
 
-      if (date) {
-        const dateString = date.toLocaleDateString();
-        dailyData[dateString] = (dailyData[dateString] || 0) + 1;
-      }
-    });
-
-    return Object.entries(dailyData)
-      .map(([date, count]) => ({
-        date,
-        registrations: count,
-      }))
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
-      .slice(-30); // Last 30 days
-  };
 
   const processPlansData = (plans) => {
     const categories = {};

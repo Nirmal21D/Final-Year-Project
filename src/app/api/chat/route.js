@@ -204,7 +204,37 @@ export async function POST(request) {
 
     // Finance-related keyword check
     const financeKeywords = [
-      "investment", "loan", "mutual fund", "EMI", "salary", "tax", "savings", "fixed deposit", "gold", "stock", "bonds", "financial", "returns"
+      // General Investment Terms
+      "investment", "returns", "interest", "financial", "finance", "portfolio", "risk", "inflation", "compounding", 
+    
+      // Loans and Credit
+      "loan", "home loan", "car loan", "personal loan", "education loan", "business loan", "mortgage", "credit card", "debt", "EMI", "credit score", "CIBIL", "loan interest rate",
+    
+      // Banking and Savings
+      "savings", "fixed deposit", "recurring deposit", "FD", "RD", "current account", "savings account", "zero balance account", "bank interest rates", "deposit insurance", "NRE account", "NRO account", "RTGS", "NEFT", "UPI",
+    
+      // Mutual Funds and Stock Market
+      "mutual fund", "SIP", "Systematic Investment Plan", "equity fund", "debt fund", "hybrid fund", "index fund", "large cap", "mid cap", "small cap", "NAV", "expense ratio", "fund manager", "asset allocation", "dividends", "capital gains", "ETF", "exchange traded fund", "hedge fund", "AUM", "market capitalization",
+    
+      // Bonds and Government Schemes
+      "bonds", "government bonds", "corporate bonds", "sovereign bonds", "tax-free bonds", "treasury bills", "G-Sec", "NSC", "PPF", "EPF", "GPF", "senior citizen savings scheme", "Sukanya Samriddhi Yojana", "sovereign gold bond",
+    
+      // Gold and Real Estate
+      "gold", "digital gold", "gold ETF", "sovereign gold bond", "physical gold", "real estate", "REIT", "rental income", "property tax", "home appreciation",
+    
+      // Insurance
+      "insurance", "life insurance", "term insurance", "health insurance", "medical insurance", "motor insurance", "travel insurance", "ULIP", "premium", "policy term", "sum assured", "claim settlement", "grace period", "rider",
+    
+      // Retirement Planning
+      "retirement", "pension", "NPS", "National Pension Scheme", "Annuity", "gratuity", "401k", "IRA", "superannuation fund",
+    
+      // Taxation
+      "income tax", "GST", "capital gains tax", "TDS", "tax bracket", "deductions", "rebate", "tax exemption", "HRA", "80C", "80D", "section 24", "tax refund", "tax filing", "advance tax",
+    
+     
+    
+      // Financial Planning and Budgeting
+      "budgeting", "expense tracking", "passive income", "side hustle", "financial freedom", "emergency fund", "wealth management", "financial planning", "estate planning", "inheritance"
     ];
     
     const isFinanceRelated = financeKeywords.some(keyword => message.toLowerCase().includes(keyword));
