@@ -130,10 +130,9 @@ const SideNav = () => {
       title: "Applications",
       items: [
         {
-          title: "Loan Applications",
+          title: "Loan Application",
           icon: FiFileText,
-          path: "/loanApplication",
-          badge: pendingApplications,
+          path: "/loanApplication"  
         },
       ],
     },
