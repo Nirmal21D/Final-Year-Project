@@ -86,7 +86,7 @@ import {
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { collection, getDocs, doc, getDoc, setDoc, query, orderBy, limit, where } from "firebase/firestore";
-import { db, auth, storage } from "@/firebase";
+import { db, auth } from "@/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import Headers from "@/components/Headers";
